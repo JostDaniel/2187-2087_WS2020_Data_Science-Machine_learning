@@ -70,7 +70,7 @@ instrument2 <- tribble(
 # PLEASE ENTER DETAILS ABOUT YOUR GROUP HERE
 
 We need your names and matricle numbers here! 
-
+########################!!!!!!!!!!!!!!!!!###########################
 DO NOT FORGET THIS!
 
 
@@ -101,7 +101,7 @@ The homework is due on Thursday 03-12-2020 at 23:59. Please upload your answers 
 Alter the code below to select just the `prop` column:
 
 ```{r echo=TRUE}
-select(babynames, name, prop) %>%
+select(babynames, prop) %>%
   head()
 
 ```
@@ -121,6 +121,16 @@ Show:
 
 # Enter your solution here
 
+
+filter(babynames, 0.05<=prop, prop<=0.80)  %>% 
+  head()
+
+filter(babynames, name=="Max"|name=="Moritz")  %>% 
+  head()
+
+filter(babynames, is.na(name))  %>% 
+  head()
+
 ```
 
 # Filter 2
@@ -128,14 +138,29 @@ Show:
 Use Boolean operators to return only the rows of the babyname object that contain:
 
 * Girls named Max 
-* Names that were used by exactly 5 or 6 children in 1990 
+* Names that were used by exactly 5 or 6 children in 1990 ###########!!!&(/"§&()/!"§%z3uedfg)
 * Names that are one of Max, Moritz, or Wilhelm 
 
 **Only display the first few results using the head() function.**
 
 ```{r echo=TRUE}
 
-# Enter your solution here
+filter(babynames, sex=="F" & name=="Max") %>% 
+  head()
+
+#### das geht nich
+filter(babynames, year==1990, n %in% c(5, 6)) %>% 
+  head()
+filter(babynames, year==1990 & n==(5) | year==1990 & n==6) %>% 
+  head()
+filter(babynames, year==1990, n==(5|6)) %>% 
+  head()
+
+
+filter(babynames, name=="Max" | name=="Moritz" | name=="Wilhelm") %>% 
+  head()
+
+#other option filter(babynames, name %in% c("Max", "Moritz", "Wilhelm")) %>% head()
 
 ```
 
@@ -147,9 +172,13 @@ Arrange babynames by `n`. Add `prop` as a second (tie breaking) variable to arra
 
 ```{r echo=TRUE}
 
-# Enter your solution here
+arrange(babynames, n, prop) %>% 
+  head()
+
+min(babynames$n)
 
 ```
+The smallest value of `n` is 5.
 
 # Desc
 
@@ -161,7 +190,11 @@ Then, use `desc()` to find the names with the highest n.
 
 ```{r echo=TRUE}
 
-# Enter your solution here
+arrange(babynames, desc(prop)) %>% 
+  head()
+
+arrange(babynames, desc(n)) %>% 
+  head()
 
 ```
 
@@ -177,7 +210,11 @@ Use `%>%` to write a sequence of functions that:
 
 ```{r echo=TRUE}
 
-# Enter your solution here
+babynames %>% 
+filter(sex=="M", year==1990) %>% 
+  select(prop, name) %>% 
+  arrange(desc(prop)) %>% 
+  head()
 
 ```
 
@@ -191,7 +228,15 @@ Chain the following steps together using the pipe `%>%` operator.
 
 ```{r echo=TRUE}
 
-# Enter your solution here
+dan <- babynames %>% 
+  filter(name=="Daniel", sex=="M") %>% 
+  head()
+
+babynames %>% 
+  filter(name=="Daniel", sex=="M") %>% 
+  ################################komisch
+ggplot(dan, aes(year, prop)) +
+  geom_line()
 
 ```
 
@@ -212,7 +257,8 @@ Now use summarise() to compute three statistics about the babynames data:
 
 ```{r echo=TRUE}
 
-# Enter your solution here
+babynames %>% 
+  summarise(min(year), max(year), sum = sum(n))
 
 ```
 
@@ -225,7 +271,9 @@ Extract the rows where `name == "Khaleesi"`. Then use `summarise()` and a summar
 
 ```{r echo=TRUE}
 
-# Enter your solution here
+babynames %>% 
+filter(name == "Khaleesi") %>%
+  summarise(sum = sum(n), min(year))
 
 ```
 
@@ -243,7 +291,11 @@ Now use `group_by()`, `summarise()`, and `arrange()` to display the ten most pop
 
 ```{r echo=TRUE}
 
-# Enter your solution here
+babynames %>% 
+group_by(sex, name) %>% 
+summarise(sum = sum(n)) %>% 
+arrange(desc(sum)) %>% 
+head(10)
 
 ```
 
