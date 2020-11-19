@@ -289,6 +289,8 @@ pollution %>%
 
 Now use `group_by()`, `summarise()`, and `arrange()` to display the ten most popular baby names using the `head(10)` command. Compute popularity as the total number of children of a single gender given a name.
 
+`group_by()`changes the scope of each function from operating on the entire dataset to operating on it group-by-group.
+
 ```{r echo=TRUE}
 
 babynames %>% 
@@ -315,7 +317,10 @@ Now use `min_rank()` and `mutate()` to rank each row in `babynames` from largest
 
 ```{r echo=TRUE}
 
-# Enter your solution here
+babynames %>% 
+  mutate(rank = min_rank(desc(n))) %>% 
+  arrange(rank) %>% 
+  head()
 
 ```
 
@@ -324,7 +329,32 @@ Then compute the median rank _for each combination of name and sex_, and arrange
 
 ```{r echo=TRUE}
 
-# Enter your solution here
+babynames %>% 
+  group_by(year, sex) %>% 
+  mutate(rank_ys = min_rank(desc(n))) %>% 
+  arrange(rank_ys) %>% 
+  head()
+
+
+###### hmmm da wissma ned weidaa
+babynames %>% 
+  group_by(name, sex) %>% 
+  mutate(rank_ns = min_rank(desc(n))) %>% 
+  mutate(med_rank_ns = median(rank_ns))
+  arrange(med_rank_ns) %>% 
+  head()
+  
+babynames %>% 
+  group_by(year) %>% 
+  mutate(rank_ns = min_rank(desc(n))) %>% 
+  arrange(rank_ns) %>% 
+  head()
+
+babynames %>% 
+  mutate(med_rank = min_rank(desc(n))) %>% 
+  arrange(med_rank) %>% 
+  head()
+
 
 ```
 
@@ -349,7 +379,14 @@ Which airlines had the largest arrival delays?
 
 ```{r echo=TRUE}
 
-# Enter your solution here
+join <- (flights %>% left_join(airlines, by="carrier"))
+
+joinjoin %>% 
+  group_by(carrier) %>% 
+  mutate(avg_delay <- mean(arr_delay)) %>% 
+  select(name, avg_delay) %>%
+  arrange(avg_delay)
+  head()
 
 ```
 
