@@ -10,8 +10,6 @@ output:
     number_sections: true
 ---
 
-Hi Giitti
-
 ```{r setup, include=FALSE}
 
 # deletes all objects from the environment
@@ -67,16 +65,19 @@ instrument2 <- tribble(
 
 ```
 
-# PLEASE ENTER DETAILS ABOUT YOUR GROUP HERE
+# GROUP 4 
 
-Leonard Fidlin h1362705, Daniel von Lappenhausen, Anne Banane
+**Leonard Fidlin** von Lappenhausen, h01362705
 
+**Daniel Jost** Lost, h01451889
+
+**Anne Valder** Alder, h11928415
 
 # Introduction
 
 Note: this Rmarkdown file downloads a 78 MB zip file from a server when you knit it.
 
-Please limit your outputs to the first few results using the **head()** function after filtering or re-arranging the data. If I recieve HTML files containing endless lists of names the respective group will get loose points!
+Please limit your outputs to the first few results using the **head()** function after filtering or re-arranging the data. If I recieve HTML files containing endless lists of names the respective group will get $loOo0se$ points!
 
 Here's how you should do it:
 
@@ -148,8 +149,8 @@ filter(babynames, sex=="F" & name=="Max") %>%
 
 #### Keine Ahnung wie man 5 & 6 hier hinbekommt
 
-filter(babynames, year == 1990 & n == 5) 
-  
+filter(babynames, year == 1990 & n == 5)  %>% 
+  head()
 
 filter(babynames, name=="Max" | name=="Moritz" | name=="Wilhelm") %>% 
   head()
@@ -253,7 +254,8 @@ Now use summarise() to compute three statistics about the babynames data:
 ```{r echo=TRUE}
 
 babynames %>% 
-  summarise(min(year), max(year), sum = sum(n))
+  summarise(min(year), max(year), sum = sum(n))  %>% 
+  head()
 
 ```
 
@@ -268,7 +270,8 @@ Extract the rows where `name == "Khaleesi"`. Then use `summarise()` and a summar
 
 babynames %>% 
 filter(name == "Khaleesi") %>%
-  summarise(sum = sum(n), min(year))
+  summarise(sum = sum(n), min(year))  %>% 
+  head()
 
 ```
 
