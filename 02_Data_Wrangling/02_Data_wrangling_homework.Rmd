@@ -10,7 +10,7 @@ output:
     number_sections: true
 ---
 
-HALLO GITIII
+Hi Giitti
 
 ```{r setup, include=FALSE}
 
@@ -69,9 +69,7 @@ instrument2 <- tribble(
 
 # PLEASE ENTER DETAILS ABOUT YOUR GROUP HERE
 
-We need your names and matricle numbers here! 
-########################!!!!!!!!!!!!!!!!!###########################
-DO NOT FORGET THIS!
+Leonard Fidlin h1362705, Daniel von Lappenhausen, Anne Banane
 
 
 # Introduction
@@ -138,7 +136,7 @@ filter(babynames, is.na(name))  %>%
 Use Boolean operators to return only the rows of the babyname object that contain:
 
 * Girls named Max 
-* Names that were used by exactly 5 or 6 children in 1990 ###########!!!&(/"§&()/!"§%z3uedfg)
+* Names that were used by exactly 5 or 6 children in 1990 
 * Names that are one of Max, Moritz, or Wilhelm 
 
 **Only display the first few results using the head() function.**
@@ -148,14 +146,10 @@ Use Boolean operators to return only the rows of the babyname object that contai
 filter(babynames, sex=="F" & name=="Max") %>% 
   head()
 
-#### das geht nich
-filter(babynames, year==1990, n %in% c(5, 6)) %>% 
-  head()
-filter(babynames, year==1990 & n==(5) | year==1990 & n==6) %>% 
-  head()
-filter(babynames, year==1990, n==(5|6)) %>% 
-  head()
+#### Keine Ahnung wie man 5 & 6 hier hinbekommt
 
+filter(babynames, year == 1990 & n == 5) 
+  
 
 filter(babynames, name=="Max" | name=="Moritz" | name=="Wilhelm") %>% 
   head()
@@ -234,7 +228,8 @@ dan <- babynames %>%
 
 babynames %>% 
   filter(name=="Daniel", sex=="M") %>% 
-  ################################komisch
+  head()
+  
 ggplot(dan, aes(year, prop)) +
   geom_line()
 
@@ -328,31 +323,20 @@ Compute each name's rank _within its year and sex_.
 Then compute the median rank _for each combination of name and sex_, and arrange the results from highest median rank to lowest.
 
 ```{r echo=TRUE}
-
+# 1
 babynames %>% 
   group_by(year, sex) %>% 
   mutate(rank_ys = min_rank(desc(n))) %>% 
   arrange(rank_ys) %>% 
   head()
 
-
-###### hmmm da wissma ned weidaa
+# 2
 babynames %>% 
+  group_by(year, sex) %>% 
+  mutate(rank_ys = min_rank(desc(n))) %>% 
   group_by(name, sex) %>% 
-  mutate(rank_ns = min_rank(desc(n))) %>% 
-  mutate(med_rank_ns = median(rank_ns))
-  arrange(med_rank_ns) %>% 
-  head()
-  
-babynames %>% 
-  group_by(year) %>% 
-  mutate(rank_ns = min_rank(desc(n))) %>% 
-  arrange(rank_ns) %>% 
-  head()
-
-babynames %>% 
-  mutate(med_rank = min_rank(desc(n))) %>% 
-  arrange(med_rank) %>% 
+  summarise(median = median(rank_ys)) %>% 
+  arrange(median) %>% 
   head()
 
 
@@ -381,12 +365,11 @@ Which airlines had the largest arrival delays?
 
 join <- (flights %>% left_join(airlines, by="carrier"))
 
-joinjoin %>% 
-  group_by(carrier) %>% 
-  mutate(avg_delay <- mean(arr_delay)) %>% 
-  select(name, avg_delay) %>%
-  arrange(avg_delay)
-  head()
+join %>% 
+  group_by(name) %>% 
+  summarise(avg_delay = mean(arr_delay, na.rm = TRUE)) %>% 
+  arrange(avg_delay) %>% 
+  head(10)
 
 ```
 
