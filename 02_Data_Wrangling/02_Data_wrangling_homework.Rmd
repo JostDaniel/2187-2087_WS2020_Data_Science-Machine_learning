@@ -503,13 +503,14 @@ Use this formula to calculate the population weighted mean per tenure status. $\
 household %>% 
   select(newid, totexpcq, fam_size, cutenure, finlwt21) %>% 
   mutate(exp_pc = (totexpcq / fam_size)) %>% 
-
-  #  case_when(
-    cutenure == 1 ~ "Owned with mortgage",
-    cutenure == 2 | cutenure == 3 ~ "Owned without mortgage",
-    cutenure == 4 | cutenure == 6 ~ "Rented",
-    cutenure == 5 ~ "occupied without payment of rent"
-  )
+  mutate(
+    cutenure = case_when(
+      cutenure == 1 ~ "Owned with mortgage",
+      cutenure == 2 | cutenure == 3 ~ "Owned without mortgage",
+      cutenure == 4 | cutenure == 6 ~ "Rented",
+      cutenure == 5 ~ "occupied without payment of rent"
+    )) %>% 
+  
 
 ```
 
