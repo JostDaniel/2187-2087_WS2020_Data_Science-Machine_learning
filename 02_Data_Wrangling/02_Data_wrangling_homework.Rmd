@@ -67,7 +67,7 @@ instrument2 <- tribble(
 
 # GROUP 4 
 
-**Leonard Fidlin** von Lappenhausen, h01362705
+**Leonard Fidlin** von Lappenhausen, h01352705
 
 **Daniel Jost** Lost, h01451889
 
@@ -500,6 +500,16 @@ Use this formula to calculate the population weighted mean per tenure status. $\
 ```{r echo=TRUE}
 
 # Enter your solution here
+household %>% 
+  select(newid, totexpcq, fam_size, cutenure, finlwt21) %>% 
+  mutate(exp_pc = (totexpcq / fam_size)) %>% 
+
+  #  case_when(
+    cutenure == 1 ~ "Owned with mortgage",
+    cutenure == 2 | cutenure == 3 ~ "Owned without mortgage",
+    cutenure == 4 | cutenure == 6 ~ "Rented",
+    cutenure == 5 ~ "occupied without payment of rent"
+  )
 
 ```
 
