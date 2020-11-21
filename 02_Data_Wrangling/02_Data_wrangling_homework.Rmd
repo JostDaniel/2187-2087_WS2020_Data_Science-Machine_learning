@@ -500,6 +500,7 @@ Use this formula to calculate the population weighted mean per tenure status. $\
 ```{r echo=TRUE}
 
 # Enter your solution here
+# Bei mir scheint ein Fehler zu sein weil Total Expenditure = 0 ?
 household %>% 
   select(newid, totexpcq, fam_size, cutenure, finlwt21) %>% 
   mutate(exp_pc = (totexpcq / fam_size)) %>% 
@@ -509,8 +510,7 @@ household %>%
       cutenure == 2 | cutenure == 3 ~ "Owned without mortgage",
       cutenure == 4 | cutenure == 6 ~ "Rented",
       cutenure == 5 ~ "occupied without payment of rent"
-    )) %>% 
-  
+    ))
 
 ```
 
