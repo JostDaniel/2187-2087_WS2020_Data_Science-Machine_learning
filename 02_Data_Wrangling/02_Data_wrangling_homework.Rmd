@@ -67,6 +67,8 @@ instrument2 <- tribble(
 
 # PLEASE ENTER DETAILS ABOUT YOUR GROUP HERE
 
+> **GROUP 4**
+
 **Leonard Fidlin**, h01352705
 
 **Daniel Jost**, h01451889
@@ -77,7 +79,7 @@ instrument2 <- tribble(
 
 Note: this Rmarkdown file downloads a 78 MB zip file from a server when you knit it.
 
-Please limit your outputs to the first few results using the **head()** function after filtering or re-arranging the data. If I recieve HTML files containing endless lists of names the respective group will get loose points!
+Please limit your outputs to the first few results using the **head()** function after filtering or re-arranging the data. If I recieve HTML files containing endless lists of names the respective group will get $loOo0se$ points!
 
 Here's how you should do it:
 
@@ -100,7 +102,7 @@ The homework is due on Thursday 03-12-2020 at 23:59. Please upload your answers 
 Alter the code below to select just the `prop` column:
 
 ```{r echo=TRUE}
-select(babynames, 'name''''''''''''''''''''''''''''', prop) %>%
+select(babynames, prop) %>%
   head()
 
 ```
@@ -144,7 +146,7 @@ Use Boolean operators to return only the rows of the babyname object that contai
 filter(babynames, sex=="F" & name=="Max") %>% 
   head()
 
-babynames %>% filter(year == 1990 & n %in% c(5,6)) %>% 
+babynames %>% filter(year == 1990 & (n==5|n==6)) %>% 
   head()
 
 filter(babynames, name=="Max" | name=="Moritz" | name=="Wilhelm") %>% 
@@ -167,6 +169,8 @@ arrange(babynames, n, prop) %>%
 min(babynames$n)
 
 ```
+The smallest value of `n` is 5.
+
 
 # Desc
 
@@ -215,11 +219,26 @@ Chain the following steps together using the pipe `%>%` operator.
 ```{r echo=TRUE}
 
 dan <- babynames %>% 
-  filter(name=="Daniel", sex=="M") %>% 
-  head()
-  
+  filter(name=="Daniel", sex=="M")
+
 ggplot(dan, aes(year, prop)) +
   geom_line()
+
+```
+
+Or all our names in one plot:
+```{r echo=TRUE}
+leo <- babynames %>% 
+  filter(name=="Leonard", sex=="M")
+
+ann <- babynames %>% 
+  filter(name=="Anne", sex=="F")
+
+all <- union(dan, leo, id="year")
+all <- union(all, ann, id="year")
+  
+ggplot(all) +
+  geom_line(aes(year, prop, group = name, color = name))
 
 ```
 
@@ -227,7 +246,7 @@ ggplot(dan, aes(year, prop)) +
 
 Here some code to remind you how summarise works:
 
-```{r echo=TRUE}
+```{r echo=TRUE, error=FALSE}
 pollution %>% 
  summarise(mean = mean(amount), sum = sum(amount), n = n())
 ```
@@ -311,20 +330,13 @@ Compute each name's rank _within its year and sex_.
 Then compute the median rank _for each combination of name and sex_, and arrange the results from highest median rank to lowest.
 
 ```{r echo=TRUE}
-# 1
+
 babynames %>% 
   group_by(year, sex) %>% 
   mutate(rank_ys = min_rank(desc(n))) %>% 
-  arrange(rank_ys) %>% 
+  mutate(med_rank_ys = median(rank_ys)) %>% 
   head()
 
-# 2
-babynames %>% 
-  group_by(year, sex) %>% 
-  mutate(rank_ys = min_rank(desc(n))) %>% 
-  summarise(median = median(rank_ys)) %>% 
-  arrange(desc(median)) %>% 
-  head()
 ```
 
 # Joining data
@@ -364,8 +376,6 @@ join %>%
 Look at the code below. What does it do exactly? Try to understand each line of code.
 
 ```{r echo=T, message=FALSE, warning=FALSE, results=F}
-
-
 
 # create the download path for the zip file 
 # we will download the file into the temporary directory of your computer
@@ -456,7 +466,7 @@ The goal of this exercise is to write a sequence of functions using the pipe ope
 * Total expenditure current quarter: **totexpcq**
 * Household Size: **fam_size**
 * Tenure status: **cutenure**
-* Houshold weight: **finlwt21**
+* Household weight: **finlwt21**
 
 ### Calculate the per capita consumption per household
 
@@ -505,16 +515,19 @@ addline_format <- function(x,...){
     gsub('\\s','\n',x) 
 } 
 
+
+# create theme
+theme_ds <- theme_classic() + 
+  theme(legend.title=element_blank()) +
+  theme(plot.title = element_text(size = 12, hjust = 0)) +
+  theme(legend.text = element_text(size = 6))
+
+# create plot
 household_clean %>% ggplot +
   geom_bar(mapping = aes(x = cutenure, y =pop_weighted_mean, fill = cutenure), stat = "summary") + 
   labs(title = "Population weighted mean per capita consumption per tenure status", x = "Tenure status", y = "Population weighted mean") + 
-  theme_classic() + 
-  theme(legend.title=element_blank()) +
-  theme(plot.title = element_text(
-           size = 12, 
-           hjust = 0)) +
-  theme(legend.text = element_text(size = 6)) +
-  scale_x_discrete(breaks=unique(household_clean$cutenure), labels=addline_format(c("Owned with mortgage","Owned without mortgage","Rented", "Occupied without payment of rent"))) 
+  scale_x_discrete(breaks=unique(household_clean$cutenure), labels=addline_format(c("Owned with mortgage","Owned without mortgage","Rented", "Occupied without payment of rent"))) +
+  theme_ds
   
 
 
@@ -538,7 +551,9 @@ Use the population weights for this step
 
 ```{r echo=TRUE}
 
-person_clean <- person %>% group_by(newid) %>% mutate(average_age = mean(age)) 
+person_clean <- person %>% 
+  group_by(newid) %>% 
+  mutate(average_age = mean(age)) 
 
 household_clean <- (left_join(household_clean, person_clean, by="newid")) 
 
