@@ -574,13 +574,8 @@ Now use your result from above to create a bar plot using ggplot2. The nicer it 
 household_clean %>% ggplot +
   geom_bar(mapping = aes(x = cutenure, y = age_weighted_mean, fill = cutenure), stat = "summary") + 
   labs(title = "Average age per tenure status", x = "Tenure status", y = "Age weighted mean") + 
-  theme_classic() + 
-  theme(legend.title=element_blank()) +
-  theme(plot.title = element_text(
-           size = 12, 
-           hjust = 0)) +
-  theme(legend.text = element_text(size = 6)) +
-  scale_x_discrete(breaks=unique(household_clean$cutenure), labels=addline_format(c("Owned with mortgage","Owned without mortgage","Rented", "Occupied without payment of rent"))) 
+  scale_x_discrete(breaks=unique(household_clean$cutenure), labels=addline_format(c("Owned with mortgage","Owned without mortgage","Rented", "Occupied without payment of rent")))  +
+  theme_ds
   
 ```
 
@@ -602,7 +597,6 @@ household_clean <- household_clean %>%
  
   household_clean %>% head(10)
 
-
 ```
 
 ### Create an appropriate plot to display the data
@@ -613,17 +607,33 @@ household_clean <- household_clean %>%
 
 ```{r echo=TRUE}
 
- 
 household_clean %>% ggplot + 
   geom_bar(mapping = aes(x = cutenure, y = Pwccpaha, fill = cutenure), stat = "summary") + 
-  labs(title = "Population weighted per capita consumption per average household age", x = "Tenure status", y = "P.c.consumption per average household age") + 
-  theme_classic() + 
-  theme(legend.title=element_blank()) +
-  theme(plot.title = element_text(
-           size = 12, 
-           hjust = 0)) +
-  theme(legend.text = element_text(size = 6)) +
-  scale_x_discrete(breaks=unique(household_clean$cutenure), labels=addline_format(c("Owned with mortgage","Owned without mortgage","Rented", "Occupied without payment of rent"))) 
+  labs(title = "Population weighted per capita consumption per average household age", x = "Tenure status", y = "P.c.consumption per average household age") +
+  scale_x_discrete(breaks=unique(household_clean$cutenure), labels=addline_format(c("Owned with mortgage","Owned without mortgage","Rented", "Occupied without payment of rent")))  +
+  theme_ds
+
+household_clean %>% ggplot + 
+  geom_bar(mapping = aes(x = cutenure, y = Pwccpaha, fill = cutenure), stat = "summary") + 
+  labs(title = "Population weighted per capita consumption per average household age", x = "Tenure status", y = "P.c.consumption per average household age") +
+  scale_x_discrete(breaks=unique(household_clean$cutenure)) +
+  theme_ds
+
+household_clean %>% ggplot + 
+  geom_bar(mapping = aes(x = cutenure, y = Pwccpaha, fill = cutenure), stat = "summary") + 
+  labs(title = "Population weighted per capita consumption per average household age", x = "Tenure status", y = "P.c.consumption per average household age") +
+  scale_x_discrete(breaks=unique(household_clean$cutenure)) +
+  theme_ds + 
+  coord_flip()
   
 ```
+
+We conclude that....
+
+```{r}
+lm1 <- lm(data=household_clean, Pwccpaha ~ cutenure)
+summary(lm1)
+```
+
+
 
