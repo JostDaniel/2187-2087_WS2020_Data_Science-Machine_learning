@@ -402,10 +402,9 @@ summary {
 </ul>
 </div>
 
-<p>Hi Giitti</p>
 <div id="group-4" class="section level1">
 <h1><span class="header-section-number">1</span> GROUP 4</h1>
-<p><strong>Leonard Fidlin</strong> von Lappenhausen, h01362705</p>
+<p><strong>Leonard Fidlin</strong> von Lappenhausen, h01352705</p>
 <p><strong>Daniel Jost</strong> Lost, h01451889</p>
 <p><strong>Anne Valder</strong> Alder, h11928415</p>
 </div>
@@ -910,7 +909,32 @@ person &lt;- read_csv(file.path(tempdir(),&quot;memi194.csv&quot;)) %&gt;%
 <li>Do not use packages, do it on your own using dplyr synthax.</li>
 <li>How can the variable <em>finlwt21</em> be interpreted?</li>
 </ul>
-<pre class="r"><code># Enter your solution here</code></pre>
+<pre class="r"><code># Enter your solution here
+# Bei mir scheint ein Fehler zu sein weil Total Expenditure = 0 ?
+household %&gt;% 
+  select(newid, totexpcq, fam_size, cutenure, finlwt21) %&gt;% 
+  mutate(exp_pc = (totexpcq / fam_size)) %&gt;% 
+  mutate(
+    cutenure = case_when(
+      cutenure == 1 ~ &quot;Owned with mortgage&quot;,
+      cutenure == 2 | cutenure == 3 ~ &quot;Owned without mortgage&quot;,
+      cutenure == 4 | cutenure == 6 ~ &quot;Rented&quot;,
+      cutenure == 5 ~ &quot;occupied without payment of rent&quot;
+    ))</code></pre>
+<pre><code>## # A tibble: 5,248 x 6
+##    newid    totexpcq fam_size cutenure               finlwt21 exp_pc
+##    &lt;chr&gt;       &lt;dbl&gt;    &lt;dbl&gt; &lt;chr&gt;                     &lt;dbl&gt;  &lt;dbl&gt;
+##  1 04069474        0        3 Owned with mortgage      36019.      0
+##  2 04069484        0        2 Owned without mortgage    2990.      0
+##  3 04069524        0        4 Owned with mortgage      25697.      0
+##  4 04069534        0        2 Owned without mortgage   18046.      0
+##  5 04069564        0        4 Rented                   21586.      0
+##  6 04069584        0        1 Owned with mortgage      19245.      0
+##  7 04069594        0        3 Rented                   25585.      0
+##  8 04069614        0        2 Owned with mortgage      14691.      0
+##  9 04069664        0        1 Owned without mortgage   22982.      0
+## 10 04069684        0        2 Owned with mortgage      25590.      0
+## # ... with 5,238 more rows</code></pre>
 </div>
 <div id="create-a-bar-plot-that-compares-the-population-weighted-mean-per-capita-consumption-per-tenure-status." class="section level3">
 <h3><span class="header-section-number">16.1.5</span> Create a bar plot that compares the population weighted mean per capita consumption per tenure status.</h3>

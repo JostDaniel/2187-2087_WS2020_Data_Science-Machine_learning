@@ -65,19 +65,19 @@ instrument2 <- tribble(
 
 ```
 
-# GROUP 4 
+# PLEASE ENTER DETAILS ABOUT YOUR GROUP HERE
 
-**Leonard Fidlin** von Lappenhausen, h01352705
+**Leonard Fidlin**, h01352705
 
-**Daniel Jost** Lost, h01451889
+**Daniel Jost**, h01451889
 
-**Anne Valder** Alder, h11928415
+**Anne Valder**, h11928415
 
 # Introduction
 
 Note: this Rmarkdown file downloads a 78 MB zip file from a server when you knit it.
 
-Please limit your outputs to the first few results using the **head()** function after filtering or re-arranging the data. If I recieve HTML files containing endless lists of names the respective group will get $loOo0se$ points!
+Please limit your outputs to the first few results using the **head()** function after filtering or re-arranging the data. If I recieve HTML files containing endless lists of names the respective group will get loose points!
 
 Here's how you should do it:
 
@@ -100,7 +100,7 @@ The homework is due on Thursday 03-12-2020 at 23:59. Please upload your answers 
 Alter the code below to select just the `prop` column:
 
 ```{r echo=TRUE}
-select(babynames, prop) %>%
+select(babynames, 'name''''''''''''''''''''''''''''', prop) %>%
   head()
 
 ```
@@ -118,13 +118,10 @@ Show:
 
 ```{r echo=TRUE}
 
-# Enter your solution here
-
-
 filter(babynames, 0.05<=prop, prop<=0.80)  %>% 
   head()
 
-filter(babynames, name=="Max"|name=="Moritz")  %>% 
+filter(babynames, name %in% c("Max","Moritz"))  %>% 
   head()
 
 filter(babynames, is.na(name))  %>% 
@@ -147,15 +144,11 @@ Use Boolean operators to return only the rows of the babyname object that contai
 filter(babynames, sex=="F" & name=="Max") %>% 
   head()
 
-#### Keine Ahnung wie man 5 & 6 hier hinbekommt
-
-filter(babynames, year == 1990 & n == 5)  %>% 
+babynames %>% filter(year == 1990 & n %in% c(5,6)) %>% 
   head()
 
 filter(babynames, name=="Max" | name=="Moritz" | name=="Wilhelm") %>% 
   head()
-
-#other option filter(babynames, name %in% c("Max", "Moritz", "Wilhelm")) %>% head()
 
 ```
 
@@ -167,13 +160,13 @@ Arrange babynames by `n`. Add `prop` as a second (tie breaking) variable to arra
 
 ```{r echo=TRUE}
 
+
 arrange(babynames, n, prop) %>% 
   head()
 
 min(babynames$n)
 
 ```
-The smallest value of `n` is 5.
 
 # Desc
 
@@ -204,13 +197,11 @@ Use `%>%` to write a sequence of functions that:
 
 
 ```{r echo=TRUE}
-
 babynames %>% 
 filter(sex=="M", year==1990) %>% 
   select(prop, name) %>% 
   arrange(desc(prop)) %>% 
   head()
-
 ```
 
 
@@ -224,10 +215,6 @@ Chain the following steps together using the pipe `%>%` operator.
 ```{r echo=TRUE}
 
 dan <- babynames %>% 
-  filter(name=="Daniel", sex=="M") %>% 
-  head()
-
-babynames %>% 
   filter(name=="Daniel", sex=="M") %>% 
   head()
   
@@ -287,8 +274,6 @@ pollution %>%
 
 Now use `group_by()`, `summarise()`, and `arrange()` to display the ten most popular baby names using the `head(10)` command. Compute popularity as the total number of children of a single gender given a name.
 
-`group_by()`changes the scope of each function from operating on the entire dataset to operating on it group-by-group.
-
 ```{r echo=TRUE}
 
 babynames %>% 
@@ -337,12 +322,9 @@ babynames %>%
 babynames %>% 
   group_by(year, sex) %>% 
   mutate(rank_ys = min_rank(desc(n))) %>% 
-  group_by(name, sex) %>% 
   summarise(median = median(rank_ys)) %>% 
-  arrange(median) %>% 
+  arrange(desc(median)) %>% 
   head()
-
-
 ```
 
 # Joining data
@@ -366,7 +348,7 @@ Which airlines had the largest arrival delays?
 
 ```{r echo=TRUE}
 
-join <- (flights %>% left_join(airlines, by="carrier"))
+join <- flights %>%  left_join(airlines, by="carrier")
 
 join %>% 
   group_by(name) %>% 
@@ -499,19 +481,17 @@ Use this formula to calculate the population weighted mean per tenure status. $\
 
 ```{r echo=TRUE}
 
-# Enter your solution here
-# Bei mir scheint ein Fehler zu sein weil Total Expenditure = 0 ?
-household %>% 
+household_clean <- household %>% 
   select(newid, totexpcq, fam_size, cutenure, finlwt21) %>% 
   mutate(exp_pc = (totexpcq / fam_size)) %>% 
-  mutate(
-    cutenure = case_when(
-      cutenure == 1 ~ "Owned with mortgage",
-      cutenure == 2 | cutenure == 3 ~ "Owned without mortgage",
-      cutenure == 4 | cutenure == 6 ~ "Rented",
-      cutenure == 5 ~ "occupied without payment of rent"
-    ))
+  mutate (cutenure = case_when (cutenure == 1 ~ "Owned with mortgage",
+    cutenure == 2 | cutenure == 3 ~ "Owned without mortgage",
+    cutenure == 4 | cutenure == 6 ~ "Rented",
+    cutenure == 5 ~ "Occupied without payment of rent")) %>% 
+  group_by(cutenure) %>% 
+  mutate(pop_weighted_mean =  weighted.mean(exp_pc,finlwt21))
 
+head(household_clean)
 ```
 
 
@@ -521,7 +501,22 @@ Now use your result from above to create a bar plot using ggplot2. The nicer it 
 
 ```{r echo=TRUE}
 
-# Enter your solution here
+addline_format <- function(x,...){ 
+    gsub('\\s','\n',x) 
+} 
+
+household_clean %>% ggplot +
+  geom_bar(mapping = aes(x = cutenure, y =pop_weighted_mean, fill = cutenure), stat = "summary") + 
+  labs(title = "Population weighted mean per capita consumption per tenure status", x = "Tenure status", y = "Population weighted mean") + 
+  theme_classic() + 
+  theme(legend.title=element_blank()) +
+  theme(plot.title = element_text(
+           size = 12, 
+           hjust = 0)) +
+  theme(legend.text = element_text(size = 6)) +
+  scale_x_discrete(breaks=unique(household_clean$cutenure), labels=addline_format(c("Owned with mortgage","Owned without mortgage","Rented", "Occupied without payment of rent"))) 
+  
+
 
 ```
 
@@ -543,8 +538,15 @@ Use the population weights for this step
 
 ```{r echo=TRUE}
 
-# Enter your solution here
+person_clean <- person %>% group_by(newid) %>% mutate(average_age = mean(age)) 
 
+household_clean <- (left_join(household_clean, person_clean, by="newid")) 
+
+household_clean <- household_clean %>%
+    select(newid, totexpcq, fam_size, cutenure, finlwt21, average_age, pop_weighted_mean, exp_pc) %>% 
+    group_by(cutenure) %>% 
+    mutate(age_weighted_mean = weighted.mean(average_age,finlwt21))
+head(household_clean)
 ```
 
 ### Create a bar plot that compares the average age per tenure status
@@ -554,8 +556,17 @@ Now use your result from above to create a bar plot using ggplot2. The nicer it 
 
 ```{r echo=TRUE}
 
-# Enter your solution here
-
+household_clean %>% ggplot +
+  geom_bar(mapping = aes(x = cutenure, y = age_weighted_mean, fill = cutenure), stat = "summary") + 
+  labs(title = "Average age per tenure status", x = "Tenure status", y = "Age weighted mean") + 
+  theme_classic() + 
+  theme(legend.title=element_blank()) +
+  theme(plot.title = element_text(
+           size = 12, 
+           hjust = 0)) +
+  theme(legend.text = element_text(size = 6)) +
+  scale_x_discrete(breaks=unique(household_clean$cutenure), labels=addline_format(c("Owned with mortgage","Owned without mortgage","Rented", "Occupied without payment of rent"))) 
+  
 ```
 
 
@@ -568,7 +579,14 @@ Now use your result from above to create a bar plot using ggplot2. The nicer it 
 
 ```{r echo=TRUE}
 
-# Enter your solution here
+household_clean <- household_clean %>% 
+  mutate(average_age = ceiling(average_age)) %>% 
+  group_by(average_age) %>% 
+  mutate(Pwccpaha = weighted.mean(exp_pc,finlwt21)) %>%
+  arrange(desc(Pwccpaha)) 
+ 
+  household_clean %>% head(10)
+
 
 ```
 
@@ -580,7 +598,17 @@ Now use your result from above to create a bar plot using ggplot2. The nicer it 
 
 ```{r echo=TRUE}
 
-# Enter your solution here
-
+ 
+household_clean %>% ggplot + 
+  geom_bar(mapping = aes(x = cutenure, y = Pwccpaha, fill = cutenure), stat = "summary") + 
+  labs(title = "Population weighted per capita consumption per average household age", x = "Tenure status", y = "P.c.consumption per average household age") + 
+  theme_classic() + 
+  theme(legend.title=element_blank()) +
+  theme(plot.title = element_text(
+           size = 12, 
+           hjust = 0)) +
+  theme(legend.text = element_text(size = 6)) +
+  scale_x_discrete(breaks=unique(household_clean$cutenure), labels=addline_format(c("Owned with mortgage","Owned without mortgage","Rented", "Occupied without payment of rent"))) 
+  
 ```
 
