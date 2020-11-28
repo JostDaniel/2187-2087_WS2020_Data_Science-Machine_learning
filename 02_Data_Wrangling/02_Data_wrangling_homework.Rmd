@@ -79,7 +79,7 @@ instrument2 <- tribble(
 
 Note: this Rmarkdown file downloads a 78 MB zip file from a server when you knit it.
 
-Please limit your outputs to the first few results using the **head()** function after filtering or re-arranging the data. If I recieve HTML files containing endless lists of names the respective group will get $loOo0se$ points!
+Please limit your outputs to the first few results using the **head()** function after filtering or re-arranging the data. If I recieve HTML files containing endless lists of names the respective group will get $l o O o 0 s e$ points!
 
 Here's how you should do it:
 
@@ -280,6 +280,8 @@ filter(name == "Khaleesi") %>%
   head()
 
 ```
+1. 1964 is the total number of children named Khaleesi in the sample
+2. 2011 is the first year Khaleesi appeared in the data
 
 # Split apply combine
 
@@ -333,8 +335,10 @@ Then compute the median rank _for each combination of name and sex_, and arrange
 
 babynames %>% 
   group_by(year, sex) %>% 
+  group_by(name, sex) %>% 
   mutate(rank_ys = min_rank(desc(n))) %>% 
   mutate(med_rank_ys = median(rank_ys)) %>% 
+  arrange(desc(med_rank_ys)) %>% 
   head()
 
 ```
@@ -500,7 +504,6 @@ household_clean <- household %>%
     cutenure == 5 ~ "Occupied without payment of rent")) %>% 
   group_by(cutenure) %>% 
   mutate(pop_weighted_mean =  weighted.mean(exp_pc,finlwt21))
-
 head(household_clean)
 ```
 
@@ -510,26 +513,42 @@ head(household_clean)
 Now use your result from above to create a bar plot using ggplot2. The nicer it looks the better.
 
 ```{r echo=TRUE}
-
+# function to obtain a line break for the x-axis since coord_flip still leads to illegible axis
 addline_format <- function(x,...){ 
     gsub('\\s','\n',x) 
 } 
 
+# install.packages("wesanderson")
+library(wesanderson) # Wes Anderson color palettes :D
 
 # create theme
 theme_ds <- theme_classic() + 
   theme(legend.title=element_blank()) +
-  theme(plot.title = element_text(size = 12, hjust = 0)) +
-  theme(legend.text = element_text(size = 6))
+  theme(plot.title = element_text(size = 14, hjust = 0)) +
+  theme(legend.position = "none") #to remove the legend
+
+theme_ds <- theme_classic() +
+  theme(legend.title=element_blank(), 
+        plot.title = element_text(colour = "burlywood4", size = 14, hjust = 0, family="serif", face="bold"),
+        axis.title.x =element_text(colour = "burlywood4", size = 10, family="sans", face="bold"),
+        axis.title.y =element_text(colour = "burlywood4", size = 10, family="sans", face="bold"), 
+        panel.grid.major.y = element_line(colour = "burlywood4", size=0,1),
+        panel.grid.minor = element_line(size = 0.25, linetype = 'solid', colour = "ivory3"),
+        plot.background = element_rect(fill = "linen"),
+        panel.background = element_rect(fill = "cornsilk", colour = "burlywood4",
+                                        size = 2, linetype = "solid"),
+        legend.background = element_rect(fill="burlywood4"), 
+        legend.text = element_text(colour="ivory3", size = 8, face = "bold"),
+        legend.position = "none") #to remove the legend
 
 # create plot
 household_clean %>% ggplot +
   geom_bar(mapping = aes(x = cutenure, y =pop_weighted_mean, fill = cutenure), stat = "summary") + 
   labs(title = "Population weighted mean per capita consumption per tenure status", x = "Tenure status", y = "Population weighted mean") + 
   scale_x_discrete(breaks=unique(household_clean$cutenure), labels=addline_format(c("Owned with mortgage","Owned without mortgage","Rented", "Occupied without payment of rent"))) +
+  scale_y_continuous(breaks = c(0, 1000, 2000)) +
+  scale_fill_manual(values=wes_palette(n=4, name="Darjeeling1")) +
   theme_ds
-  
-
 
 ```
 
@@ -553,14 +572,14 @@ Use the population weights for this step
 
 person_clean <- person %>% 
   group_by(newid) %>% 
-  mutate(average_age = mean(age)) 
+  mutate(avg_age = mean(age)) 
 
 household_clean <- (left_join(household_clean, person_clean, by="newid")) 
 
 household_clean <- household_clean %>%
-    select(newid, totexpcq, fam_size, cutenure, finlwt21, average_age, pop_weighted_mean, exp_pc) %>% 
+    select(newid, totexpcq, fam_size, cutenure, finlwt21, avg_age, pop_weighted_mean, exp_pc) %>% 
     group_by(cutenure) %>% 
-    mutate(age_weighted_mean = weighted.mean(average_age,finlwt21))
+    mutate(age_weighted_mean = weighted.mean(avg_age,finlwt21))
 head(household_clean)
 ```
 
@@ -574,7 +593,8 @@ Now use your result from above to create a bar plot using ggplot2. The nicer it 
 household_clean %>% ggplot +
   geom_bar(mapping = aes(x = cutenure, y = age_weighted_mean, fill = cutenure), stat = "summary") + 
   labs(title = "Average age per tenure status", x = "Tenure status", y = "Age weighted mean") + 
-  scale_x_discrete(breaks=unique(household_clean$cutenure), labels=addline_format(c("Owned with mortgage","Owned without mortgage","Rented", "Occupied without payment of rent")))  +
+  scale_x_discrete(breaks=unique(household_clean$cutenure), labels=addline_format(c("Owned with mortgage","Owned without mortgage","Rented", "Occupied without payment of rent"))) +
+  scale_fill_manual(values=wes_palette(n=4, name="Darjeeling1")) +
   theme_ds
   
 ```
@@ -583,15 +603,15 @@ household_clean %>% ggplot +
 ### Calculate the population weighted per capita consumption per average household age 
 
 * Round the average age per household to integer values 
-* Use the split apply combine approach to calculate the population weighted per captia consumption per average household age
+* Use the split apply combine approach to calculate the population weighted per capita consumption per average household age
 * Arrange the results in an descending order
 * Display only the Top 10 results
 
 ```{r echo=TRUE}
 
 household_clean <- household_clean %>% 
-  mutate(average_age = ceiling(average_age)) %>% 
-  group_by(average_age) %>% 
+  mutate(avg_age = ceiling(avg_age)) %>% 
+  group_by(avg_age) %>% 
   mutate(Pwccpaha = weighted.mean(exp_pc,finlwt21)) %>%
   arrange(desc(Pwccpaha)) 
  
@@ -607,33 +627,29 @@ household_clean <- household_clean %>%
 
 ```{r echo=TRUE}
 
-household_clean %>% ggplot + 
-  geom_bar(mapping = aes(x = cutenure, y = Pwccpaha, fill = cutenure), stat = "summary") + 
-  labs(title = "Population weighted per capita consumption per average household age", x = "Tenure status", y = "P.c.consumption per average household age") +
-  scale_x_discrete(breaks=unique(household_clean$cutenure), labels=addline_format(c("Owned with mortgage","Owned without mortgage","Rented", "Occupied without payment of rent")))  +
-  theme_ds
-
-household_clean %>% ggplot + 
-  geom_bar(mapping = aes(x = cutenure, y = Pwccpaha, fill = cutenure), stat = "summary") + 
-  labs(title = "Population weighted per capita consumption per average household age", x = "Tenure status", y = "P.c.consumption per average household age") +
-  scale_x_discrete(breaks=unique(household_clean$cutenure)) +
-  theme_ds
-
-household_clean %>% ggplot + 
-  geom_bar(mapping = aes(x = cutenure, y = Pwccpaha, fill = cutenure), stat = "summary") + 
-  labs(title = "Population weighted per capita consumption per average household age", x = "Tenure status", y = "P.c.consumption per average household age") +
-  scale_x_discrete(breaks=unique(household_clean$cutenure)) +
-  theme_ds + 
-  coord_flip()
+ggplot(household_clean, aes(x = avg_age, y = Pwccpaha, color = cutenure)) + 
+  geom_point() +
+  geom_smooth(method="loess", se = F, color="burlywood4")  +
+  scale_fill_manual(values=wes_palette(n=4, name="Darjeeling1")) +
+  theme_ds +
+  theme(legend.position = "top")
   
 ```
 
-We conclude that....
+There seems to be a quadratic relatonship. This is why we decided to include the squared average household age as a regressor.
 
-```{r}
-lm1 <- lm(data=household_clean, Pwccpaha ~ cutenure)
-summary(lm1)
+```{r echo=TRUE}
+household_clean <- household_clean %>% 
+  mutate(avg_age_2 = avg_age^2) 
+
+library(jtools)
+library(kableExtra)
+
+lm2 <- lm(data=household_clean, Pwccpaha ~ avg_age + avg_age_2)
+summ(lm2)
+
 ```
 
+As both the coefficient of the average household age and the squared average household age are highly significant a quadratic form might be a better starting point to model this relationship.
 
-
+***
