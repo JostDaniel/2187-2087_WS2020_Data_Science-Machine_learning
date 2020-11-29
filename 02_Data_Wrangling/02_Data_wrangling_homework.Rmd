@@ -5,12 +5,15 @@ subtitle: "Data Science and Machine Learning 2187 & 2087"
 date: "11 2020"
 output: 
   html_document:
-    toc: true
+    toc: TRUE
     toc_depth: 2
-    number_sections: true
+    number_sections: TRUE
+    theme: yeti
 ---
 
 ```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(class.source="bg-warning")
 
 # deletes all objects from the environment
 rm(list=ls())
@@ -522,11 +525,6 @@ addline_format <- function(x,...){
 library(wesanderson) # Wes Anderson color palettes :D
 
 # create theme
-theme_ds <- theme_classic() + 
-  theme(legend.title=element_blank()) +
-  theme(plot.title = element_text(size = 14, hjust = 0)) +
-  theme(legend.position = "none") #to remove the legend
-
 theme_ds <- theme_classic() +
   theme(legend.title=element_blank(), 
         plot.title = element_text(colour = "burlywood4", size = 14, hjust = 0, family="serif", face="bold"),
@@ -638,18 +636,20 @@ ggplot(household_clean, aes(x = avg_age, y = Pwccpaha, color = cutenure)) +
 
 There seems to be a quadratic relatonship. This is why we decided to include the squared average household age as a regressor.
 
-```{r echo=TRUE}
-household_clean <- household_clean %>% 
-  mutate(avg_age_2 = avg_age^2) 
-
+Nicer output:
+```{r echo=TRUE, message=FALSE}
 library(jtools)
 library(kableExtra)
+```
+
+```{r echo=TRUE}
+household_clean <- household_clean %>% 
+  mutate(avg_age_2 = avg_age^2)
 
 lm2 <- lm(data=household_clean, Pwccpaha ~ avg_age + avg_age_2)
 summ(lm2)
-
 ```
 
-As both the coefficient of the average household age and the squared average household age are highly significant a quadratic form might be a better starting point to model this relationship.
+As both the coefficient of the average household age and the squared average household age are highly significant a quadratic form might be a good starting point to model this relationship.
 
 ***
