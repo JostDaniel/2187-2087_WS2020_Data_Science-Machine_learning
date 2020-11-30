@@ -49,7 +49,7 @@ Adjust the data path and load the input data.
 ```{r}
 
 # Set the path to the data
-data_path = "/Users/annevalder/Desktop/UNI /WU WIEN/WS 20:21/2187-2087_WS2020_Data_Science-Machine_learning/06_RandomForest_BoostedRegressiontree/assignment"
+data_path = "./2187-2087_WS2020_Data_Science-Machine_learning/06_RandomForest_BoostedRegressiontree"
 
 # Read input data on municipal level for the whole country
 col_input = read_fst(file.path(data_path, "data", "colombia_input.fst"))
