@@ -3,21 +3,14 @@ title: "02 Data Wrangling Homework"
 author: "Max Thomasberger"
 date: "11 2020"
 output:
-  html_document:
-<<<<<<< HEAD
-    toc: yes
-    toc_depth: 2
-    number_sections: yes
   pdf_document:
     toc: yes
-    toc_depth: '2'
-subtitle: Data Science and Machine Learning 2187 & 2087
-=======
-    toc: TRUE
     toc_depth: 2
-    number_sections: TRUE
-    theme: yeti
->>>>>>> 4215e75840c81c717dbcc8f0cc42c390c41c185d
+  html_document:
+    toc: true
+    toc_depth: 2
+    number_sections: true
+  subtitle: "Data Science and Machine Learning 2187 & 2087"
 ---
 
 ```{r setup, include=FALSE}

@@ -115,13 +115,6 @@
 \usepackage{xcolor}
 
 \title{02 Data Wrangling Homework}
-\usepackage{etoolbox}
-\makeatletter
-\providecommand{\subtitle}[1]{% add subtitle to \maketitle
-  \apptocmd{\@title}{\par {\large #1 \par}}{}{}
-}
-\makeatother
-\subtitle{Data Science and Machine Learning 2187 \& 2087}
 \author{Max Thomasberger}
 \date{11 2020}
 
@@ -1066,11 +1059,6 @@ nicer it looks the better.
 \KeywordTok{library}\NormalTok{(wesanderson) }\CommentTok{# Wes Anderson color palettes :D}
 
 \CommentTok{# create theme}
-\NormalTok{theme_ds <-}\StringTok{ }\KeywordTok{theme_classic}\NormalTok{() }\OperatorTok{+}\StringTok{ }
-\StringTok{  }\KeywordTok{theme}\NormalTok{(}\DataTypeTok{legend.title=}\KeywordTok{element_blank}\NormalTok{()) }\OperatorTok{+}
-\StringTok{  }\KeywordTok{theme}\NormalTok{(}\DataTypeTok{plot.title =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{14}\NormalTok{, }\DataTypeTok{hjust =} \DecValTok{0}\NormalTok{)) }\OperatorTok{+}
-\StringTok{  }\KeywordTok{theme}\NormalTok{(}\DataTypeTok{legend.position =} \StringTok{"none"}\NormalTok{) }\CommentTok{#to remove the legend}
-
 \NormalTok{theme_ds <-}\StringTok{ }\KeywordTok{theme_classic}\NormalTok{() }\OperatorTok{+}
 \StringTok{  }\KeywordTok{theme}\NormalTok{(}\DataTypeTok{legend.title=}\KeywordTok{element_blank}\NormalTok{(), }
         \DataTypeTok{plot.title =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{colour =} \StringTok{"burlywood4"}\NormalTok{, }\DataTypeTok{size =} \DecValTok{14}\NormalTok{, }\DataTypeTok{hjust =} \DecValTok{0}\NormalTok{, }\DataTypeTok{family=}\StringTok{"serif"}\NormalTok{, }\DataTypeTok{face=}\StringTok{"bold"}\NormalTok{),}
@@ -1266,29 +1254,20 @@ data}\label{create-an-appropriate-plot-to-display-the-data}}
 There seems to be a quadratic relatonship. This is why we decided to
 include the squared average household age as a regressor.
 
+Nicer output:
+
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{household_clean <-}\StringTok{ }\NormalTok{household_clean }\OperatorTok{%>%}\StringTok{ }
-\StringTok{  }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{avg_age_2 =}\NormalTok{ avg_age}\OperatorTok{^}\DecValTok{2}\NormalTok{) }
-
 \KeywordTok{library}\NormalTok{(jtools)}
 \KeywordTok{library}\NormalTok{(kableExtra)}
 \end{Highlighting}
 \end{Shaded}
 
-\begin{verbatim}
-## 
-## Attaching package: 'kableExtra'
-\end{verbatim}
-
-\begin{verbatim}
-## The following object is masked from 'package:dplyr':
-## 
-##     group_rows
-\end{verbatim}
-
 \begin{Shaded}
 \begin{Highlighting}[]
+\NormalTok{household_clean <-}\StringTok{ }\NormalTok{household_clean }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{avg_age_2 =}\NormalTok{ avg_age}\OperatorTok{^}\DecValTok{2}\NormalTok{)}
+
 \NormalTok{lm2 <-}\StringTok{ }\KeywordTok{lm}\NormalTok{(}\DataTypeTok{data=}\NormalTok{household_clean, Pwccpaha }\OperatorTok{~}\StringTok{ }\NormalTok{avg_age }\OperatorTok{+}\StringTok{ }\NormalTok{avg_age_}\DecValTok{2}\NormalTok{)}
 \KeywordTok{summ}\NormalTok{(lm2)}
 \end{Highlighting}
@@ -1332,7 +1311,7 @@ avg\_age & 86.77 & 0.89 & 97.55 & 0.00\\
 
 As both the coefficient of the average household age and the squared
 average household age are highly significant a quadratic form might be a
-better starting point to model this relationship.
+good starting point to model this relationship.
 
 \begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
 
