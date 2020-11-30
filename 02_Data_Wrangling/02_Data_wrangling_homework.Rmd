@@ -1,13 +1,16 @@
 ---
 title: "02 Data Wrangling Homework"
 author: "Max Thomasberger"
-subtitle: "Data Science and Machine Learning 2187 & 2087"
 date: "11 2020"
-output: 
+output:
   html_document:
-    toc: true
+    toc: yes
     toc_depth: 2
-    number_sections: true
+    number_sections: yes
+  pdf_document:
+    toc: yes
+    toc_depth: '2'
+subtitle: Data Science and Machine Learning 2187 & 2087
 ---
 
 ```{r setup, include=FALSE}
