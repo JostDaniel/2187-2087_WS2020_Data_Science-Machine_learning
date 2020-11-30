@@ -49,7 +49,7 @@ Adjust the data path and load the input data.
 ```{r}
 
 # Set the path to the data
-data_path = "/Users/Kathi/Documents/WU/Data Science/06_RandomForest"
+data_path = "/Users/annevalder/Desktop/UNI /WU WIEN/WS 20:21/2187-2087_WS2020_Data_Science-Machine_learning/06_RandomForest_BoostedRegressiontree/assignment"
 
 # Read input data on municipal level for the whole country
 col_input = read_fst(file.path(data_path, "data", "colombia_input.fst"))
@@ -69,9 +69,24 @@ Use the input data for Colombia on the municipal level (colombia_input.fst) for 
 
 Create a plot that shows the distribution of the popualtion density (raster_pop_100). Briefly describe what you see.
 
+```{r}
+
+col_input %>% ggplot(aes(x=raster_pop_100)) +
+  geom_density() +
+  scale_x_continuous(limits=(c(-10,10))) 
+
+```
+
+
 ### 1.2
 
 Create a plot that visualizes the relationship between the population density (raster_pop_100) and the light intensity recorded at night (night_lights_100). Combine two suitable geom functions in one plot. Briefly describe what you see.
+
+```{r}
+
+col_input %>% ggplot(aes(x=raster_pop_100, y=night_lights_100, color = night_lights_100)) + geom_point()
+
+```
 
 ## Exercise 2
 
@@ -83,9 +98,25 @@ Create a plot the shows the distribution of the light intensity at night (night_
 
 Hint: Transform the variable protected_areas_100 to character inside the ggplot or the geom function.
 
+```{r}
+
+quindio_grid %>% ggplot(aes(x=night_lights_100, color = as.character(protected_areas_100))) + geom_density()
+
+
+```
+
 ### 2.2
 
 Create a plot that visualizes the relationship between the light intensity at night (night_lights_100) and the slope (hydro_slo_100). What could be a problem with a standard scatterplot? Try to solve this issue and briefly describe what you see.
+
+```{r}
+
+quindio_grid %>% ggplot(aes(x=night_lights_100,y= hydro_slo_100)) + geom_point()
+                            
+## to much data!! 
+
+
+```
 
 # Random Forests and Boosted Regression Trees
 
