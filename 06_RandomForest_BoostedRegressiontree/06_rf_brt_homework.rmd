@@ -70,10 +70,11 @@ Use the input data for Colombia on the municipal level (colombia_input.fst) for 
 Create a plot that shows the distribution of the popualtion density (raster_pop_100). Briefly describe what you see.
 
 ```{r}
+col_input = col_input[,2:76]
+col_input[,1] = log(col_input[,1])
 
 col_input %>% ggplot(aes(x=raster_pop_100)) +
-  geom_density() +
-  scale_x_continuous(limits=(c(-10,10))) 
+  geom_density()
 
 ```
 
