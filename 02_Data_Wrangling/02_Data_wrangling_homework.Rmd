@@ -3,9 +3,6 @@ title: "02 Data Wrangling Homework"
 author: "Max Thomasberger"
 date: "11 2020"
 output:
-  pdf_document:
-    toc: yes
-    toc_depth: 2
   html_document:
     toc: true
     toc_depth: 2
@@ -342,8 +339,9 @@ Then compute the median rank _for each combination of name and sex_, and arrange
 
 babynames %>% 
   group_by(year, sex) %>% 
-  group_by(name, sex) %>% 
   mutate(rank_ys = min_rank(desc(n))) %>% 
+  ungroup() %>% 
+  group_by(name, sex) %>% 
   mutate(med_rank_ys = median(rank_ys)) %>% 
   arrange(desc(med_rank_ys)) %>% 
   head()
@@ -510,9 +508,11 @@ household_clean <- household %>%
     cutenure == 4 | cutenure == 6 ~ "Rented",
     cutenure == 5 ~ "Occupied without payment of rent")) %>% 
   group_by(cutenure) %>% 
-  mutate(pop_weighted_mean =  weighted.mean(exp_pc,finlwt21))
+  mutate(pop_weighted_mean =  sum(exp_pc * finlwt21) / sum(finlwt21))
+
 head(household_clean)
 ```
+Alternatively, `weighted.mean(exp_pc,finlwt21)` could be used instead of `sum(exp_pc * finlwt21) / sum(finlwt21)`.
 
 
 ### Create a bar plot that compares the population weighted mean per capita consumption per tenure status.
@@ -652,8 +652,9 @@ household_clean <- household_clean %>%
 
 lm2 <- lm(data=household_clean, Pwccpaha ~ avg_age + avg_age_2)
 summ(lm2)
+
 ```
 
-As both the coefficient of the average household age and the squared average household age are highly significant a quadratic form might be a good starting point to model this relationship.
+As the coefficients of the average household age and the squared average household age are highly significant and the R-Squared is quite large a quadratic form might be a good starting point to model this relationship.
 
 ***
