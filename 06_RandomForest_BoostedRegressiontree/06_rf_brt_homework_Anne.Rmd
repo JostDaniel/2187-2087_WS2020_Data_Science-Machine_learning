@@ -49,7 +49,7 @@ Adjust the data path and load the input data.
 ```{r}
 
 # Set the path to the data
-data_path = "./2187-2087_WS2020_Data_Science-Machine_learning/06_RandomForest_BoostedRegressiontree"
+data_path = "/Users/annevalder/Desktop/UNI /WU WIEN/WS 20:21/2187-2087_WS2020_Data_Science-Machine_learning/06_RandomForest_BoostedRegressiontree"
 
 # Read input data on municipal level for the whole country
 col_input = read_fst(file.path(data_path, "data", "colombia_input.fst"))
@@ -70,11 +70,14 @@ Use the input data for Colombia on the municipal level (colombia_input.fst) for 
 Create a plot that shows the distribution of the popualtion density (raster_pop_100). Briefly describe what you see.
 
 ```{r}
+
 col_input = col_input[,2:76]
 col_input[,1] = log(col_input[,1])
 
 col_input %>% ggplot(aes(x=raster_pop_100)) +
   geom_density()
+
+#raster_pop_100 = average pop density on 100 by 100 m level  (total density by area) to get pop density on grid level 
 
 ```
 
@@ -128,12 +131,18 @@ quindio_grid %>% ggplot(aes(x=night_lights_100,y= hydro_slo_100)) + geom_point()
 Use the input data for Colombia on the municipal level (colombia_input.fst) to train a Random Forest. Use the log of the population density (raster_pop_100) as the dependent variable. Tune one of the parameters in the Random Forest. Briefly describe the parameter you are tuning and explain why you have decided for this parameter.
 
 ```{r}
-
-# eig LOG schon vorher !
 col_input <- col_input %>% mutate(raster_pop_100_log = log(raster_pop_100))
 rf_1 <- ranger(data = col_input, dependent.variable.name = "raster_pop_100_log", importance = "impurity")
 class(rf_1)"
+
+I am not sure if this is helpful but have you tried putting the name of the depended variable in quotation marks --> f_1 <- ranger(data = col_input, dependent.variable.name = "raster_pop_100_log", importance = "impurity") maybe like that
+
+col_input = col_input[,2:76]
+col_input[,1] = log(col_input[,1])
+rf_1 = ranger(data = col_input, dependent.variable.name = "raster_pop_100", importance = "impurity")
+class(rf_1)
 ```
+
 
 ### 3.2
 
