@@ -73,35 +73,27 @@ Create a plot that shows the distribution of the population density (raster_pop_
 
 ```{r}
 
-# eins auswählen
-
-col_input %>% 
-  ggplot(aes(x=raster_pop_100)) +
-  geom_density() +
-  theme_classic()
-
-col_input %>% 
-  ggplot(aes(x=raster_pop_100)) +
-  geom_density(kernel = "gaussian") +
-  theme_classic()
-
-col_input %>% 
-  ggplot(aes(x=raster_pop_100)) +
-  geom_area(stat = "bin") +
-  theme_classic()
-
 col_input %>% 
   ggplot(aes(x=raster_pop_100)) +
   geom_histogram(binwidth = 0.5)  +
   theme_classic()
 
 col_input %>% 
+  summarize(mean(raster_pop_100, na.rm = T), median(raster_pop_100, na.rm = T))
+
+```
+As can be seen in the plot, most grids have a rather low population density (below 10 inhabitants per 100m^2). In fact half of the grids have a population density below 0.44 inhabitants per 100m^2. To better visualize the distribution close to the origin we limit the scale of the x-axis to 10.
+
+```{r}
+col_input %>% 
   ggplot(aes(x=raster_pop_100)) +
-  geom_freqpoly()  +
+  geom_histogram(binwidth = 0.05)  +
+  scale_x_continuous(limit = c(0,10)) +
   theme_classic()
 
 ```
 
+Here we can better see the distribution of the population density close to the origin (but do not see grids with a population density above 10 inhabitants per grid)
 
 ### 1.2
 
@@ -116,6 +108,7 @@ col_input %>%
   theme_classic()
 
 ```
+As expected, this plot suggests a positive relationship of population density and night lights at the grid level. On average, a higher population density correlates with more light at night.
 
 ## Exercise 2
 
@@ -132,13 +125,23 @@ Hint: Transform the variable protected_areas_100 to character inside the ggplot 
 
 quindio_grid %>% 
   ggplot(aes(x=night_lights_100, fill = as.character(protected_areas_100))) +
-  geom_histogram(binwidth = 0.5)  +
+  geom_histogram(binwidth = 0.3)  +
   theme_classic()
 
-#quindio_grid %>% 
-  #ggplot(aes(x=night_lights_100, color = as.character(protected_areas_100))) + 
-  #geom_density() +
-  #theme_classic()
+quindio_grid %>% 
+  ggplot(aes(x=night_lights_100, color = as.character(protected_areas_100))) + 
+  geom_density() +
+  theme_classic()
+
+quindio_grid %>% 
+  ggplot(aes(x=night_lights_100, color = as.character(protected_areas_100), y = stat(count))) + 
+  geom_point(alpha = 1/10, size = 0.5) +
+  theme_classic()
+
+quindio_grid %>% 
+  ggplot(aes(x=night_lights_100, color = as.character(protected_areas_100), y = stat(count))) + 
+  geom_dotplot(alpha = 1/10, size = 0.1) +
+  theme_classic()
 
 ```
 
@@ -147,16 +150,25 @@ quindio_grid %>%
 Create a plot that visualizes the relationship between the light intensity at night (night_lights_100) and the slope (hydro_slo_100). What could be a problem with a standard scatterplot? Try to solve this issue and briefly describe what you see.
 
 ```{r}
+plot(quindio_grid$night_lights_100, quindio_grid$hydro_slo_100)
+
+quindio_grid %>% 
+  ggplot(aes(x=night_lights_100,y = hydro_slo_100, color = night_lights_100)) + 
+  geom_point() +
+  theme_classic()
+```
+Both the base R and the ggplot standard scatterplot do not adequately visualize the distribution since n is very large. This is why we reduce the size of the data points and make them a bit transparent.
+
+```{r}
 
 quindio_grid %>% 
   ggplot(aes(x=night_lights_100,y = hydro_slo_100, color = night_lights_100)) + 
   geom_point(alpha = 1/10, size = 0.5) +
   theme_classic()
-                            
-## too much data!! 
-
 
 ```
+
+
 
 # Random Forests and Boosted Regression Trees
 
@@ -166,11 +178,8 @@ quindio_grid %>%
 
 Use the input data for Colombia on the municipal level (colombia_input.fst) to train a Random Forest. Use the log of the population density (raster_pop_100) as the dependent variable. Tune one of the parameters in the Random Forest. Briefly describe the parameter you are tuning and explain why you have decided for this parameter.
 
-```{r, eval=FALSE}
+```{r}
 
-# eval=FALSE -> do not run code in chunk damit geknitted werden kann. Sobald code funktioniert muss man das weggeben
-
-# eig LOG schon vorher !
 col_input <- col_input %>% 
   mutate(raster_pop_100_log = log(raster_pop_100))
 
