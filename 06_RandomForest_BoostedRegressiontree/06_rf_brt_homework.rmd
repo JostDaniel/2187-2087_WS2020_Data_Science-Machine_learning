@@ -164,10 +164,16 @@ Both the base R and the ggplot standard scatterplot do not adequately visualize 
 quindio_grid %>% 
   ggplot(aes(x=night_lights_100,y = hydro_slo_100, color = night_lights_100)) + 
   geom_point(alpha = 1/10, size = 0.5) +
+  geom_smooth(color = "black") +
   theme_classic()
 
 ```
 
+The plot suggests a negative relationship of the slope and the night lights. On average, more night lights coorelates with a slightly lower slope. This can also be checked with a simple linear regression:
+
+```{r}
+summary(lm(hydro_slo_100 ~ night_lights_100, quindio_grid))
+```
 
 
 # Random Forests and Boosted Regression Trees
@@ -176,7 +182,7 @@ quindio_grid %>%
 
 ### 3.1
 
-Use the input data for Colombia on the municipal level (colombia_input.fst) to train a Random Forest. Use the log of the population density (raster_pop_100) as the dependent variable. Tune one of the parameters in the Random Forest. Briefly describe the parameter you are tuning and explain why you have decided for this parameter.
+Use the input data for Colombia on the municipal level () to train a Random Forest. Use the log of the population density (raster_pop_100) as the dependent colombia_input.fstvariable. Tune one of the parameters in the Random Forest. Briefly describe the parameter you are tuning and explain why you have decided for this parameter.
 
 ```{r}
 
