@@ -50,7 +50,7 @@ Adjust the data path and load the input data.
 
 ```{r}
 
-# Set the path to the data
+# Set wd to Set the path to the data
 data_path = "."
 
 # Read input data on municipal level for the whole country
@@ -69,15 +69,35 @@ Use the input data for Colombia on the municipal level (colombia_input.fst) for 
 
 ### 1.1
 
-Create a plot that shows the distribution of the popualtion density (raster_pop_100). Briefly describe what you see.
+Create a plot that shows the distribution of the population density (raster_pop_100). Briefly describe what you see.
 
 ```{r}
-col_input = col_input[,2:76]
-col_input[,1] = log(col_input[,1])
+
+# eins auswählen
 
 col_input %>% 
   ggplot(aes(x=raster_pop_100)) +
   geom_density() +
+  theme_classic()
+
+col_input %>% 
+  ggplot(aes(x=raster_pop_100)) +
+  geom_density(kernel = "gaussian") +
+  theme_classic()
+
+col_input %>% 
+  ggplot(aes(x=raster_pop_100)) +
+  geom_area(stat = "bin") +
+  theme_classic()
+
+col_input %>% 
+  ggplot(aes(x=raster_pop_100)) +
+  geom_histogram(binwidth = 0.5)  +
+  theme_classic()
+
+col_input %>% 
+  ggplot(aes(x=raster_pop_100)) +
+  geom_freqpoly()  +
   theme_classic()
 
 ```
@@ -149,11 +169,7 @@ Use the input data for Colombia on the municipal level (colombia_input.fst) to t
 col_input <- col_input %>% 
   mutate(raster_pop_100_log = log(raster_pop_100))
 
-head(col_input$raster_pop_100)
-head(col_input$raster_pop_100_log)
-# many negative numbers -> NA when logged    !
-
-#  rf_1 <- ranger(data = col_input, dependent.variable.name = "raster_pop_100_log", importance = "impurity")
+rf_1 <- ranger(data = col_input, dependent.variable.name = "raster_pop_100_log", importance = "impurity")
 
 class(rf_1)
 ```
