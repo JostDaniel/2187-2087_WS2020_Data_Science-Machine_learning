@@ -18,15 +18,21 @@ knitr::opts_chunk$set(fig.align = 'center')
 
 ```
 
+# Classification Tree with the Voting
+
 # Input data
 
 Install and load the required packages.
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
+
+# Später schauen ob wir alle aus der VL brauchen ! 
+
 library(rpart)
 library(rpart.plot) 
 library(precrec)
-library(caret)
+library(caret) ## funktioniert beir mir nicht
 library(party)
+library(libcoin) # noch dazu ?
 
 library(tidyverse)
 library(vcd)
@@ -35,7 +41,7 @@ library(viridis)
 library(knitr)
 library(tinytex)
 library(wooldridge)
-library(glmnet)
+library(glmnet) ## funktioniert beir mir nicht
 
 # Set wd to Set the path to the data
 data_path = "."
@@ -46,23 +52,36 @@ voting <- read_delim(file.path(data_path, "voting.csv"), ";",
 
 ```
 
-# Classification Tree with the Voting
-
-```{r }
-
-
-
-```
-
-
 # Task 1) Estimate a classification tree using cross validation predicting the variable w1_q24
+
 ```{r }
+# manuell und wenn ja welche model specification oder mit caret???
+set.seed(123) ## warum??? 
+
+## Seperate the voting data set into test and training data
+voting <- 
+  voting %>%
+  mutate(train_index = sample(c("train", "test"), nrow(voting), replace=TRUE, prob=c(0.75, 0.25)))
+
+voting_train <- voting %>% filter(train_index=="train")
+voting_test <- voting %>% filter(train_index=="test")
+
+tree <- rpart(w1_q24 ~ gender + age + bundesland, data = voting_train, cp=.01)
+tree
+summary(tree)
+
+###### alternative mit caret #####
+
+control <- trainControl(method = "repeatedcv", number = 10, repeats = 10,
+                        savePredictions = T, classProbs = T, summaryFunction = twoClassSummary)
 
 ```
 
 #Task 2) Plot a tree graph of the model with the best performance. Explain how you come to your prediction in one of the terminal nodes
 
 ```{r}
+
+rpart.plot(tree, box.palette="RdBu", nn=FALSE, type=2)
 
 ```
 
@@ -72,6 +91,10 @@ voting <- read_delim(file.path(data_path, "voting.csv"), ";",
 # 3.3) What would be the "naive prediction" in such a multiclass prediction problem?
 
 ```{r}
+
+voting_train$prediction_tree <- predict(tree, newdata = voting_train, type = c("class")) 
+confusion <- confusionMatrix(voting_train$survived_label, voting_train$prediction_tree)
+confusion
 
 ```
 
