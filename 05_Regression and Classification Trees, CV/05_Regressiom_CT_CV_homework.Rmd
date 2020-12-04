@@ -1,0 +1,32 @@
+---
+title: "Regression and Classification Trees, Cross Validation - Homework"
+author: "GROUP 4: Leonard Fidlin (h01352705), Daniel Jost (h01451889), Anne Valder (h11928415)"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 2
+    number_sections: false
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(include = TRUE)
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(fig.align = 'center')
+
+```
+
+
+```{r cars}
+
+```
+
+
+
+```{r pressure, echo=FALSE}
+
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
