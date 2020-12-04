@@ -122,25 +122,13 @@ Hint: Transform the variable protected_areas_100 to character inside the ggplot 
 
 ```{r}
 
-
 quindio_grid %>% 
-  ggplot(aes(x=night_lights_100, fill = as.character(protected_areas_100))) +
+  ggplot(aes(x=night_lights_100, fill = as.character(protected_areas_100),stat="bin")) +
   geom_histogram(binwidth = 0.3)  +
-  theme_classic()
-
-quindio_grid %>% 
-  ggplot(aes(x=night_lights_100, color = as.character(protected_areas_100))) + 
-  geom_density() +
-  theme_classic()
-
-quindio_grid %>% 
-  ggplot(aes(x=night_lights_100, color = as.character(protected_areas_100), y = stat(count))) + 
-  geom_point(alpha = 1/10, size = 0.5) +
-  theme_classic()
-
-quindio_grid %>% 
-  ggplot(aes(x=night_lights_100, color = as.character(protected_areas_100), y = stat(count))) + 
-  geom_dotplot(alpha = 1/10, size = 0.1) +
+  scale_x_continuous(limits = c(0,20)) +
+  scale_y_continuous(limits = c(0,10000)) +
+  theme(legend.title =element_blank()) +
+  scale_fill_discrete(breaks = c("0","1"), labels = c("Unprotected area","Protected area"))
   theme_classic()
 
 ```
@@ -182,7 +170,7 @@ summary(lm(hydro_slo_100 ~ night_lights_100, quindio_grid))
 
 ### 3.1
 
-Use the input data for Colombia on the municipal level () to train a Random Forest. Use the log of the population density (raster_pop_100) as the dependent colombia_input.fstvariable. Tune one of the parameters in the Random Forest. Briefly describe the parameter you are tuning and explain why you have decided for this parameter.
+Use the input data for Colombia on the municipal level (colombia_input.fst) to train a Random Forest. Use the log of the population density (raster_pop_100) as the dependent colombia_input.fst variable. Tune one of the parameters in the Random Forest. Briefly describe the parameter you are tuning and explain why you have decided for this parameter.
 
 ```{r}
 
@@ -193,7 +181,11 @@ rf_1 <- ranger(data = col_input, dependent.variable.name = "raster_pop_100_log",
 
 class(rf_1)
 ```
+```{r}
+control = trainControl(method = "cv", number = 5)
 
+```
+ 
 ### 3.2
 
 Use the best Random Forest model from the tuning exercise to make a prediction of the grid-level population density in Quindío. Make sure that the sums of the grid-level predictions match the official numbers on the municipal level.
