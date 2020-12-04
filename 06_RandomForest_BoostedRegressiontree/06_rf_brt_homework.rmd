@@ -144,7 +144,7 @@ Create a plot that visualizes the relationship between the light intensity at ni
 ```{r}
 
 quindio_grid %>% 
-  ggplot(aes(x=night_lights_100,y= hydro_slo_100)) + 
+  ggplot(aes(x=night_lights_100,y = hydro_slo_100, color = night_lights_100)) + 
   geom_point(alpha = 1/10, size = 0.5) +
   theme_classic()
                             
