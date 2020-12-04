@@ -18,15 +18,83 @@ knitr::opts_chunk$set(fig.align = 'center')
 
 ```
 
+# Input data
 
-```{r cars}
+Install and load the required packages.
+```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
+library(rpart)
+library(rpart.plot) 
+library(precrec)
+library(caret)
+library(party)
+
+library(tidyverse)
+library(vcd)
+library(RColorBrewer)
+library(viridis)
+library(knitr)
+library(tinytex)
+library(wooldridge)
+library(glmnet)
+
+# Set wd to Set the path to the data
+data_path = "."
+
+voting <- read_delim(file.path(data_path, "voting.csv"), ";", 
+                      escape_double = FALSE, col_types = cols(age = col_number()), 
+                      locale = locale(decimal_mark = ",", grouping_mark = "."), trim_ws = TRUE)
+
+```
+
+# Classification Tree with the Voting
+
+```{r }
+
+
+
+```
+
+
+# Task 1) Estimate a classification tree using cross validation predicting the variable w1_q24
+```{r }
+
+```
+
+#Task 2) Plot a tree graph of the model with the best performance. Explain how you come to your prediction in one of the terminal nodes
+
+```{r}
+
+```
+
+#Task 3) Make a confusion matrix of the model and interpret the results. 
+# 3.1) Regarding which two categories do you find the highest and lowest sensitivity?
+# 3.2) How well would you judge the predictive performance of the model?
+# 3.3) What would be the "naive prediction" in such a multiclass prediction problem?
+
+```{r}
+
+```
+
+#Task 4) Estimate the model across a wide range of parameters of the model and plot the accuracy in the training and in the test data against the parameters. What can you see? what problem does this relate to?
+
+```{r}
+
+```
+
+#Task 5) Simplify the model by only trying to predict if somebody voted for the ÖVP or not,
+re-estimate the model (again by using CV) as well as estimating a logit model in the training
+data utilizing whatever variables you find appropriate
+
+```{r}
+
+```
+
+#Task 6) Compute the confusion matrix and ROC-curves for both models. Which one performs better and why? Where would you set the cut-off-point? 
+
+```{r}
 
 ```
 
 
 
-```{r pressure, echo=FALSE}
 
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
