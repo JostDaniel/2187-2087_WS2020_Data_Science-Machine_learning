@@ -177,12 +177,16 @@ col_input <- col_input %>%
 
 control = trainControl(method = "cv", number = 5) 
 
-# Next, we need a tuning grid, in which we specify which parameter we want to tune and the corresponding values which should be tried out. With caret and the ranger package we have 3 different parameters that we can tune: Mtry, the splitrule and the min-nod-size. Following the lecture we decide that Mtry is most important and should therefore be tuned. Mytr is the number of variables used by rf to split the tree, and it cannot be less than one or more than the number of columns of predictors. As criteria that should be used to find the optimal split points  we use variance. The min number of observations that are associated with each leave node gas to be at least 1 because at least one observations has to be in each leaf node.
+# Next, we need a tuning grid, in which we specify which parameter we want to tune and the corresponding values which should be tried out. With caret and the ranger package we have 3 different parameters that we can tune: Mtry, the splitrule and the min-nod-size. Following the lecture we decide that Mtry is most important and should therefore be tuned. Mytr is the number of variables used by rf to split the tree, and it cannot be less than one or more than the number of columns of predictors. As criteria that should be used to find the optimal split points we use variance. The min number of observations that are associated with each leave node has to be at least 1 because at least one observations has to be in each leaf node.
 
-tuning_grid = expand.grid(mtry = seq(20, 30, by = 5), splitrule = "variance", min.node.size = seq(1, 5, by = 2))
+# Considering the trade-off between how much parameters we want to try out and the time used to calculate the rf, we decided to alter the maximum value for the sequence in mytr and the the number of min.node.size by 1, compared to the model in class, to obtain a tuning grid with 35 instead of 9 observations of 3 variables. This gives us a better chance of finding an even better final model. 
+
+tuning_grid = expand.grid(mtry = seq(20,50 by = 5), splitrule = "variance", min.node.size = seq(1, 5, by = 1))
 head(tuning_grid)
 
 # We now use caret and ranger to optimize the model and tune the parameters. We also include the model's importance scores (Check how important each variable is in explaning our dependent variable).
+
+### HAT CA 15 Min zum rechen bei mir gedauert!! aber dafür ists ein besseres model als in der VL!
 
 rf_caret = train(data = col_input, raster_pop_100 ~ ., method = "ranger", trControl = control, tuneGrid = tuning_grid, importance = "impurity")
 
