@@ -166,12 +166,13 @@ Use the input data for Colombia on the municipal level (colombia_input.fst) to t
 
 ```{r}
 # First,we want to use the the col_input data for all the estimations and tuning and then use quindio_grid for the predictions. This is because once we found a good tuned random forest and boosted regression tree, we then use the grid level data to estimate pop density on the grid level. We begin by removing the first column in col_input containing the geocode since we can not use it for the estimation because we cannot use it to explain population density
+
 col_input <- col_input[,2:76]
 
 # Taking the log of the dependent variable because as seen in class/ publications this works better for estimations on population density
 
-col_input <- col_input %>% 
-  mutate(raster_pop_100_log = log(raster_pop_100))
+
+col_input[,1] = log(col_input[,1])
 
 # Since we want to tune the parameters we do not use the ranger function but a combination of the ranger and caret package. Alternatively we could also use the tune_ranger approach. The first step is to specify the type of cross validation we wan to do and the number of folds.  
 
@@ -181,17 +182,24 @@ control = trainControl(method = "cv", number = 5)
 
 # Considering the trade-off between how much parameters we want to try out and the time used to calculate the rf, we decided to alter the maximum value for the sequence in mytr and the the number of min.node.size by 1, compared to the model in class, to obtain a tuning grid with 35 instead of 9 observations of 3 variables. This gives us a better chance of finding an even better final model. 
 
-tuning_grid = expand.grid(mtry = seq(20,50 by = 5), splitrule = "variance", min.node.size = seq(1, 5, by = 1))
+tuning_grid = expand.grid(mtry = seq(20,50, by = 5), splitrule = "variance", min.node.size = seq(1, 5, by = 1))
 head(tuning_grid)
 
 # We now use caret and ranger to optimize the model and tune the parameters. We also include the model's importance scores (Check how important each variable is in explaning our dependent variable).
 
-### HAT CA 15 Min zum rechen bei mir gedauert!! aber dafür ists ein besseres model als in der VL!
+### HAT CA 15 Min zum rechnen bei mir gedauert!! aber dafür ists ein besseres model als in der VL!
 
 rf_caret = train(data = col_input, raster_pop_100 ~ ., method = "ranger", trControl = control, tuneGrid = tuning_grid, importance = "impurity")
 
 rf_caret
+rf_1 = rf_caret$finalModel
 
+class(rf_1)
+
+# check RMSE and variable importance to compare to other models 
+
+rf_1$prediction.error
+head(importance(rf_1))
 # From the output of the caret training we chose the model with the smallest RMSE since this is the best one. In this case it is the model with .... Then we save the final model from the caret package.  
 
 ##### Alternative with the tuneRanger package #####
@@ -202,25 +210,105 @@ rf_caret
 
 Use the best Random Forest model from the tuning exercise to make a prediction of the grid-level population density in Quindío. Make sure that the sums of the grid-level predictions match the official numbers on the municipal level.
 
+```{r}
+
+# The Random Forest model can now be used to make a prediction. We will use grid-level data from Quindio , to estimate the city’s grid-level population density. First, we look at the variables in our data set. We use the columns with the explanatory variables in our Random Forest models to create predictions.
+
+names(quindio_grid)
+
+# fehler noch ?
+# only use columns with explanatory variables this is why we specify columns 5 to 78 
+
+pred_rf_1 = predict(rf_1, data = quindio_grid [,5:78])
+                      
+quindio_grid
+
+# Further to use the predictions for plots or analyses we first have to take the exponent, to reverse taking the log before the estimations. Moreover, we can combine them with information from the input data, like the coordinates of the corresponding grids, the geocodes, and the initial values of the average population density.
+
+pred_rf_1 = cbind(quindio_grid[,1:4], exp(pred_rf_1$predictions))
+
+names(pred_rf_1) = c(names(quindio_grid[1:4]), "rf_1")
+
+# Finally, we want to make sure that in total our predictions match the official number on the municipal level. Hence, we rescale our numbers to the census data.
+
+pred_rf_1 = data.table(pred_rf_1)[, rf_1 := rf_1*sum(raster_pop_100)/sum(rf_1), by = raster_geocode_100]
+
+```
 ## Exercise 4
 
 ### 4.1
 
 Use the input data for Colombia on the municipal level (colombia_input.fst) to train a Boosted Regression Tree. Use the log of the population density (raster_pop_100) as the dependent variable. Tune one of the parameters in the Boosted Regression Tree. Briefly describe the parameter you are tuning and explain why you have decided for this parameter.
 
+```{r}
+
+
+# To later compare the performance of all models, we can do a cross validation using the function xgb.cv that is included in the xgboost package.
+# To optimize the model we combine the packages caret and xgboost.Again, we start this process by specifying which type of cross validation we are interested in. 
+
+control = trainControl(method = "cv", number = 5)
+
+# Then we create a tuning grid, setting the parameters that we want to tune and the corresponding values that should be tried out.
+
+## abändern!!! & Erklärung warum welcher Parameter 
+
+tuning_grid = expand.grid(nrounds = seq(50, 150, by = 50), max_depth = 6, eta = seq(0.2, 0.4, by = 0.1), gamma = seq(0.01, 0.03, by = 0.01), colsample_bytree = 1, min_child_weight = 1, subsample = 1)
+
+head(tuning_grid)
+
+# Combine the packages caret and xgboost.
+gb_caret = train(data = col_input, raster_pop_100 ~ ., method = "xgbTree", trControl = control, tuneGrid = tuning_grid)
+
+gb_caret
+
+# Now we can extract the final model from the caret package. 
+gb_1 = gb_caret$finalModel
+#class(gb_2)
+
+```
 ### 4.2
 
 Use the best Boosted Regression Tree model from the tuning exercise to make a prediction of the grid-level population density in Quindío. Make sure that the sums of the grid-level predictions match the official numbers on the municipal level.
 
+```{r}
+# We can again use the columns with the explanatory variables in our data from Bogotá to create predictions.
+
+pred_gb_1 = predict(gb_1, newdata = as.matrix(quindio_grid[,5:78]))
+
+# We take the exponent again and combine the predictions with data on the coordinates of the grids, the geocodes, and the initial values of the average population density.
+
+pred_gb_1 = cbind(quindio_grid[,1:4], exp(pred_gb_1))
+names(pred_gb_1) = c(names(quindio_grid[1:4]), "gb_1")
+
+# Making sure that in total our predictions match the official number on the municipal level.
+
+pred_gb_1 = data.table(pred_gb_1)[, gb_1 := gb_1*sum(raster_pop_100)/sum(gb_1), by = raster_geocode_100]
+
+```
 # Visualization of Results
 
 ## Exercise 5
 
 Create a plot showing the following three maps of the population density in Quindío side by side: one based on the input data, one based on your Random Forest prediction, and one based on your Boosted Regression Tree prediction. Try to make sure that the maps give a good picture of the differences in population density, both between the different data sets as well as between the different parts of the department.
 
+```{r}
+# First combine all predictions in one data frame.
+pred_all = join_all(list(pred_rf_1, pred_gb_1), by = c("x", "y", "raster_geocode_100", "raster_pop_100"))
+
+# Transform the data set from wide to long format
+
+pred_all = pivot_longer(pred_all, cols = c(raster_pop_100, rf_1, gb_1), names_to = "method", values_to = "prediction")
+
+ggplot() +
+    geom_raster(pred_all, mapping = aes(x, y, fill = prediction)) +
+    coord_fixed() +
+    scale_fill_viridis(option = "plasma", trans = "log", breaks = c(3, 20, 150)) +
+    scale_x_continuous(breaks = NULL) +
+    scale_y_continuous(breaks = NULL) +
+    facet_wrap(~ method, nrow = 2)
 
 
-
+```
 
 <br>
 <br>
