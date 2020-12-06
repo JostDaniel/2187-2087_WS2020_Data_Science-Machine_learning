@@ -50,7 +50,7 @@ Adjust the data path and load the input data.
 
 ```{r}
 
-# Set wd to Set the path to the data
+# Set wd before to use the relative path to the data
 data_path = "."
 
 # Read input data on municipal level for the whole country
@@ -126,22 +126,10 @@ Hint: Transform the variable protected_areas_100 to character inside the ggplot 
 quindio_grid %>% 
   ggplot(aes(x=night_lights_100, fill = as.character(protected_areas_100))) +
   geom_histogram(binwidth = 0.3)  +
-  theme_classic()
-
-quindio_grid %>% 
-  ggplot(aes(x=night_lights_100, color = as.character(protected_areas_100))) + 
-  geom_density() +
-  theme_classic()
-
-quindio_grid %>% 
-  ggplot(aes(x=night_lights_100, color = as.character(protected_areas_100), y = stat(count))) + 
-  geom_point(alpha = 1/10, size = 0.5) +
-  theme_classic()
-
-quindio_grid %>% 
-  ggplot(aes(x=night_lights_100, color = as.character(protected_areas_100), y = stat(count))) + 
-  geom_dotplot(alpha = 1/10, size = 0.1) +
-  theme_classic()
+  theme_classic() + 
+  scale_x_continuous(limits = c(0,20)) +
+  scale_y_continuous(limits = c(0,10000)) +
+  scale_fill_discrete(name = element_blank(), labels = c("Unprotected area", "Protected area"))
 
 ```
 
@@ -168,8 +156,6 @@ quindio_grid %>%
 
 ```
 
-
-
 # Random Forests and Boosted Regression Trees
 
 ## Exercise 3
@@ -179,13 +165,33 @@ quindio_grid %>%
 Use the input data for Colombia on the municipal level (colombia_input.fst) to train a Random Forest. Use the log of the population density (raster_pop_100) as the dependent variable. Tune one of the parameters in the Random Forest. Briefly describe the parameter you are tuning and explain why you have decided for this parameter.
 
 ```{r}
+# First,we want to use the the col_input data for all the estimations and tuning and then use quindio_grid for the predictions. This is because once we found a good tuned random forest and boosted regression tree, we then use the grid level data to estimate pop density on the grid level. We begin by removing the first column in col_input containing the geocode since we can not use it for the estimation because we cannot use it to explain population density
+col_input <- col_input[,2:76]
+
+# Taking the log of the dependent variable because as seen in class/ publications this works better for estimations on population density
 
 col_input <- col_input %>% 
   mutate(raster_pop_100_log = log(raster_pop_100))
 
-rf_1 <- ranger(data = col_input, dependent.variable.name = "raster_pop_100_log", importance = "impurity")
+# Since we want to tune the parameters we do not use the ranger function but a combination of the ranger and caret package. Alternatively we could also use the tune_ranger approach. The first step is to specify the type of cross validation we wan to do and the number of folds.  
 
-class(rf_1)
+control = trainControl(method = "cv", number = 5) 
+
+# Next, we need a tuning grid, in which we specify which parameter we want to tune and the corresponding values which should be tried out. With caret and the ranger package we have 3 different parameters that we can tune: Mtry, the splitrule and the min-nod-size. Following the lecture we decide that Mtry is most important and should therefore be tuned. Mytr is the number of variables used by rf to split the tree, and it cannot be less than one or more than the number of columns of predictors. As criteria that should be used to find the optimal split points  we use variance. The min number of observations that are associated with each leave node gas to be at least 1 because at least one observations has to be in each leaf node.
+
+tuning_grid = expand.grid(mtry = seq(20, 30, by = 5), splitrule = "variance", min.node.size = seq(1, 5, by = 2))
+head(tuning_grid)
+
+# We now use caret and ranger to optimize the model and tune the parameters. We also include the model's importance scores (Check how important each variable is in explaning our dependent variable).
+
+rf_caret = train(data = col_input, raster_pop_100 ~ ., method = "ranger", trControl = control, tuneGrid = tuning_grid, importance = "impurity")
+
+rf_caret
+
+# From the output of the caret training we chose the model with the smallest RMSE since this is the best one. In this case it is the model with .... Then we save the final model from the caret package.  
+
+##### Alternative with the tuneRanger package #####
+
 ```
 
 ### 3.2
