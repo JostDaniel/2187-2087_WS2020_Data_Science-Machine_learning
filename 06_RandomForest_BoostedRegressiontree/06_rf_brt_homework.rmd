@@ -120,7 +120,7 @@ Create a plot the shows the distribution of the light intensity at night (night_
 
 Hint: Transform the variable protected_areas_100 to character inside the ggplot or the geom function.
 
-```{r}
+```{r, warning=FALSE}
 
 
 quindio_grid %>% 
@@ -242,14 +242,24 @@ control = trainControl(method = "cv", number = 5)
 tuning_grid = expand.grid(nrounds = seq(50, 150, by = 50), max_depth = 6, eta = seq(0.2, 0.4, by = 0.1), gamma = seq(0.01, 0.03, by = 0.01), colsample_bytree = 1, min_child_weight = 1, subsample = 1)
 
 head(tuning_grid)
+```
 
-# Then we combine the packages caret and xgboost to optimize the model doing extreme gradient boosting (using all variables as explanatory variables):
+Then we combine the packages caret and xgboost to optimize the model doing extreme gradient boosting (using all variables as explanatory variables).
+
+```{r, message=FALSE, warning=FALSE, results='hide'}
 
 gb_caret = train(data = col_input, raster_pop_100 ~ ., method = "xgbTree", trControl = control, tuneGrid = tuning_grid)
+```
+
+```{r}
 
 gb_caret
 
-# Again we choose the model with the smallest RMSE and extract and save it. The final values used for the model were nrounds = 150, max_depth = 6, eta = 0.2, gamma = 0.02, colsample_bytree = 1, min_child_weight = 1 and subsample = 1.
+```
+
+Again we choose the model with the smallest RMSE and extract and save it. The final values used for the model were nrounds = 150, max_depth = 6, eta = 0.2, gamma = 0.02, colsample_bytree = 1, min_child_weight = 1 and subsample = 1.
+
+```{r}
 
 gb_1 = gb_caret$finalModel
 
@@ -305,11 +315,7 @@ ggplot() +
     facet_wrap(~ facet, nrow = 1) +
     labs(title = "Comparison of different maps of the popultation density")
 
-# We can see that mapping on the grid level with rf_1 and gb_1 gives us a better idea of the population dens ity on a more granular level. In the raster_pop_100 map we can only see the overall pop-density per municipality. For example in the southern part we see there is some higher population density we did not see before when just looking at population density on the municipal level. We can conclude that the population density is the highest in the upper center of Quindio. 
 ```
 
-<br>
-<br>
-<br>
-<br>
+We can see that mapping on the grid level with rf_1 and gb_1 gives us a better idea of the population dens ity on a more granular level. In the raster_pop_100 map we can only see the overall pop-density per municipality. For example in the southern part we see there is some higher population density we did not see before when just looking at population density on the municipal level. We can conclude that the population density is the highest in the upper center of Quindio.
 
