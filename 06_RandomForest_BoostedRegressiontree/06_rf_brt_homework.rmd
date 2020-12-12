@@ -177,7 +177,7 @@ We are taking the log of the dependent variable because as was shown in class/pu
 ```{r}
 col_input[,1] = log(col_input[,1])
 ```
-# Since we want to tune the parameters we do not use the ranger function but a combination of the ranger and caret package. Alternatively we could also use the tune_ranger approach. The first step is to specify the type of cross validation we wan to do and the number of folds.  
+Since we want to tune the parameters we do not use the ranger function but a combination of the ranger and caret package. Alternatively we could also use the tune_ranger approach. The first step is to specify the type of cross validation we wan to do and the number of folds.  
 ```{r}
 control = trainControl(method = "cv", number = 5) 
 ```
@@ -239,16 +239,22 @@ pred_rf_1 = data.table(pred_rf_1)[, rf_1 := rf_1*sum(raster_pop_100)/sum(rf_1), 
 
 Use the input data for Colombia on the municipal level (colombia_input.fst) to train a Boosted Regression Tree. Use the log of the population density (raster_pop_100) as the dependent variable. Tune one of the parameters in the Boosted Regression Tree. Briefly describe the parameter you are tuning and explain why you have decided for this parameter.
 
-```{r}
 
-# To optimize and tune  the model we combine the packages caret and xgboost.Again, we start this process by specifying which type of cross validation and number of folds we are interested in. The dependent variable is already in logs from the exercise before. 
+
+To optimize and tune  the model we combine the packages caret and xgboost. Again, we start this process by specifying which type of cross validation and number of folds we are interested in. The dependent variable is already in logs from the exercise before. 
+
+```{r}
 
 control = trainControl(method = "cv", number = 5)
 
-# Then we create a tuning grid, setting the parameters that we want to tune and the corresponding values that should be tried out. Here we can tune many different parameters. But again because of the time trade-off we only alter the nrounds (= maximum number of boosting iterations that should be done to create boosted regression tree), eta (= the learning rate between 0 and 1, which with lower values create a model that is more resistant to overfitting and therefore better) and gamma (= the minimum loss reduction that we then used to evaluate whether we want another split or not).
+```
+
+
+Then we create a tuning grid, setting the parameters that we want to tune and the corresponding values that should be tried out. Here we can tune many different parameters. But again because of the time trade-off we only alter the nrounds (= maximum number of boosting iterations that should be done to create boosted regression tree), eta (= the learning rate between 0 and 1, which with lower values create a model that is more resistant to overfitting and therefore better) and gamma (= the minimum loss reduction that we then used to evaluate whether we want another split or not).
+
 
 ## parameter noch ändern!
-
+```{r}
 tuning_grid = expand.grid(nrounds = seq(50, 150, by = 50), max_depth = 6, eta = seq(0.2, 0.4, by = 0.1), gamma = seq(0.01, 0.03, by = 0.01), colsample_bytree = 1, min_child_weight = 1, subsample = 1)
 
 head(tuning_grid)
@@ -327,5 +333,7 @@ ggplot() +
 
 ```
 
-We can see that mapping on the grid level with rf_1 and gb_1 gives us a better idea of the population dens ity on a more granular level. In the raster_pop_100 map we can only see the overall pop-density per municipality. For example in the southern part we see there is some higher population density we did not see before when just looking at population density on the municipal level. We can conclude that the population density is the highest in the upper center of Quindio.
+We can see that mapping on the grid level with rf_1 and gb_1 gives us a better idea of the population density on a more granular level. In the raster_pop_100 map we can only see the overall pop-density per municipality. For example in the southern part we see there is some higher population density we did not see before when just looking at population density on the municipal level. We can conclude that the population density is the highest in the upper center of Quindio.
+
+
 
