@@ -30,8 +30,9 @@ Install and load the required packages.
 library(rpart)
 library(rpart.plot) 
 library(precrec)
-library(caret) ## funktioniert beir mir nicht
+library(caret)## funktioniert beir mir nicht
 library(party)
+library(MLmetrics) #brauchen wir für Caret
 library(libcoin) # noch dazu ?
 
 library(tidyverse)
@@ -40,7 +41,6 @@ library(RColorBrewer)
 library(viridis)
 library(knitr)
 library(tinytex)
-library(wooldridge)
 library(glmnet) ## funktioniert beir mir nicht
 
 # Set wd to Set the path to the data
@@ -50,15 +50,35 @@ voting <- read_delim(file.path(data_path, "voting.csv"), ";",
                       escape_double = FALSE, col_types = cols(age = col_number()), 
                       locale = locale(decimal_mark = ",", grouping_mark = "."), trim_ws = TRUE)
 
+# Change Vote to a factor
+voting <- voting %>% mutate(vote_outcome = as.factor(w1_q24))
+
+# Changing the Gender Variable and removing "wrong" survey entries in the used Variables
+voting <- voting %>% mutate(gen = as.factor(gender),
+                            female = recode(gender, "Male" = 0, "Female" = 1),
+                            left_or_right = replace(w1_q12, w1_q12 > 10, NA),
+                            gov_sat = replace(w1_q7, w1_q7 > 5, NA),
+                            financial_sit = replace(w1_q4, w1_q4 > 5, NA),
+                            close_to_eu = replace(w1_q8x4, w1_q8x4 > 5, NA),
+                            immigration_pos = replace(w1_q10x2, w1_q10x2 > 5, NA),
+                            polit_trust = replace(w1_q19x3, w1_q19x3 > 5, NA),
+                            immigration_neg = replace(w1_q17x3, w1_q17x3 > 5, NA))
+
+
 ```
 
 # Task 1) Estimate a classification tree using cross validation predicting the variable w1_q24
 
 ```{r }
-# manuell und wenn ja welche model specification oder mit caret???
-set.seed(123) ## warum??? 
+# manuell und wenn ja welche model specification oder mit caret??? - So wie es ist, ist es ohne CV???
+set.seed(123)
 
-## Seperate the voting data set into test and training data
+## Seperate the voting data set into test and training data and changing the names
+voting <- voting %>%
+  rename("top_issue1" = w1_q2_level1,
+         "religious_aff" = w1_sd15r,
+         "educ" = w1_sd6,
+         "income" = w1_sd7)
 voting <- 
   voting %>%
   mutate(train_index = sample(c("train", "test"), nrow(voting), replace=TRUE, prob=c(0.75, 0.25)))
@@ -66,22 +86,62 @@ voting <-
 voting_train <- voting %>% filter(train_index=="train")
 voting_test <- voting %>% filter(train_index=="test")
 
-tree <- rpart(w1_q24 ~ gender + age + bundesland, data = voting_train, cp=.01)
+#For simplicity use formula for estimation
+formula <- vote_outcome ~  gender + age + close_to_eu + left_or_right + immigration_neg
+
+formula1 <- vote_outcome ~  gender + age + top_issue1 + financial_sit + polit_trust + gov_sat + close_to_eu + educ + income + left_or_right + immigration_neg + immigration_pos + religious_aff
+
+tree <- rpart(formula, data = voting_train, cp=.01)
 tree
-summary(tree)
+summary(tree1)
 
-###### alternative mit caret #####
 
-control <- trainControl(method = "repeatedcv", number = 10, repeats = 10,
-                        savePredictions = T, classProbs = T, summaryFunction = twoClassSummary)
+tree1 <- rpart(formula1, data = voting_train, cp=.01)
+tree1
+```
 
+```{r}
+###### Erweiterung mit caret und CV #####
+
+# When running this algorithm we get that the optimal cp = .007 / .006. However, after running the control estimate we can no longer also generate the Confusion Matrix due to some Variable missing. Not so sure as of yet how to solve it. 
+
+
+control <- trainControl(method = "repeatedcv", number = 10, repeats = 10, savePredictions = T, classProbs = T, summaryFunction = multiClassSummary)
+control
+summary(control)
+
+# Tuning Grid
+tuning_grid <- expand.grid(cp = seq(0.001, 0.01, by= 0.001))
+tuning_grid
+
+
+# Tree tuned with Caret, we get a similar tree to the one in the lecture
+tree_caret1 <- train(data = voting, formula1, method = "rpart", trControl = control, tuneGrid = tuning_grid, metric = "logLoss", na.action = na.pass)
+tree_caret1
+
+tree_caret1 <- tree_caret$finalModel
+
+```
+
+```{r}
+# Vote overview
+table(voting$vote_outcome)
+
+# Colour palette for possible party outcomes?
+# cols <- c("blue", "green", "pink", "gray", "black", "red")
 ```
 
 #Task 2) Plot a tree graph of the model with the best performance. Explain how you come to your prediction in one of the terminal nodes
 
 ```{r}
+# Tree plot Formula
+rpart.plot(tree, box.palette="RdYlGn", nn=FALSE, type=2)
 
-rpart.plot(tree, box.palette="RdBu", nn=FALSE, type=2)
+# Tree plot more variables Formula1
+rpart.plot(tree, box.palette="RdYlGn", nn=FALSE, type=2)
+
+# Tree plot, CV Caret Tree, many variables Formula1
+rpart.plot(tree_caret1, box.palette="RdBu", nn=FALSE, type=2)
 
 ```
 
@@ -91,11 +151,29 @@ rpart.plot(tree, box.palette="RdBu", nn=FALSE, type=2)
 # 3.3) What would be the "naive prediction" in such a multiclass prediction problem?
 
 ```{r}
+# Earlier it worked but now an Error message pops up, Im not sure why tho?
+voting_train$prediction_tree <- predict(tree1, newdata = voting_train, type = "class") 
 
-voting_train$prediction_tree <- predict(tree, newdata = voting_train, type = c("class")) 
-confusion <- confusionMatrix(voting_train$survived_label, voting_train$prediction_tree)
-confusion
+# We have to change the level of the vote_outcome variable to be the same as the outcome of the prediction
+# voting_train$vote_outcome <- voting_train$vote_outcome %>% as.factor()
 
+# 1st Confusion matrix
+confusion1 <- confusionMatrix(voting_train$vote_outcome , voting_train$prediction_tree)
+confusion1
+
+# This prediction has very low accuracy, we have the highest sensitivity for a vote outcome for FPÖ and the highest specicivity for "Ohter".
+
+# The predictove performance of the model is not very good!
+# The naive prediction is that ÖVP would win
+
+# 2nd Confusion Matrix
+voting_test$prediction_tree <- predict.train(tree_caret, newdata = voting_test, type = "raw")
+
+voting_test$vote_outcome <- voting_test$vote_outcome%>%
+  as.factor()
+
+confusion2 <- confusionMatrix(voting_test$vote_outcome, voting_test$prediction_tree)
+confusion2
 ```
 
 #Task 4) Estimate the model across a wide range of parameters of the model and plot the accuracy in the training and in the test data against the parameters. What can you see? what problem does this relate to?
