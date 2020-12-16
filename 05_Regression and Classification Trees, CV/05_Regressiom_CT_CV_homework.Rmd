@@ -54,17 +54,32 @@ voting <- read_delim(file.path(data_path, "voting.csv"), ";",
 voting <- voting %>% mutate(vote_outcome = as.factor(w1_q24))
 
 # Changing the Gender Variable and removing "wrong" survey entries in the used Variables
-voting <- voting %>% mutate(gen = as.factor(gender),
-                            female = recode(gender, "Male" = 0, "Female" = 1),
-                            left_or_right = replace(w1_q12, w1_q12 > 10, NA),
-                            gov_sat = replace(w1_q7, w1_q7 > 5, NA),
-                            financial_sit = replace(w1_q4, w1_q4 > 5, NA),
-                            close_to_eu = replace(w1_q8x4, w1_q8x4 > 5, NA),
-                            immigration_pos = replace(w1_q10x2, w1_q10x2 > 5, NA),
-                            polit_trust = replace(w1_q19x3, w1_q19x3 > 5, NA),
-                            immigration_neg = replace(w1_q17x3, w1_q17x3 > 5, NA))
 
+# Diser Schritt ist von Julian und macht auch eigentlich Sinn, da seltsam ausgefüllte Antworten mit 99 oder 88 gekennzeichnet wurden und damit diese nicht ein so hohe Gewichtung bekommen entferne ich sie hier, aber das Ergebnis sieht dann leider ganz anders aus als aus der Vorlesung :/
 
+# voting <- voting %>% mutate(gen = as.factor(gender),
+#                            female = recode(gender, "Male" = 0, "Female" = 1),
+#                            left_or_right = replace(w1_q12, w1_q12 > 10, NA),
+#                            gov_sat = replace(w1_q7, w1_q7 > 5, NA),
+#                            financial_sit = replace(w1_q4, w1_q4 > 5, NA),
+#                            close_to_eu = replace(w1_q8x4, w1_q8x4 > 5, NA),
+#                            immigration_pos = replace(w1_q10x2, w1_q10x2 > 5, NA),
+#                            polit_trust = replace(w1_q19x3, w1_q19x3 > 5, NA),
+#                            immigration_neg = replace(w1_q17x3, w1_q17x3 > 5, NA))
+
+# Changing the names
+voting <- voting %>%
+  rename("top_issue1" = w1_q2_level1,
+         "religious_aff" = w1_sd15r,
+         "educ" = w1_sd6,
+         "income" = w1_sd7,
+         "left_or_right" = w1_q12,
+         "gov_sat" = w1_q7,
+         "financial_sit" = w1_q4,
+         "close_to_eu" = w1_q8x4,
+         "immigration_pos" = w1_q10x2,
+         "polit_trust" = w1_q19x3,
+         "immigration_neg" = w1_q17x3)
 ```
 
 # Task 1) Estimate a classification tree using cross validation predicting the variable w1_q24
@@ -73,12 +88,7 @@ voting <- voting %>% mutate(gen = as.factor(gender),
 # manuell und wenn ja welche model specification oder mit caret??? - So wie es ist, ist es ohne CV???
 set.seed(123)
 
-## Seperate the voting data set into test and training data and changing the names
-voting <- voting %>%
-  rename("top_issue1" = w1_q2_level1,
-         "religious_aff" = w1_sd15r,
-         "educ" = w1_sd6,
-         "income" = w1_sd7)
+# Seperate the voting data set into test and training data
 voting <- 
   voting %>%
   mutate(train_index = sample(c("train", "test"), nrow(voting), replace=TRUE, prob=c(0.75, 0.25)))
@@ -86,14 +96,18 @@ voting <-
 voting_train <- voting %>% filter(train_index=="train")
 voting_test <- voting %>% filter(train_index=="test")
 
+
+# The question here should be whether we are pre-pruning or post-pruning 'formula' is a rather simple model while 'formula1' is a bit more complex but far away from representing all the 63 possible variables. My computer is not capable of using all the variables, the ones included in 'formula1'  are already close to the maximum my PC can handle. I have removed some, because they did not change anything in the outcome. The resulting tree in 'tree_caret' looks very similar to the one presented in the Lecture!
+
 #For simplicity use formula for estimation
 formula <- vote_outcome ~  gender + age + close_to_eu + left_or_right + immigration_neg
 
-formula1 <- vote_outcome ~  gender + age + top_issue1 + financial_sit + polit_trust + gov_sat + close_to_eu + educ + income + left_or_right + immigration_neg + immigration_pos + religious_aff
+# The inclusion of the Educ Variable is quite questionable at this point ^^
+formula1 <- vote_outcome ~  gender + age + top_issue1 + financial_sit + polit_trust + gov_sat + close_to_eu + income + left_or_right + immigration_neg + immigration_pos + religious_aff
 
 tree <- rpart(formula, data = voting_train, cp=.01)
 tree
-summary(tree1)
+summary(tree)
 
 
 tree1 <- rpart(formula1, data = voting_train, cp=.01)
@@ -116,10 +130,18 @@ tuning_grid
 
 
 # Tree tuned with Caret, we get a similar tree to the one in the lecture
-tree_caret1 <- train(data = voting, formula1, method = "rpart", trControl = control, tuneGrid = tuning_grid, metric = "logLoss", na.action = na.pass)
+tree_caret1 <- train(data = voting, formula1, method = "rpart", trControl = control, tuneGrid = tuning_grid, metric = "ROC", na.action = na.pass)
 tree_caret1
 
-tree_caret1 <- tree_caret$finalModel
+tree_caret1 <- tree_caret1$finalModel
+
+# The caret method tells us that we should use cp = 0.006 for estimation.
+```
+```{r}
+# I expected it too look like the one we got from Caret but it does not
+tree2 <- rpart(formula1, data = voting_train, cp=.006)
+
+tree2
 
 ```
 
@@ -138,10 +160,13 @@ table(voting$vote_outcome)
 rpart.plot(tree, box.palette="RdYlGn", nn=FALSE, type=2)
 
 # Tree plot more variables Formula1
-rpart.plot(tree, box.palette="RdYlGn", nn=FALSE, type=2)
+rpart.plot(tree1, box.palette="RdYlGn", nn=FALSE, type=2)
 
 # Tree plot, CV Caret Tree, many variables Formula1
 rpart.plot(tree_caret1, box.palette="RdBu", nn=FALSE, type=2)
+
+# Tree plot, Rpart with the new CP
+rpart.plot(tree2, box.palette="RdYlGn", nn=FALSE, type=2)
 
 ```
 
@@ -151,7 +176,9 @@ rpart.plot(tree_caret1, box.palette="RdBu", nn=FALSE, type=2)
 # 3.3) What would be the "naive prediction" in such a multiclass prediction problem?
 
 ```{r}
-# Earlier it worked but now an Error message pops up, Im not sure why tho?
+# Earlier it worked but now an Error message pops up, Im not sure why tho? 
+# We can use this for the normal Tree1, but not for the tree_caret1 tuned version, not clear why
+
 voting_train$prediction_tree <- predict(tree1, newdata = voting_train, type = "class") 
 
 # We have to change the level of the vote_outcome variable to be the same as the outcome of the prediction
@@ -161,13 +188,30 @@ voting_train$prediction_tree <- predict(tree1, newdata = voting_train, type = "c
 confusion1 <- confusionMatrix(voting_train$vote_outcome , voting_train$prediction_tree)
 confusion1
 
+# 2nd Confusion matrix
+voting_test$prediction_tree <- predict(tree1, newdata = voting_test, type = "class")
+
+confusion <- confusionMatrix(voting_test$vote_outcome, voting_test$prediction_tree)
+confusion
+
+
+
+#Confusion Matrix for Tree2
+voting_train$prediction_tree2 <- predict(tree2, newdata = voting_train, type = "class")
+confusion2 <- confusionMatrix(voting_train$vote_outcome , voting_train$prediction_tree2)
+confusion2
+
+voting_test$prediction_tree2 <- predict(tree2, newdata = voting_test, type = "class")
+confusion2_1 <- confusionMatrix(voting_test$vote_outcome , voting_test$prediction_tree2)
+confusion2_1
+
 # This prediction has very low accuracy, we have the highest sensitivity for a vote outcome for FPÖ and the highest specicivity for "Ohter".
 
 # The predictove performance of the model is not very good!
 # The naive prediction is that ÖVP would win
 
-# 2nd Confusion Matrix
-voting_test$prediction_tree <- predict.train(tree_caret, newdata = voting_test, type = "raw")
+# 3rd Confusion Matrix - does not work again because of the Tree Caret issue
+voting_train$prediction_tree_caret1 <- predict(tree_caret1, newdata = voting_train, type = "class")
 
 voting_test$vote_outcome <- voting_test$vote_outcome%>%
   as.factor()
@@ -180,6 +224,16 @@ confusion2
 
 ```{r}
 
+# Both have same Level but can not run the confusion matrix, weird
+logit <- glm(formula1, 
+             data = voting_train, family = "binomial")
+
+voting_test$prediction_logit <- predict(logit, newdata = voting_test, type = "response")
+
+confusion <- confusionMatrix(voting_test$vote_outcome, voting_test$prediction_logit)
+confusion
+
+levels(voting_test$prediction_logit)
 ```
 
 #Task 5) Simplify the model by only trying to predict if somebody voted for the ÖVP or not,
