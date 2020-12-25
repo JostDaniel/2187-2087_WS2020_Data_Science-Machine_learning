@@ -18,14 +18,13 @@ knitr::opts_chunk$set(fig.align = 'center')
 
 ```
 
-# Classification Tree with the Voting
-
-# Input data
+# Classification Tree with the Voting Input data
+Data contains prospective voting decisions in the 2017 parliamentary election in Austria as well as a set of predictors which are other questions from the survey
 
 Install and load the required packages.
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 
-# Später schauen ob wir alle aus der VL brauchen ! 
+# Später schauen ob wir alle aus der VL brauchen !  Parsimony us key  !
 
 library(rpart)
 library(rpart.plot) 
@@ -82,11 +81,13 @@ voting <- voting %>%
          "immigration_neg" = w1_q17x3)
 ```
 
-# Task 1) Estimate a classification tree using cross validation predicting the variable w1_q24
+# Task 1) Classification tree using cross validation
+Estimate a classification tree using cross validation predicting the variable $w1_q24$.
+$w1_q24$ is the prospective party choice. 
 
 ```{r }
 # manuell und wenn ja welche model specification oder mit caret??? - So wie es ist, ist es ohne CV???
-set.seed(123)
+set.seed(1312)
 
 # Seperate the voting data set into test and training data
 voting <- 
@@ -153,7 +154,8 @@ table(voting$vote_outcome)
 # cols <- c("blue", "green", "pink", "gray", "black", "red")
 ```
 
-#Task 2) Plot a tree graph of the model with the best performance. Explain how you come to your prediction in one of the terminal nodes
+# Task 2) Tree graph
+Plot a tree graph of the model with the best performance. Explain how you come to your prediction in one of the terminal nodes
 
 ```{r}
 # Tree plot Formula
@@ -170,10 +172,17 @@ rpart.plot(tree2, box.palette="RdYlGn", nn=FALSE, type=2)
 
 ```
 
-#Task 3) Make a confusion matrix of the model and interpret the results. 
-# 3.1) Regarding which two categories do you find the highest and lowest sensitivity?
-# 3.2) How well would you judge the predictive performance of the model?
-# 3.3) What would be the "naive prediction" in such a multiclass prediction problem?
+# Task 3) Confusion matrix
+Make a confusion matrix of the model and interpret the results.
+
+## 3.1) Sensitivity
+Regarding which two categories do you find the highest and lowest sensitivity?
+
+## 3.2) Predictive performance
+How well would you judge the predictive performance of the model?
+
+## 3.3) Naive prediction
+What would be the "naive prediction" in such a multiclass prediction problem?
 
 ```{r}
 # Earlier it worked but now an Error message pops up, Im not sure why tho? 
@@ -220,7 +229,8 @@ confusion2 <- confusionMatrix(voting_test$vote_outcome, voting_test$prediction_t
 confusion2
 ```
 
-#Task 4) Estimate the model across a wide range of parameters of the model and plot the accuracy in the training and in the test data against the parameters. What can you see? what problem does this relate to?
+# Task 4) Large model
+Estimate the model across a wide range of parameters of the model and plot the accuracy in the training and in the test data against the parameters. What can you see? what problem does this relate to?
 
 ```{r}
 
@@ -236,15 +246,15 @@ confusion
 levels(voting_test$prediction_logit)
 ```
 
-#Task 5) Simplify the model by only trying to predict if somebody voted for the ÖVP or not,
-re-estimate the model (again by using CV) as well as estimating a logit model in the training
-data utilizing whatever variables you find appropriate
+# Task 5) Simpllified model
+Simplify the model by only trying to predict if somebody voted for the ÖVP or not, re-estimate the model (again by using CV) as well as estimating a logit model in the training data utilizing whatever variables you find appropriate
 
 ```{r}
 
 ```
 
-#Task 6) Compute the confusion matrix and ROC-curves for both models. Which one performs better and why? Where would you set the cut-off-point? 
+# Task 6) Confusion matrix and ROC-curves
+Compute the confusion matrix and ROC-curves for both models. Which one performs better and why? Where would you set the cut-off-point? 
 
 ```{r}
 
