@@ -252,10 +252,26 @@ levels(test$prediction_logit)
 
 # **Task 5** Simplified model
 Simplify the model by only trying to predict if somebody voted for the ÖVP or not, re-estimate the model (again by using CV) as well as estimating a logit model in the training data utilizing whatever variables you find appropriate
-
+creating new hot one encoding (dummy variable) `vp` which is 1 for ÖVP and 0 otherwise
 ```{r}
-
+voting$vp <-  
+  recode(voting$vote, "ÖVP" = 1, .default = 0)
 ```
+
+new formula explaining `vp`
+```{r}
+FORMULA.vp <- vp ~ gender + age + top_issue1 + financ + polit_trust + gov_sat + close_eu + income + left_right + migration_neg + migration_pos + relig
+
+control.vp <- trainControl(method = "repeatedcv", number = 10, repeats = 10, savePredictions = T, summaryFunction = twoClassSummary)
+```
+
+```{r} 
+# DJ: Versteh den error nicht :/
+TREE.vp <- train(data = voting, FORMULA.vp, method = "rpart", trControl = control.vp, tuneGrid = tuning_grid, metric = "ROC", na.action = na.pass)
+
+TREE.vp$finalModel
+```
+
 
 # **Task 6** Confusion matrix and ROC-curves
 Compute the confusion matrix and ROC-curves for both models. Which one performs better and why? Where would you set the cut-off-point? 
