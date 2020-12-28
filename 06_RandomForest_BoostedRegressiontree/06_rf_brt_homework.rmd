@@ -191,18 +191,30 @@ head(tuning_grid)
 We now use caret and ranger to optimize the model and tune the parameters. We also include the model's importance scores, which check how important each variable is in explaining our dependent variable.
 
 ```{r}
-### HAT CA 15 Min zum rechnen bei mir gedauert!! aber dafür ists ein besseres model als in der VL! ### sonst b tuning grid wieder auf 30 by mytr und seq auf 2 setzen.
-
 rf_caret = train(data = col_input, raster_pop_100 ~ ., method = "ranger", trControl = control, tuneGrid = tuning_grid, importance = "impurity")
 
 rf_caret
 rf_1 = rf_caret$finalModel
 
-
-##### Alternative with the tuneRanger package #####
 ```
-From the output of the caret training we chose the model with the smallest RMSE since this is the best one. In this case it is the model with (MTRY 30 / MIN.NOD.SIZE 30?) Then we save the final model from the caret package.  
 
+From the output of the caret training we chose the model with the smallest RMSE since this is the best one. In this case it is the model with mtyr = 30. Then we save the final model from the caret package.  
+
+Alternatively we can use the tuneRanger package to to tune some of the parameters in the Random forest. For this approach we first have to create a regression/ classification task, including the specification of the data set and the dependent variable. 
+
+```{r}
+library(tuneRanger)
+
+reg_task <- makeRegrTask(data = col_input, target = "raster_pop_100")
+estimateTimeTuneRanger(reg_task)
+
+rf_tr = tuneRanger(task = reg_task)
+rf_tr$recommended.pars
+rf_2 = rf_tr$model
+
+
+```
+First, we load the tuneRanger package to the library. Second, we create a regression and then use tungRanger to tune the parameters. The default includes tuning mtry, min.node.size and sample.fraction. If we would also wanted to tune other parameters we would simply had to add them using "tune.parameters()" in the tuneRanger function. Before running the tuneRanger function we get an estimate of how long the tuning process will take (17M 58S). After the tuning is finished we see that the factors chosen are: mytr = 26, min.node.size = 4, sample.fraction = 0.8615. Again we extract the final model and save it. 
 
 ### 3.2
 
