@@ -97,6 +97,8 @@ test <- voting %>% filter(train_index=="test")
 
 # The question here should be whether we are pre-pruning or post-pruning 'formula' is a rather simple model while 'FORMULA' is a bit more complex but far away from representing all the 63 possible variables. My computer is not capable of using all the variables, the ones included in 'FORMULA'  are already close to the maximum my PC can handle. I have removed some, because they did not change anything in the outcome. The resulting tree in 'tree_caret' looks very similar to the one presented in the Lecture!
 
+# DJ: würde mal auf meinem PC probieren es mit allen variablen zu machen (wenn ich iweder in Wien bin)
+
 # For simplicity use formula for estimation
 formula <- vote ~ gender + age + close_eu + left_right + migration_neg
 
@@ -120,12 +122,16 @@ When running this algorithm we get that the optimal cp = .007 / .006. However, a
 control <- trainControl(method = "repeatedcv", number = 10, repeats = 10, savePredictions = T, classProbs = T, summaryFunction = multiClassSummary)
 control
 summary(control)
+```
 
-# Tuning Grid
+Tuning Grid
+```{r}
 tuning_grid <- expand.grid(cp = seq(0.001, 0.01, by= 0.001))
 tuning_grid
+```
 
-# Tree tuned with Caret, we get a similar tree to the one on the slides
+Tree tuned with Caret, we get a similar tree to the one on the slides
+```{r}
 TREE_caret <- train(data = voting, FORMULA, method = "rpart", trControl = control, tuneGrid = tuning_grid, metric = "ROC", na.action = na.pass)
 TREE_caret
 
@@ -165,7 +171,7 @@ rpart.plot(tree, box.palette=party, nn=FALSE, type=2)
 rpart.plot(TREE, box.palette=party, nn=FALSE, type=2)
 
 # Tree plot, CV Caret Tree, many variables FORMULA
-rpart.plot(TREE_caret, box.palette=party, nn=FALSE, type=2)    # DJ: exactly like the graph on the slides so I'd say we remove everything except TREE_caret
+rpart.plot(TREE_caret, box.palette=party, nn=FALSE, type=2)    # DJ: exactly like the graph on the slides so I'd say we remove everything except TREE_caret?
 
 # Tree plot, Rpart with the new CP
 rpart.plot(TREE2, box.palette=party, nn=FALSE, type=2)
@@ -175,67 +181,50 @@ rpart.plot(TREE2, box.palette=party, nn=FALSE, type=2)
 # **Task 3** Confusion matrix
 Make a confusion matrix of the model and interpret the results.
 
+Confusion matrix for tree (##
 ```{r}
-train$prediction_tree <- predict(tree, newdata = train) 
+train$prediction_tree <- predict(tree, newdata = train, type = "class")
 confusion <- confusionMatrix(train$vote, train$prediction_tree, positive = "ÖVP", mode = "sens_spec")
 confusion
 ```
+
+Confusion matrix for TREE (test data)
 ```{r}
-# Earlier it worked but now an Error message pops up, Im not sure why tho? 
-# We can use this for the normal TREE, but not for the TREE_caret tuned version, not clear why
+test$predict_TREE <- predict(TREE, newdata = test, type = "class")
+CONFUSION <- confusionMatrix(test$vote, test$predict_TREE)
+CONFUSION
+```
 
-train$prediction_tree <- predict(TREE, newdata = train, type = "class") 
+Confusion Matrix for TREE2
+```{r}
+test$predict_TREE2_test <- predict(TREE2, newdata = test, type = "class")
+CONFUSION2_test <- confusionMatrix(test$vote , test$predict_TREE2)
+CONFUSION2_test
+```
 
-# We have to change the level of the vote variable to be the same as the outcome of the prediction
-# train$vote <- train$vote %>% as.factor()
-
-# 1st Confusion matrix
-confusion1 <- confusionMatrix(train$vote , train$prediction_tree)
-confusion1
-
-# 2nd Confusion matrix
-test$prediction_tree <- predict(TREE, newdata = test, type = "class")
-
-confusion <- confusionMatrix(test$vote, test$prediction_tree)
-confusion
-
-#Confusion Matrix for Tree2
-train$prediction_tree2 <- predict(tree2, newdata = train, type = "class")
-confusion2 <- confusionMatrix(train$vote , train$prediction_tree2)
-confusion2
-
-test$prediction_tree2 <- predict(tree2, newdata = test, type = "class")
-confusion2_1 <- confusionMatrix(test$vote , test$prediction_tree2)
-confusion2_1
-
-# This prediction has very low accuracy, we have the highest sensitivity for a vote outcome for FPÖ and the highest specicivity for "Ohter".
-
-# The predictove performance of the model is not very good!
-# The naive prediction is that ÖVP would win
-
-# 3rd Confusion Matrix - does not work again because of the Tree Caret issue
-train$prediction_tree_caret1 <- predict(tree_caret1, newdata = train, type = "class")
-
-test$vote <- test$vote%>%
-  as.factor()
-
-confusion2 <- confusionMatrix(test$vote, test$prediction_tree)
-confusion2
+Confusion Matrix for TREE_caret - does not work because of the Tree Caret issue
+```{r}
+test$predict_TREE_caret <- predict(TREE_caret, newdata = test, type = "class")
+# ERROR Error in eval(predvars, data, env) : object 'genderMale' not found  :-(
+CONFUSION3 <- confusionMatrix(test$vote, predict_TREE_caret)
+CONFUSION3
 ```
 
 
 ## **3.1** Sensitivity
-Regarding which two categories do you find the highest and lowest sensitivity?
+**Regarding which two categories do you find the highest and lowest sensitivity?**
+Prediction `test$predict_TREE2` has very low accuracy, we have the highest sensitivity for a vote outcome for FPÖ and the highest specicivity for "Other".
 
 ## **3.2** Predictive performance
-How well would you judge the predictive performance of the model?
+**How well would you judge the predictive performance of the model?**
+The predictive performance of the model is not very good!
 
 ## **3.3** Naive prediction
-What would be the "naive prediction" in such a multiclass prediction problem?
-
+**What would be the "naive prediction" in such a multiclass prediction problem?**
+The naive prediction is that ÖVP would win
 
 # **Task 4** Large model
-Estimate the model across a wide range of parameters of the model and plot the accuracy in the training and in the test data against the parameters. What can you see? what problem does this relate to?
+**Estimate the model across a wide range of parameters of the model and plot the accuracy in the training and in the test data against the parameters. What can you see? what problem does this relate to?**
 
 ```{r}
 # Both have same Level but can not run the confusion matrix, weird
@@ -251,34 +240,58 @@ levels(test$prediction_logit)
 ```
 
 # **Task 5** Simplified model
-Simplify the model by only trying to predict if somebody voted for the ÖVP or not, re-estimate the model (again by using CV) as well as estimating a logit model in the training data utilizing whatever variables you find appropriate
-creating new hot one encoding (dummy variable) `vp` which is 1 for ÖVP and 0 otherwise
+**Simplify the model by only trying to predict if somebody voted for the ÖVP or not, re-estimate the model (again by using CV) as well as estimating a logit model in the training data utilizing whatever variables you find appropriate**
+
+Creating new hot one encoding (dummy variable) `vp` which is 1 for ÖVP and 0 otherwise
 ```{r}
 voting$vp <-  
   recode(voting$vote, "ÖVP" = 1, .default = 0)
 ```
 
-new formula explaining `vp`
+New formula explaining `vp`
 ```{r}
 FORMULA.vp <- vp ~ gender + age + top_issue1 + financ + polit_trust + gov_sat + close_eu + income + left_right + migration_neg + migration_pos + relig
-
-control.vp <- trainControl(method = "repeatedcv", number = 10, repeats = 10, savePredictions = T, summaryFunction = twoClassSummary)
 ```
 
+Specifying how the samples should be split and type of CV. method = "repeatedcv" is k-fold cross validation (other options e.g. "LOOCV" or "LGOCV")
+```{r}
+control.vp <- trainControl(method = "LOOCV", number = 10, repeats = 10, savePredictions = T, summaryFunction = twoClassSummary, classProbs = TRUE)
+```
+
+Specifying the optimization metric and the method (using the same tuning grid as in **Task 1**)
 ```{r} 
 # DJ: Versteh den error nicht :/
 TREE.vp <- train(data = voting, FORMULA.vp, method = "rpart", trControl = control.vp, tuneGrid = tuning_grid, metric = "ROC", na.action = na.pass)
+
+# ERROR train()'s use of ROC codes requires class probabilities. See the classProbs option of trainControl()
+# setting "classProbs = FALSE" in the trainControl() did not solve the error   :-(
 
 TREE.vp$finalModel
 ```
 
 
 # **Task 6** Confusion matrix and ROC-curves
-Compute the confusion matrix and ROC-curves for both models. Which one performs better and why? Where would you set the cut-off-point? 
+**Compute the confusion matrix and ROC-curves for both models. Which one performs better and why? Where would you set the cut-off-point?** 
 
+Confusion matrix
 ```{r}
-
+test$predict_TREE.vp <- predict(TREE.vp, newdata = test, type = "class")        # erstmal den error oben solven
+CONFUSION <- confusionMatrix(test$vote, test$predict_TREE)
+CONFUSION
 ```
+
+ROC
+```{r}
+test$full_tree_scores <- predict(TREE_caret, test ,type = c("prob"))[,2]
+test$simple_tree_scores <- predict(TREE.vp, titanic_test ,type = c("response")) # erstmal den error oben solven
+
+precrec_obj <- evalmod(scores = cbind(test$full_tree_scores, test$simple_tree_scores), 
+                       labels = cbind(voting$vote, voting$vote), 
+                       modnames = c("full model","simple model"),
+                       raw_curves = FALSE, ties_method="first")
+autoplot(precrec_obj)
+```
+
 
 
 
