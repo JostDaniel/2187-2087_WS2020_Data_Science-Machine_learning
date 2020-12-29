@@ -6,6 +6,7 @@ output:
     toc: true
     toc_depth: 2
     number_sections: false
+subtitle: Data Science and Machine Learning 2187 & 2087
 editor_options: 
   chunk_output_type: inline
 
@@ -66,7 +67,8 @@ quindio_grid = read_fst(file.path(data_path, "data", "quindio_input_grid.fst"))
 ```{r warning=FALSE}
 col_input %>% 
   ggplot(aes(x=raster_pop_100)) +
-  geom_histogram(binwidth = 0.5)  +
+  geom_histogram(binwidth = 0.5) +
+  labs(title = "Distribution of population density per municipality in Columbia", x = "Population density (inhabitants per hectare)", y = "Number of municipalities") +
   theme_classic()
 
 col_input %>% 
@@ -75,15 +77,16 @@ col_input %>%
 
 As can be seen in the plot, most grids have a rather low population density (below 10 inhabitants per 100m^2). In fact half of the grids have a population density below 0.44 inhabitants per 100m^2. To better visualize the distribution close to the origin we limit the scale of the x-axis to 10.
 
-```{r}
+```{r warning=FALSE}
 col_input %>% 
   ggplot(aes(x=raster_pop_100)) +
   geom_histogram(binwidth = 0.05)  +
   scale_x_continuous(limit = c(0,10)) +
+  labs(title = "Distribution of population density per municipality in Columbia", x = "Population density (inhabitants per hectare)", y = "Number of municipalities") +
   theme_classic()
 ```
 
-Here we can better see the distribution of the population density close to the origin (but do not see grids with a population density above 10 inhabitants per grid)
+Here we can better see the distribution of the population density close to the origin (but do not see grids with a population density above 10 inhabitants per hectare)
 
 ### 1.2
 
@@ -93,11 +96,13 @@ Here we can better see the distribution of the population density close to the o
 col_input %>% 
   ggplot(aes(x=raster_pop_100, y=night_lights_100, color = night_lights_100)) + 
   geom_point() + 
-  geom_smooth() +
+  geom_smooth(color = "darkgrey") +
+  scale_color_continuous("Light", labels = NULL, breaks = 0) +
+  labs(title = "Relationship of population density and light intensity at night", x = "Population density (inhabitants per hectare)", y = "Light at night") +
   theme_classic()
 ```
 
-As expected, this plot suggests a positive and non-linear relationship of population density and night lights at the grid level. On average, a higher population density correlates with more light at night. ~~The General Additive Model estimation also suggests that the relationship is marginally decreasing.~~
+As expected, this plot suggests a positive and non-linear relationship of population density and night lights at the grid level. On average, a higher population density correlates with more light at night.
 
 ## Exercise 2
 
@@ -113,10 +118,11 @@ As expected, this plot suggests a positive and non-linear relationship of popula
 quindio_grid %>% 
   ggplot(aes(x=night_lights_100, fill = as.character(protected_areas_100))) +
   geom_histogram(binwidth = 0.3)  +
-  theme_classic() + 
   scale_x_continuous(limits = c(0,20)) +
   scale_y_continuous(limits = c(0,10000)) +
-  scale_fill_discrete(name = element_blank(), labels = c("Unprotected area", "Protected area"))
+  scale_fill_discrete(name = element_blank(), labels = c("Unprotected area", "Protected area")) +
+  labs(title = "Distribution of population density per municipality in Columbia", x = "Population density (inhabitants per hectare)", y = "Number of municipalities") +
+  theme_classic()
 ```
 
 We can see that in protected areas there is also less night lights density. Furthermore, and unsurprisingly the distribution of night lights in protected areas looks similar to that of unprotected areas, being included within the other category.
@@ -131,6 +137,8 @@ plot(quindio_grid$night_lights_100, quindio_grid$hydro_slo_100)
 quindio_grid %>% 
   ggplot(aes(x=night_lights_100,y = hydro_slo_100, color = night_lights_100)) + 
   geom_point() +
+  scale_color_continuous("Light", labels = NULL, breaks = 0) +
+  labs(title = "Relationship of light intensity at night and the slope", x = "Light at night", y = "Slope") +
   theme_classic()
 ```
 
@@ -140,6 +148,8 @@ Both the base R and the ggplot standard scatterplot do not adequately visualize 
 quindio_grid %>% 
   ggplot(aes(x=night_lights_100,y = hydro_slo_100, color = night_lights_100)) + 
   geom_point(alpha = 1/10, size = 0.5) +
+  scale_color_continuous("Light", labels = NULL, breaks = 0) +
+  labs(title = "Relationship of light intensity at night and the slope", x = "Light at night", y = "Slope") +
   theme_classic()
 ```
 
@@ -271,7 +281,7 @@ gb_caret = train(data = col_input, raster_pop_100 ~ ., method = "xgbTree", trCon
 gb_caret
 gb_1 = gb_caret$finalModel
 ```
-Again, we choose the model with the smallest RMSE, extract it and save it. The final values used for the model were nrounds = 150, max_depth = 6, eta = 0.1, gamma = 0.03, colsample_bytree = 1, min_child_weight = 1 and subsample = 1.
+Again, we choose the model with the smallest RMSE, extract it and save it. The final values used for the model were `nrounds = 150`, `max_depth = 6`, `eta = 0.1`, `gamma = 0.03`, `colsample_bytree = 1`, `min_child_weight = 1` and `subsample = 1`.
 
 ### 4.2
 
@@ -310,11 +320,11 @@ ggplot() +
     scale_x_continuous(breaks = NULL) +
     scale_y_continuous(breaks = NULL) +
     facet_wrap(~ facet, nrow = 1) +
-    labs(title = "Comparison of different maps of the popultation density") +
+    labs(title = "Comparison of different maps of the popultation density", x = "", y = "") +
   theme_minimal()
 
 ```
 
-We can see that mapping on the grid level with `rf_2` and `gb_1` gives us a better idea of the population density on a more granular level. In the raster_pop_100 map we can only observe the overall pop-density per municipality. For example in the southern part we see there is some higher population density we did not see before when just looking at population density on the municipal level. We can conclude that the population density is the highest in the upper center of Quindio.
+We can see that mapping on the grid level with `rf_2` and `gb_1` gives us a better idea of the population density on a more granular level. In the `raster_pop_100` map we can only observe the overall pop-density per municipality. For example in the southern part we see there is some higher population density we did not see before when just looking at population density on the municipal level. We can conclude that the population density is the highest in the upper center of Quindio.
 
 ***
