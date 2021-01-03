@@ -290,7 +290,7 @@ REALLY HIGH P_VALUE IN CARET, problem ???!
 We have the highest sensitivity or a vote outcome for FPÖ (model: tree_caret) & the lowest in Greens. 
 
 **How well would you judge the predictive performance of the model?**
-The predictive performance of the model is not very good! (see above)
+The predictive performance of the model is not very good! (see above). To obtain a better model performance we should probably see if some of the variables are properly characterized... 
 
 **What would be the "naive prediction" in such a multiclass prediction problem?**
 The naive prediction is that ÖVP would win
