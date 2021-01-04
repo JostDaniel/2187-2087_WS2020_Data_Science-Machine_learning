@@ -29,58 +29,82 @@ library(precrec)
 library(caret)       
 library(party)
 library(MLmetrics)  
-library(libcoin)     # noch dazu?                                                                 #'''''''''#
-
+#library(libcoin)    
 library(tidyverse)
 library(vcd)
 library(RColorBrewer)
 library(viridis)
 library(knitr)
-library(tinytex)
+#library(tinytex)
 library(glmnet)     
 ```
 
-Here we set the variable working directory, read in the voting data-set and adjust some variables.
+Here we set the relative working directory and read in the voting data-set. 
+Next, after inspecting the data we mutate and rename some of the variables we want to use now & later on. On top, we change w1_q24 (prospective party choice) our dependent variable to a factor and rename it. 
 
 ```{r}
 data_path = "."
 
 voting <- read_delim(file.path(data_path, "voting.csv"), ";", 
-                      escape_double = FALSE, col_types = cols(age = col_number()), 
+                      escape_double = FALSE, col_types = cols(), 
                       locale = locale(decimal_mark = ",", grouping_mark = "."), trim_ws = TRUE)
 
-# Change w1_q24 (prospective party choice) our dependent variable to a factor and rename it. 
-voting <- voting %>% mutate(vote = as.factor(w1_q24))
-voting <- voting %>% mutate(gender = as.factor(gender))
 
-# Changing the Gender Variable and removing "wrong" survey entries in the used Variables
-                                                                                                  #'''''''''#
-# Dieser Schritt ist von Julian und macht auch eigentlich Sinn, da seltsam ausgefüllte Antworten mit 99 oder 88 gekennzeichnet wurden und damit diese nicht ein so hohe Gewichtung bekommen entferne ich sie hier, aber das Ergebnis sieht dann leider ganz anders aus als aus der Vorlesung :/
+summary(voting)
 
-# voting <- voting %>% mutate(gen = as.factor(gender),
-#                            female = recode(gender, "Male" = 0, "Female" = 1),
-#                            left_right = replace(w1_q12, w1_q12 > 10, NA),
-#                            gov_sat = replace(w1_q7, w1_q7 > 5, NA),
-#                            financ = replace(w1_q4, w1_q4 > 5, NA),
-#                            close_eu = replace(w1_q8x4, w1_q8x4 > 5, NA),
-#                            migration_pos = replace(w1_q10x2, w1_q10x2 > 5, NA),
-#                            polit_trust = replace(w1_q19x3, w1_q19x3 > 5, NA),
-#                            migration_neg = replace(w1_q17x3, w1_q17x3 > 5, NA))
+voting <- voting %>% mutate(gender = as.factor(na_if(gender, "Prefer not to say")), 
+                    male = recode(gender, "Male" = 1, "Female" = 0), 
+                    left_right = replace(w1_q12, w1_q12 > 10, NA), 
+                    satis_gov = replace(w1_q7, w1_q7 > 5, NA), 
+                    satis_democ = replace(w1_q6, w1_q6 > 5, NA), 
+                    close_europe =  replace(w1_q8x4, w1_q8x4 > 5, NA), 
+                    opinion_immigr = replace(w1_q10x1, w1_q10x1 > 5, NA), 
+                    polit_trust = replace(w1_q19x3, w1_q19x3 > 5, NA), 
+                    protect_environ = replace(w1_q17x4, w1_q17x4 > 5, NA), 
+                    opinion_inequal = replace(w1_q5x1, w1_q5x1 > 5, NA), 
+                    opinion_welf = replace(w1_q5x2, w1_q5x2 > 5, NA), 
+                    opinion_unempl = replace(w1_q5x3, w1_q5x3 > 5, NA), 
+                    opinion_pol = replace(w1_q5x4, w1_q5x4 > 5, NA), 
+                    opinion_indiff = replace(w1_q5x5, w1_q5x5 > 5, NA), 
+                    close_party_1 =replace(w1_q13, w1_q13 > 2, NA), 
+                    close_party_2 =replace(w1_q14, w1_q14 > 2, NA), 
+                    ft_voter = recode(w1_jw, "no" = 0, "yes" = 1),
+                    vote = as.factor(w1_q24)) %>%
+                    drop_na(male) %>% 
+                    rename("top_issue1" = w1_q2_level1, 
+                          "relig" = w1_sd15r,
+                          "mig_pos" = w1_q10x2)
+
+class(voting$vote)
+
+# For the last task we here already specify the ÖVP dummy variable!
+
+
+voting <- voting %>% mutate(vp = ifelse(vote == "ÖVP" , 1, 0), 
+                    vp_vote = factor(vp, labels = c("No","Yes")))
+
+#FORMULA <- vote ~ gender + age + top_issue1 + financ + polit_trust + gov_sat + close_eu + income + left_right + migration_neg + migration_pos + relig
+
+
+
+
+#voting <- voting %>% mutate(vote = as.factor(w1_q24))
+
 
 # Changing the names
-voting <- voting %>%
-  rename("top_issue1" = w1_q2_level1,
-         "relig" = w1_sd15r,
-         "educ" = w1_sd6,
-         "income" = w1_sd7,
-         "left_right" = w1_q12,
-         "gov_sat" = w1_q7,
-         "financ" = w1_q4,
-         "satisfaction_democ" = w1_q6,
-         "close_eu" = w1_q8x4,
-         "migration_pos" = w1_q10x2,
-         "polit_trust" = w1_q19x3,
-         "migration_neg" = w1_q17x3)
+#voting <- voting %>%
+#  rename("top_issue1" = w1_q2_level1,
+ #        "relig" = w1_sd15r,
+  #       "educ" = w1_sd6,
+   #      "income" = w1_sd7,
+    #     "left_right" = w1_q12,
+     #    "gov_sat" = w1_q7,
+      #   "financ" = w1_q4,
+       #  "satisfaction_democ" = w1_q6,
+        # "close_eu" = w1_q8x4,
+         #"migration_pos" = w1_q10x2,
+         #"polit_trust" = w1_q19x3,
+         #"migration_neg" = w1_q17x3)
 ```
 
 # **Task 1** Classification tree using cross validation
@@ -88,11 +112,10 @@ voting <- voting %>%
 
 In order to estimate a classification tree we have different options. First, we will manually do cross validation. Later on, we will estimate a classification tree using the caret package. The tree is a set of rules which will tell us voted for whom depending on the given criteria provided. 
 
-We start by separating the voting data into train and test data. As usual the test data set is smaller because we do not want to lose a lot of observations when training the model, this also increases how our prediction works (DJ: WAS BEDEUTET DAS?). After splitting the data set
-                                                                                                  #'''''''''#
+We start by separating the voting data into train and test data. As usual the test data set is smaller because we do not want to lose a lot of observations when training the model, this also increases how our prediction works. After splitting the data set
 
 ```{r}
-set.seed(1312)
+set.seed(123)
 
 voting <- voting %>%
   mutate(train_index = sample(c("train", "test"), nrow(voting), replace=TRUE, prob=c(0.85, 0.15)))
@@ -101,45 +124,20 @@ train <- voting %>% filter(train_index=="train")
 test <- voting %>% filter(train_index=="test")
 ```
 
-Next, we specify a formula and use the rpart package to create the tree from the test data. Thus, we partition the space spanned by input variables and fit a very simple function. The main tuning parameter complexity is set arbitrarily to `cp=.01`. After estimating the tree we call the `rpart`-object to get the splits and terminal nodes of the tree. When specifying the formula (to estimate the response within a bin), we do not include all variables since this would likely lead to overfitting.
+Next, we specify a formula and use the rpart package to create the tree from the test data. Thus, we partition the space spanned by input variables and fit a very simple piecewise linear function. The main tuning parameter complexity is set arbitrarily to cp=.005. After estimating the tree we call the rpart-object to get the splits and terminal nodes of the tree. When specifying the formula (to estimate the response within a bin), we do not include all variables since this would likely lead to overfitting.
 
 ```{r}
-#A: slightly higher accuracy, kappa, sensitivity, specificity and one more splitting point in the tree
 
-formula <- vote ~ age + gender + satisfaction_democ + migration_pos + left_right
-tree <- rpart(formula, data = train, cp=.01)
+formula <- vote ~ age + male + satis_democ + left_right
+tree <- rpart(formula, data = train, cp=.005)
 tree
 
-# hab recht viele variabeln weggelassen im vergelich zu Leo, weil die nicht im Baum aufgetaucht sind also dementsprechend keinen signifikanten einfluss auf die dependent variable haben (es keinen split gibt). Im Vergleich am besten mal confusion Matrix anschauen, um zu gucken welche model specification wir nehmen wollen am Ende. 
-
-
-
-# Leos version:
-# The question here should be whether we are pre-pruning or post-pruning 'formula' is a rather simple model while 'FORMULA' is a bit more complex but far away from representing all the 63 possible variables. My computer is not capable of using all the variables, the ones included in 'FORMULA'  are already close to the maximum my PC can handle. I have removed some, because they did not change anything in the outcome. The resulting tree in 'tree_caret' looks very similar to the one presented in the Lecture!
-
-# DJ: würde mal auf meinem PC probieren es mit allen variablen zu machen (wenn ich iweder in Wien bin)
-# A: overfitten wir dann nicht?!
-
-# For simplicity use formula for estimation
-formula <- vote ~ gender + age + close_eu + left_right + migration_neg
-# The inclusion of the Educ Variable is quite questionable at this point ^^
-FORMULA <- vote ~ gender + age + top_issue1 + financ + polit_trust + gov_sat + close_eu + income + left_right + migration_neg + migration_pos + relig
-
-tree <- rpart(formula, data = train, cp=.01) # cp (complexity) is the tuning parameter, named differently in different pkgs, 0 < cp < 1)
-tree
-# summary(tree)
-
-TREE <- rpart(FORMULA, data = train, cp=.01)
-TREE
 ```
-A: From calling the `rpart`-object we see that we have a tree with 14 nodes, 7 terminal nodes and 6 splits. We start at the root node, which represents the entire population of the sample. From there we go down numerically to the next nodes. At the root node the tree splits using the criteria left_right>=4.5. This means if the left-right self-palcement is higher or equal to 5 (indicating...) the tree splits into the parent nodes SPÖ if "no" (=3)) or ÖVP if "yes" (=2)). From the ÖVP node the tree splits again with the satisfaction_democ criterion if lower than 2.5 we are in the terminal ÖVP node (=5)). Otherwise we are in the FPÖ node (=4)). Where we split into the terminal FPÖ node (=8)) and the ÖVP node (=9)) using again the left_right self-palcement criterion. In node 9) we have one last split depending on the age criterion. If age is smaller 36.5 we end in the terminal node FPÖ (=18)) otherwise if age greater or equal to 36.5 we end in the ÖVP node (=19)). Jumping back to the second parent node (SPÖ, 3)) the tree splits using the age citerion. If age is larger than 56.5 we are in the terminal node SPÖ (=7)). If age is smaller 56.5 we are in node 6) where the tree splits one more time given the migration_pos criterion. If migration_pos is smaller 1.5 we end in the terminal node Greens (=12)), otherwise in the terminal node SPÖ (=13)). The types NEOS and other are unused in or tree. 
+From calling the rpart-object we see that we have a tree with 17 nodes, 9 terminal nodes and 8 splits. We start at the root node, which represents the entire population of the sample. From there we go down numerically to the next nodes. At the root node the tree splits using the criteria left_right>=4.5. This means if the left-right self-palcement is higher or equal to 5 (indicating...) the tree splits into the parent nodes SPÖ if "no" (=3)) or ÖVP if "yes" (=2)). From the ÖVP node the tree splits again with the close_europe criterion if lower than 2.5 we are in the terminal ÖVP node (=5)). Otherwise we are in the FPÖ node (=4)). Where we split into the terminal FPÖ node (=8)) and the ÖVP node (=9)) using again the satis_gov criterion being larger or equal to 3.5. In node 9) we have another split depending on the left_right selfplacement criterion. If it is smaller 5.5 we end in the terminal node ÖVP (=19)) otherwise if  greater or equal to 5.5 we end in the FPÖ node (=18)), splitting again into FPÖ (36)) and ÖVP (37)) depending on age being smaller 53.5. Jumping back to the second parent node (SPÖ, 3)) the tree splits using the age citerion. If age is larger than 56.5 we are in the terminal node SPÖ (=7)). If age is smaller 56.5 we are in node 6) where the tree splits again depending on opinion_immgr, if this is smaller 1.5 we are in terminal node ÖVP (13)) otherwise we are in Greens (12)) where one last split occurs given the satis_gov criterion. If satis_gov is smaller 2.5 we end in the terminal node SPÖ (=25)), otherwise in the terminal node Greens (=24)).The types NEOS and other are unused in or tree. 
 
 ## Extension with caret and CV
 
-Now we turn to the estimation of the classification tree using the `caret` package. First, we use the trainControl function to specify how the samples should be split and which type of CV we want to apply. Here we use repeated cross validation, with 10 Kfolds repeating 10 times to reduce the variance of the performance measures we get. With summaryFunction we can specify some function that computes performance measures, which we can use for selecting the optimal parameters. Since we are having a multiclass problem here we use multiClassSummary.
-
-When running this algorithm we get that the optimal cp = .007 / .006. (A: bei mir 0.008)
-However, after running the control estimate we can no longer also generate the Confusion Matrix due to some Variable missing. Not so sure yet how to solve it. 
+Now we turn to the estimation of the classification tree using the caret package. First, we use the trainControl function to specify how the samples should be split and which type of CV we want to apply. Here we use repeated cross validation, with 10 Kfolds repeating 10 times to reduce the variance of the performance measures we get. With summaryFunction we can specify some function that computes performance measures, which we can use for selecting the optimal parameters. Since we are having a multiclass problem here we use multiClassSummary.
 
 ```{r}
 control <- trainControl(method = "repeatedcv", number = 10, repeats = 10, savePredictions = T, classProbs = T, summaryFunction = multiClassSummary)
@@ -150,7 +148,7 @@ control <- trainControl(method = "repeatedcv", number = 10, repeats = 10, savePr
 Next, we create a tuning grid that determines which values for the tuning parameters should be used. For every different combination of values train will perform cross validation. Here we only set the values for cp.
 
 ```{r}
-tuning_grid <- expand.grid(cp = seq(0.001, 0.01, by= 0.001))
+tuning_grid <- expand.grid(cp = seq(0, 0.04, by= 0.005))
 tuning_grid
 ```
 
@@ -158,37 +156,16 @@ When we estimate the tree tuned with caret we get a similar tree to the one on t
 
 ```{r, warning = false}
 #A:
-tree_caret <- train(data = voting, formula, method = "rpart", trControl = control, tuneGrid = tuning_grid, metric = "ROC", na.action = na.pass)
+tree_caret <- train(data = voting, formula , method = "rpart", trControl = control, tuneGrid = tuning_grid, metric = "ROC", na.action = na.pass)
 tree_caret
 
-#OR mit party package: 
+#Alternative with  party package: 
 #tuning_grid2 <- expand.grid(mincriterion = seq(0.02,0.20, by= 0.02))
 #tree_caret2 <- train(data=voting, formula,method="ctree", trControl = control, tuneGrid = tuning_grid2, metric="ROC", na.action = na.pass)
 
-
-# Leo:
-TREE_caret <- train(data = voting, FORMULA, method = "rpart", trControl = control, tuneGrid = tuning_grid, metric = "ROC", na.action = na.pass)
-TREE_caret
-
-TREE_caret <- TREE_caret$finalModel #A: deswegen bei confsion matrix fehelr unten! 
-# The caret method tells us that we should use cp = 0.006 for estimation.
 ```
 
-I expected it too look like the one we got from caret but it does not. A: bei mir sehen beide gleich aus! 
-
-```{r}
-#Leo:
-TREE2 <- rpart(formula = FORMULA, data = train, cp=.006)
-TREE2
-
-#A:
-tree2 <- rpart(formula = formula, data = train, cp=.008)
-tree2
-
-```
-
-? Which is the model with the best performance ? - A: ROC curves  & matrix vergleichen
-
+When running this algorithm we get that the optimal cp = .005. 
 
 # **Task 2** Tree graph
 Plot a tree graph of the model with the best performance. Explain how you come to your prediction in one of the terminal nodes.
@@ -204,205 +181,151 @@ party <- list("lightblue", "lightgreen", "turquoise", "pink")
 ```
 
 ```{r}
-
-# A: Tree plot formula
+# Model based on "manual" tree
 rpart.plot(tree, box.palette=party, nn=FALSE, type=2)
+```
 
-#A: Fehler hier bzw davor, weil tree_caret sollte ja aussehen wie in den slides...wegen formula? 
+```{r}
+# Model based on tree_caret
 tree_caret_final <- tree_caret$finalModel
 rpart.plot(tree_caret_final, box.palette=party, nn=FALSE, type=2)
 
-# Tree plot Formula
-rpart.plot(tree, box.palette=party, nn=FALSE, type=2)
-
-# Tree plot more variables FORMULA
-rpart.plot(TREE, box.palette=party, nn=FALSE, type=2)
-
-# Tree plot, CV Caret Tree, many variables FORMULA
-rpart.plot(TREE_caret, box.palette=party, nn=FALSE, type=2)    # DJ: exactly like the graph on the slides so I'd say we remove everything except TREE_caret?
-
-# Tree plot, Rpart with the new CP
-rpart.plot(TREE2, box.palette=party, nn=FALSE, type=2)
-
 ```
-NOT CARET: As explained before when looking at the rpart-object we start in the root node (our positive class?) and from there start go down to the next nodes concluding from the rules where the tree splits. As visulaized we end up with 7 terminal nodes and 6 splits. Here we also see the probability of the parties receiving a vote based on the splitting rules. For example take the terminal node SPÖ (11%) we get here by starting at the root node. The first split happens on whether the left_right self-placement is larger or equal to 5 if this is not the case (with a probability of 34% we are in the parent node SPÖ. From here if age is smaller 57 we end up in the terminal node SPÖ with a probability of 11%. 
+Now look at the tree for using caret. As explained before when looking at the rpart-object we start in the root node (our positive class) and from there start going down to the next nodes concluding from the rules where the tree splits. As visulaized we end up with 10 terminal nodes and 9 splits. Here we also see the probability of the parties receiving a vote based on the splitting rules. For example take the terminal node SPÖ (11%) we get here by starting at the root node. The first split happens on whether the left_right self-placement is larger or equal to 5 if this is not the case (with a probability of 34% we are in the parent node SPÖ. From here if age is smaller 57 we end up in the terminal node SPÖ with a probability of 11%. 
 
-CARET: 
 
 # **Task 3** Confusion matrix
 
 In order to assess and compare the performance of the two models we make a confusion matrix. We use the test data since in the training  data our model is always more accurate:
 
 ```{r}
-#A: 
-# for model 1:
+# Model based on "manual" tree
+
 test$prediction_tree <- predict(tree, newdata = test, type = c("class"))
 confusion <- confusionMatrix(test$vote, test$prediction_tree,positive = "ÖVP", mode="sens_spec")
 confusion
+```
 
-# for model 2 (using caret): wenn ich party package benutzt also: different implementation of a classification tree from the `party` package, funktionierts sonst mit caret Fehlermeldung: "Fehler in (function (formula, data, weights, subset, na.action = na.rpart, : Argument param not matched" - Fehler nicht da, wenn tree_caret <- tree_caret$finalModel nicht durchgeführt wird! 
+```{r}
+# Model based on tree_caret
 
-# mit caret - geht doch 
 test$prediction_tree_caret <- predict.train(tree_caret, newdata = test, type = c("raw"), na.action = na.rpart)
 confusion <- confusionMatrix(test$vote, test$prediction_tree_caret,positive = "ÖVP", mode="sens_spec")
 confusion
 
-# mit party 
-test$prediction_tree_caret2 <- predict.train(tree_caret2, newdata = test, type = c("raw"), na.action = na.rpart)
-confusion <- confusionMatrix(test$vote, test$prediction_tree_caret2,positive = "ÖVP", mode="sens_spec")
-confusion
+
+# Alternative mit party package 
+#test$prediction_tree_caret2 <- predict.train(tree_caret2, newdata = test, type = c("raw"), na.action = na.rpart)
+#confusion <- confusionMatrix(test$vote, test$prediction_tree_caret2,positive = "ÖVP", mode="sens_spec")
+#confusion
 
 ```
 
-Leo: 
-Confusion matrix for tree
-```{r}
-train$prediction_tree <- predict(tree, newdata = train, type = "class")
-confusion <- confusionMatrix(train$vote, train$prediction_tree, positive = "ÖVP", mode = "sens_spec")
-confusion
-```
-
-Confusion matrix for TREE (test data)
-```{r}
-test$predict_TREE <- predict(TREE, newdata = test, type = "class")
-CONFUSION <- confusionMatrix(test$vote, test$predict_TREE)
-CONFUSION
-```
-
-Confusion Matrix for TREE2
-```{r}
-test$predict_TREE2_test <- predict(TREE2, newdata = test, type = "class")
-CONFUSION2_test <- confusionMatrix(test$vote , test$predict_TREE2)
-CONFUSION2_test
-```
-
-Confusion Matrix for TREE_caret - does not work because of the Tree Caret issue - A: muss es nicht predict.train sein die Funktion?
-```{r}
-test$predict_TREE_caret <- predict(TREE_caret, newdata = test, type = "class")
-# ERROR Error in eval(predvars, data, env) : object 'genderMale' not found  :-(                   #'''''''''#
-CONFUSION3 <- confusionMatrix(test$vote, predict_TREE_caret)
-CONFUSION3
-```
-A: Looking at the important measures of both models in the confusion matrix we see that in the model we estimated doing CV manually accuracy, kappa are as expected both slightly higher. This indicates that the model we estimated using the caret package performs better! Considering the sensitivity and specificity we also see that the tree_caret performs better in the classes FPÖ and ÖVP than with the simple tree model. Also balanced accurcy improved in this two classes.But in general in both models accuracy and kappa are not really high with only about 0.5277 and 0.3435. To get a better overview of the tradeoff between the indicators of the confusion matrix we should look at ROC curves.
-
-REALLY HIGH P_VALUE IN CARET, problem ???!                                                        #'''''''''#
+Looking at the important measures of both models in the confusion matrix we see that in the model we estimated doing CV manually accuracy, kappa are as expected both slightly smaller. This indicates that the model we estimated using the caret package performs better! Considering the sensitivity and specificity we also see that the tree_caret performs better in the classes Greens, ÖVP and SPÖ than with the simple tree model. Also balanced accurcy improved in all classes.But in general in both models accuracy and kappa are not really high with only about 0.5027 and 0.3008. To get a better overview of the trade-off between the indicators of the confusion matrix we should look at ROC curves.
 
 **Regarding which two categories do you find the highest and lowest sensitivity?**
-We have the highest sensitivity or a vote outcome for FPÖ (model: tree_caret) & the lowest in Greens. 
+We have the highest sensitivity or a vote outcome for FPÖ (model: tree_caret) with a probability of 57,89% and the lowest in Greens with a probability of 36,67%. 
 
 **How well would you judge the predictive performance of the model?**
-The predictive performance of the model is not very good! (see above). To obtain a better model performance we should probably see if some of the variables are properly characterized... 
+Given tha accuracy rate andf the kappa value the predictive performance of the model is not very good! (see above). Our tree just assigns a bit more than 50% of the votes to the true party. Also the no information rate is very high and clearly not significant to zero, therefore the tree does not estimate differently from a naive classifier.
 
 **What would be the "naive prediction" in such a multiclass prediction problem?**
-The naive prediction is that ÖVP would win
-
-LEO:
-## **3.1** Sensitivity
-**Regarding which two categories do you find the highest and lowest sensitivity?**
-Prediction `test$predict_TREE2` has very low accuracy, we have the highest sensitivity for a vote outcome for FPÖ and the highest specicivity for "Other".
-
-## **3.2** Predictive performance
-**How well would you judge the predictive performance of the model?**
-The predictive performance of the model is not very good!
-
-## **3.3** Naive prediction
-**What would be the "naive prediction" in such a multiclass prediction problem?**
-The naive prediction is that ÖVP would win (positive class)
+The naive prediction is that a voter votes for ÖVP (positive class).
 
 # **Task 4** Large model
 **Estimate the model across a wide range of parameters of the model and plot the accuracy in the training and in the test data against the parameters. What can you see? what problem does this relate to?**
 
+In order to estimate the model across a wider range of parameters of the model we include a larger model. Therefore however we use a weaker tunning parameter, as a penality for including more parameters.
+
 ```{r}
+formula_large <- vote ~ male + age + left_right + satis_democ + satis_gov + protect_environ  + close_europe + opinion_immigr + polit_trust + opinion_inequal + opinion_welf + opinion_unempl + opinion_pol + opinion_indiff + close_party_1 +close_party_2 + ft_voter
 
-#A: check nicht so ganz warum wir hier ein logit model nehmen? ROC curves?                       #'''''''''#
+tree_large <- rpart(formula_large , data = train, cp=.001)
+tree_large
+rpart.plot(tree_large, box.palette=party, nn=FALSE, type=2)
 
-#Leo:
-# Both have same Level but can not run the confusion matrix, weird                               #'''''''''#
+#train data
 
-logit <- glm(FORMULA, 
-             data = train, family = "binomial")
-
-test$prediction_logit <- predict(logit, newdata = test, type = "response")
-
-confusion <- confusionMatrix(test$vote, test$prediction_logit)
+train$prediction_tree_large <- predict(tree_large, newdata = train, type = c("class"
+))  
+ 
+train <- train %>%  
+  drop_na(prediction_tree_large) 
+ 
+confusion <- confusionMatrix(train$vote,train$prediction_tree_large) 
 confusion
 
-levels(test$prediction_logit)
+# test data
+
+test$prediction_tree_large <- predict(tree_large, newdata = test, type = c("class"))  
+ 
+test <- test %>%  
+  drop_na(prediction_tree_large) 
+ 
+confusion <- confusionMatrix(test$vote,test$prediction_tree_large) 
+confusion
+
+########################
+
+#PLOT????
 
 ```
+We can see that when we estimate the model across a wide range of parameters and then plot the accuracy in the training and in the test data against the parameters that we have a much better accuracy for the new larger model in the training data. Using the test data however shows us that we have a lower accuracy than in the first models. This comes from overfitting the model and thus leads to less predicitive power.
 
 # **Task 5** Simplified model
 **Simplify the model by only trying to predict if somebody voted for the ÖVP or not, re-estimate the model (again by using CV) as well as estimating a logit model in the training data utilizing whatever variables you find appropriate**
 
-Creating new hot one encoding (dummy variable) `vp` which is 1 for ÖVP and 0 otherwise. Now we have a binary classification instead of the multi-class version.
+The new dummy variable vp which takes the value 1 for ÖVP and 0 otherwise we use here was already created in the beginning. We have a binary classification instead of the multi-class version here. First we specify a new formula and then use rpart to estimate the tree, then we compute the confusion model. Second, we esimate a logit model and also compute the confusion matrix to compare the two models and their performance.
+
 ```{r}
-#A:
-voting$vp <- ifelse(voting$vote == "ÖVP", 1, 0) # führt aber zum gleichen fehler... 
 
-#vorher:
-voting$vp <-  
-  recode(voting$vote, "ÖVP" = 1, .default = 0)
-dum
-#A: 
-mode(voting$vp)
-voting <- voting %>% mutate(vp = as.factor(vp)) # A: glaubs damits unten funktioniert muss die dependent variable ein factor sein, dafür kommt dann aber ein anderer Fehler... 
+formula_vp <-  vp_vote ~ age + male + satis_democ + left_right
+tree_vp <- rpart(formula_vp, data = train, cp = 0.01)
+
+
+test$prediction_tree_vp <- predict(tree_vp, newdata = test, type = c("class"))  
+ 
+test <- test %>%  
+  drop_na(prediction_tree_vp) 
+ 
+confusion <- confusionMatrix(test$vp_vote,test$prediction_tree_vp) 
+confusion
 ```
 
-New formula explaining `vp`
+# Logit model
+
 ```{r}
-#A: kanns sein dass das Problem ist das wir eine dummy variable als dependent variable haben? LOGIT oder PROBIT model? (glm)
-#(https://bookdown.org/carillitony/bailey/chp12.html)
+logit_vp <- glm(formula_vp, 
+             data = train, family = "binomial")
 
-FORMULA.vp <- vp ~ gender + age + top_issue1 + financ + polit_trust + gov_sat + close_eu + income + left_right + migration_neg + migration_pos + relig
+test$prediction_logit <- predict(logit_vp, newdata = test, type = "response")
+
+test <- test %>%  
+  mutate(prediction_logit=as.factor(ifelse(prediction_logit>0.5,"Yes","No"))) %>%  
+  drop_na(prediction_logit) 
+
+confusion <- confusionMatrix(test$vp_vote, test$prediction_logit)
+confusion
+
 ```
-
-Specifying how the samples should be split and type of CV. method = "repeatedcv" is k-fold cross validation (other options e.g. "LOOCV" or "LGOCV")
-```{r}
-control.vp <- trainControl(method = "repeatedcv", number = 10, repeats = 10, savePredictions = T, summaryFunction = twoClassSummary, classProbs = TRUE)
-
-#tuning_grid <- expand.grid(cp = seq(0.001, 0.01, by= 0.001))
-
-```
-
-Specifying the optimization metric and the method (using the same tuning grid as in **Task 1**)
-```{r} 
-# DJ: Versteh den error nicht :/
-TREE.vp <- train(data = voting, FORMULA.vp, method = "rpart", trControl = control.vp, tuneGrid = tuning_grid, metric = "ROC",  na.action = na.pass)
-
-# ERROR train()'s use of ROC codes requires class probabilities. See the classProbs option of trainControl()
-# setting "classProbs = FALSE" in the trainControl() did not solve the error   :-(
-
-TREE.vp$finalModel
-```
-
 
 # **Task 6** Confusion matrix and ROC-curves
 **Compute the confusion matrix and ROC-curves for both models. Which one performs better and why? Where would you set the cut-off-point?** 
-
-Confusion matrix
-```{r}
-test$predict_TREE.vp <- predict(TREE.vp, newdata = test, type = "class")        # erstmal den error oben solven
-#A: glaub brauchen auch hier wieder train.predict als function!
-
-CONFUSION <- confusionMatrix(test$vote, test$predict_TREE)
-CONFUSION
-```
+Confusion Matrix see before.
 
 ROC
 ```{r}
-#A: test$full_tree_scores <- predict(tree_caret, test ,type = c("prob"))[,2] (anderes Model!)
 
-test$full_tree_scores <- predict(TREE_caret, test ,type = c("prob"))[,2]
-test$simple_tree_scores <- predict(TREE.vp, test ,type = c("response")) # erstmal den error oben solven
+test$prediction_tree_scores <- predict(tree_vp, test ,type = c("prob"))[,2] 
+test$prediction_logit_scores <- predict(logit_vp, test ,type = c("response")) 
+ 
+precrec_obj <- evalmod(scores = cbind(test$prediction_tree_scores, test$prediction_logit_scores), labels = cbind(test$vp_vote,test$vp_vote),modnames = c("classification tree","logit"), raw_curves = FALSE, ties_method="first")
 
-precrec_obj <- evalmod(scores = cbind(test$full_tree_scores, test$simple_tree_scores), 
-                       labels = cbind(voting$vote, voting$vote), 
-                       modnames = c("full model","simple model"),
-                       raw_curves = FALSE, ties_method="first")
 autoplot(precrec_obj)
+
 ```
 
-
+####Interpretation fehlt noch bei 6 & 5 teils !!!!!#####
 
 
 
