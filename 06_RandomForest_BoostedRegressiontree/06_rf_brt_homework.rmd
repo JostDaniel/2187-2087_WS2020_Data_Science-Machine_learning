@@ -3,9 +3,6 @@ title: "Random Forests and Boosted Regression Trees - Homework"
 author: 'GROUP 4: Leonard Fidlin (h01352705), Daniel Jost (h01451889), Anne Valder
   (h11928415)'
 output:
-  pdf_document:
-    toc: yes
-    toc_depth: '2'
   html_document:
     toc: yes
     toc_depth: 2
