@@ -142,7 +142,7 @@ quindio_grid %>%
   theme_classic()
 ```
 
-Both the base R and the ggplot standard scatterplot do not adequately visualize the distribution since n is very large. This is why we reduce the size of the data points and make them a bit transparent.
+Both the base R and the ggplot standard scatterplot do not adequately visualize the distribution since the size of our dataset is very large. The reason for this is that points can begin to overplot and pile up into areas of uniform black/ blue. This is why we reduce the size of the data points and adjust their transparancy using the alpha aesthetic.
 
 ```{r}
 quindio_grid %>% 
