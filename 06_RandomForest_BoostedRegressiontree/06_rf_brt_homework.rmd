@@ -1,18 +1,15 @@
 ---
 title: "Random Forests and Boosted Regression Trees - Homework"
-author: 'GROUP 4: Leonard Fidlin (h01352705), Daniel Jost (h01451889), Anne Valder
-  (h11928415)'
-output:
-  pdf_document:
-    toc: yes
-    toc_depth: '2'
+author: "GROUP 4: Leonard Fidlin (h01352705), Daniel Jost (h01451889), Anne Valder (h11928415)"
+output: 
   html_document:
-    toc: yes
+    toc: true
     toc_depth: 2
-    number_sections: no
+    number_sections: false
 subtitle: Data Science and Machine Learning 2187 & 2087
-editor_options:
+editor_options: 
   chunk_output_type: inline
+
 ---
 
 ```{r setup, include=FALSE}
@@ -267,13 +264,14 @@ control = trainControl(method = "cv", number = 5)
 ```
 
 Then we create a tuning grid, setting the parameters that we want to tune and the corresponding values that should be tried out. Here we can tune many different parameters. But again because of the time trade-off we only alter the `nrounds` (= maximum number of boosting iterations that should be done to create boosted regression tree), `eta` (= the learning rate between 0 and 1, which with lower values create a model that is more resistant to overfitting and therefore better) and `gamma` (= the minimum loss reduction that we then used to evaluate whether we want another split or not) - 60 models instead of 27.
+
 ```{r}
 tuning_grid = expand.grid(nrounds = seq(50, 150, by = 25), max_depth = 6, eta = seq(0.1, 0.4, by = 0.1), gamma = seq(0.01, 0.03, by = 0.01), colsample_bytree = 1, min_child_weight = 1, subsample = 1)
 
 head(tuning_grid)
 ```
-
 Then we combine the packages caret and xgboost to optimize the model doing extreme gradient boosting (using all variables as explanatory variables).
+
 ```{r,results='hide', message= FALSE, warning=FALSE}
 
 gb_caret = train(data = col_input, raster_pop_100 ~ ., method = "xgbTree", trControl = control, tuneGrid = tuning_grid)
@@ -328,6 +326,6 @@ ggplot() +
 
 ```
 
-We can see that mapping on the grid level with `rf_2` and `gb_1` gives us a better idea of the population density on a more granular level. In the `raster_pop_100` map we can only observe the overall pop-density per municipality. For example in the southern part we see there is some higher population density we did not see before when just looking at population density on the municipal level. We can conclude that the population density is the highest in the upper center of Quindio. From the earlier calculated RMSE we can tell that `rf_2` is the model with the best performance.
+We can see that mapping on the grid level with `rf_2` and `gb_1` gives us a better idea of the population density on a more granular level. In the `raster_pop_100` map we can only observe the overall pop-density per municipality. For example in the southern part we see there is some higher population density we did not see before when just looking at population density on the municipal level. We can conclude that the population density is the highest in the upper center of Quindio. From the earlier calculated RMSE we can tell that rf_2 is the model with the best performance.
 
 ***
