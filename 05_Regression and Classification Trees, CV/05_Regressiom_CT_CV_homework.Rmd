@@ -126,7 +126,9 @@ test <- voting %>% filter(train_index=="test")
 
 Next, we specify a formula and use the rpart package to create the tree from the test data. Thus, we partition the space spanned by input variables and fit a very simple piecewise linear function. The main tuning parameter complexity is set arbitrarily to cp=.005. After estimating the tree we call the rpart-object to get the splits and terminal nodes of the tree. When specifying the formula (to estimate the response within a bin), we do not include all variables since this would likely lead to overfitting.
 
+
 ```{r}
+#Sollten wir nicht ein anderes cp nehmen? Ist ja weird das wir "genau" das haben was uns auch das Caret empfiehlt. Aber ist sonst ok. Wäre zu viel Arbeit den ganzen Text zu ändern. Ansonsten siehts bis hierhin super aus!
 
 formula <- vote ~ age + male + satis_democ + left_right
 tree <- rpart(formula, data = train, cp=.005)
@@ -154,7 +156,7 @@ tuning_grid
 
 When we estimate the tree tuned with caret we get a similar tree to the one on the slides.
 
-```{r, warning = false}
+```{r}
 #A:
 tree_caret <- train(data = voting, formula , method = "rpart", trControl = control, tuneGrid = tuning_grid, metric = "ROC", na.action = na.pass)
 tree_caret
@@ -191,7 +193,7 @@ tree_caret_final <- tree_caret$finalModel
 rpart.plot(tree_caret_final, box.palette=party, nn=FALSE, type=2)
 
 ```
-Now look at the tree for using caret. As explained before when looking at the rpart-object we start in the root node (our positive class) and from there start going down to the next nodes concluding from the rules where the tree splits. As visulaized we end up with 10 terminal nodes and 9 splits. Here we also see the probability of the parties receiving a vote based on the splitting rules. For example take the terminal node SPÖ (11%) we get here by starting at the root node. The first split happens on whether the left_right self-placement is larger or equal to 5 if this is not the case (with a probability of 34% we are in the parent node SPÖ. From here if age is smaller 57 we end up in the terminal node SPÖ with a probability of 11%. 
+Now look at the tree for using caret. As explained before when looking at the rpart-object we start in the root node (our positive class) and from there start going down to the next nodes concluding from the rules where the tree splits. As visulaized we end up with 10 terminal nodes and 9 splits. Here we also see the probability of the parties receiving a vote based on the splitting rules. For example take the terminal node SPÖ (11%) we get here by starting at the root node. The first split happens on whether the left_right self-placement is larger or equal to 5 if this is not the case (with a probability of 34% we are in the parent node SPÖ. From here if age is larger than 57 we end up in the terminal node SPÖ with a probability of 11%. 
 
 
 # **Task 3** Confusion matrix
@@ -221,13 +223,13 @@ confusion
 
 ```
 
-Looking at the important measures of both models in the confusion matrix we see that in the model we estimated doing CV manually accuracy, kappa are as expected both slightly smaller. This indicates that the model we estimated using the caret package performs better! Considering the sensitivity and specificity we also see that the tree_caret performs better in the classes Greens, ÖVP and SPÖ than with the simple tree model. Also balanced accurcy improved in all classes.But in general in both models accuracy and kappa are not really high with only about 0.5027 and 0.3008. To get a better overview of the trade-off between the indicators of the confusion matrix we should look at ROC curves.
+Looking at the important measures of both models in the confusion matrix we see that in the model we estimated doing CV manually, both accuracy and kappa are as expected slightly smaller. This indicates that the model we estimated using the caret package performs better! Considering the sensitivity and specificity we also see that the tree_caret performs better in the classes Greens, ÖVP and SPÖ than with the simple tree model. Furthermore, balanced accurcy improved for all classes. In general the accuracy and kappa for both models are not really high, with only about 0.5027 and 0.3008 respectively. To get a better overview of the trade-off between the indicators of the confusion matrix we should look at ROC curves.
 
 **Regarding which two categories do you find the highest and lowest sensitivity?**
 We have the highest sensitivity or a vote outcome for FPÖ (model: tree_caret) with a probability of 57,89% and the lowest in Greens with a probability of 36,67%. 
 
 **How well would you judge the predictive performance of the model?**
-Given tha accuracy rate andf the kappa value the predictive performance of the model is not very good! (see above). Our tree just assigns a bit more than 50% of the votes to the true party. Also the no information rate is very high and clearly not significant to zero, therefore the tree does not estimate differently from a naive classifier.
+Given the accuracy rate and the kappa value the predictive performance of the model is not very good! (see above). Our tree just assigns a bit more than 50% of the votes to the true party. Also the no information rate is very high and clearly not significant from zero. Therefore, the tree does not estimate differently from a naive classifier.
 
 **What would be the "naive prediction" in such a multiclass prediction problem?**
 The naive prediction is that a voter votes for ÖVP (positive class).
