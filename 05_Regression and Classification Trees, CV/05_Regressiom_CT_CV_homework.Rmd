@@ -61,7 +61,7 @@ class(voting$vote)
 # For the last task we here already specify the ÖVP dummy variable!
 
 voting <- voting %>% mutate(vp = ifelse(vote == "ÖVP" , 1, 0), 
-                    vp_vote = factor(vp, labels = c("Not ÖVP","ÖVP")))
+                    vp_vote = factor(vp, labels = c("Yes","No")))
 ```
 
 # **Task 1** Classification tree using cross validation
