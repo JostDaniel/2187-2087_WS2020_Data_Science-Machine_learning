@@ -7,18 +7,24 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+
+library(devtools)
+# install_github("muuankarski/r.eusilc")    #zum data mergen
+library(r.eusilc)                           #zum data mergen
 ```
 
 # Load Data, modify & join (über country?)
 
 ```{r}
-library(dplyr)
-
 data_path = "."
 
 getwd()
-setwd("/Users/annevalder/Desktop/UNI /WU WIEN/WS20_21/2187-2087_WS2020_Data_Science-Machine_learning/01_Data Science Seminar Paper")
+#setwd("/Users/annevalder/Desktop/UNI /WU WIEN/WS20_21/2187-2087_WS2020_Data_Science-Machine_learning/01_Data Science Seminar Paper")
+```
 
+
+```{r}
 #Datensätze einlesen & bereinigen!
 ##1
 age_sex_input = read.csv(file.path(data_path, "Data", "Average Age Sex Adults", "ilc_lvps01_1_Data.csv"), skip = 14 ,col.names = c("Year", "Country", "Age", "Sex", "X", "weg"))
@@ -90,5 +96,10 @@ educ_transition_input = read.csv(file.path(data_path, "Data", "Transition of edu
 #educ_transition_input <- educ_transition_input %>% select(!c(b, Percentage) %>% mutate(Country = replace(Country,c(25:30), "Germany"))
 
 ```
-
+merge data with `r.eusilc` pkg
+<!--so macht man Kommentare in Rmd files die nicht im output landen-->
+<!--http://muuankarski.github.io/r.eusilc/vignettes/r.eusilc_tutorial.html-->
+```{r}
+merge_eusilc()
+```
 
