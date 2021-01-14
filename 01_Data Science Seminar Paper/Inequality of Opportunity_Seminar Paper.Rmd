@@ -36,30 +36,64 @@ library(fst)
 library(ranger)
 library(tuneRanger)
 library(xgboost)
+library(readr)
 ```
 # *1* Data Wrangling
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 data_path ="."
 getwd()
 hhi2019 <- read_sav(file.path(data_path,"wetransfer-a0b059", "hhi2019en_1.0.sav"))
-hse2019 <- read_sav(file.path(data_path,"wetransfer-a0b059", "hse2019en_1.0.sav"))
+#hse2019 <- read_sav(file.path(data_path,"wetransfer-a0b059", "hse2019en_1.0.sav"))
 wrk2019 <- read_sav(file.path(data_path,"wetransfer-a0b059", "wrk2019en_1.2.sav"))
 inc2019 <- read_sav(file.path(data_path,"wetransfer-a0b059", "inc2019en_1.0.sav"))
 
+write_csv(x = hhi2019, path = "hhi2019.csv" )
+hhi2019csv <- read.csv(file.path(data_path, "hhi2019.csv"))
+
 # hhi2019 %>% left_join(select(wrk2019 %>% select(c(nohhold,burgst, branche)), by = "nohhold"))
 
-sub_wrk2019 <- wrk2019 %>% select(c(nohhold,burgst, branche))
 
-sub_inc <- inc2019 %>% select(c(nohhold, ij161, in49a))
+write_csv(x = inc2019, path = "inc2019.csv" )
+inc2019csv <- read.csv(file.path(data_path, "inc2019.csv"))
+
+write_csv(x = wrk2019, path = "wrk2019.csv" )
+wrk2019csv <- read.csv(file.path(data_path, "wrk2019.csv"))
+
+sub_wrk2019csv <- wrk2019csv %>% select(c(nohhold,burgst, branche))
 
 
-join <- hhi2019 %>% left_join(sub_wrk2019, by ="nohhold")
-netherlands_survey_data <- join %>%  left_join(sub_inc, by = "nohhold")
+sub_inc2019csv <- inc2019csv %>% select(c(nohhold, ij161, in49a))
+
+
+join <- hhi2019csv %>% left_join(sub_wrk2019csv, by ="nohhold")
+netherlands_survey_data <- join %>%  left_join(sub_inc2019csv, by = "nohhold")
 
 summary(netherlands_survey_data) %>% head()
 
 # We decide to drop
 sum(is.na(netherlands_survey_data$in49a))
+
+netherlands_survey_clean <- netherlands_survey_data %>% as_data_frame()  %>% drop_na(in49a)
+
+
+netherlands_survey_clean <- netherlands_survey_clean %>% mutate( 
+                    #drop_na(in49a),
+                    income_K = (in49a/1000),
+                    age = as.numeric(2019 - gebjaar)) %>% 
+                    rename(
+                          "household_ID" = nohhold,
+                          "birthyear" = gebjaar,
+                          "gender" = geslacht,
+                          "educ" = oplmet,
+                          "occupation" = bezighei,
+                          "num_hhold_memb" = aantalhh,
+                          "num_hhold_children" = aantalki,
+                          "urbanization" =  sted,
+                          "region"= regio,
+                          "hhold_type" = woonvorm,
+                          "tenancy" = woning,
+                          "industry" = branche,
+                         )
 
 ```
 # **Research Question**
@@ -81,8 +115,35 @@ Inheritance? If yes then: Inheritance of 100,000 or 500,000 should make sense: (
 
 Questionaire on Accommodation and mortgages: tenancy status (WO1)
 
-What we dont have is migration status, number of wokring adults in households, managerial position of father/mother
+What we dont have is migration status, number of working adults in households, managerial position of father/mother.
+Further we do not have indicators on the educational endowment of the parents of the questioned individuals. 
 
 # **Results**
+```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
+set.seed(123)
 
+netherlands_survey_clean <- netherlands_survey_clean %>%
+  mutate(train_index = sample(c("train", "test"), nrow(netherlands_survey_clean), replace=TRUE, prob=c(0.85, 0.15)))
+
+train <- netherlands_survey_clean %>% filter(train_index=="train")
+test <- netherlands_survey_clean %>% filter(train_index=="test")
+
+formula <- income_K  ~gender + educ + occupation + num_hhold_memb + num_hhold_children +  urbanization + region + hhold_type + tenancy + industry
+
+tree <- rpart(formula, data = train, cp=.01)
+
+tree
+
+rpart.plot(tree, nn=FALSE, type=2)
+
+```
+```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
+control <- trainControl(method = "repeatedcv", number = 10, repeats = 10, savePredictions = T, classProbs = T, summaryFunction = multiClassSummary)
+
+tuning_grid <- expand.grid(cp = seq(0, 0.02, by= 0.005))
+tuning_grid
+
+tree_caret <- train(data = netherlands_survey_clean, formula , method = "rpart", trControl = control, tuneGrid = tuning_grid, metric = "Accuracy", na.action = na.pass)
+tree_caret
+```
 # **Conclusion**
