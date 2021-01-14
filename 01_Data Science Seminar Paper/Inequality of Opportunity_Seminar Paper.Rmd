@@ -39,22 +39,17 @@ library(ranger)
 library(tuneRanger)
 library(xgboost)
 library(readr)
-library(e1071)
 ```
 # **Data Wrangling**
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 data_path ="."
 getwd()
 hhi2019 <- read_sav(file.path(data_path,"wetransfer-a0b059", "hhi2019en_1.0.sav"))
-#hse2019 <- read_sav(file.path(data_path,"wetransfer-a0b059", "hse2019en_1.0.sav"))
 wrk2019 <- read_sav(file.path(data_path,"wetransfer-a0b059", "wrk2019en_1.2.sav"))
 inc2019 <- read_sav(file.path(data_path,"wetransfer-a0b059", "inc2019en_1.0.sav"))
 
 write_csv(x = hhi2019, path = "hhi2019.csv" )
 hhi2019csv <- read.csv(file.path(data_path, "hhi2019.csv"))
-
-# hhi2019 %>% left_join(select(wrk2019 %>% select(c(nohhold,burgst, branche)), by = "nohhold"))
-
 
 write_csv(x = inc2019, path = "inc2019.csv" )
 inc2019csv <- read.csv(file.path(data_path, "inc2019.csv"))
@@ -63,19 +58,15 @@ write_csv(x = wrk2019, path = "wrk2019.csv" )
 wrk2019csv <- read.csv(file.path(data_path, "wrk2019.csv"))
 
 sub_wrk2019csv <- wrk2019csv %>% select(c(nohhold,burgst, branche))
-
-
 sub_inc2019csv <- inc2019csv %>% select(c(nohhold, ij161, in49a))
-
 
 join <- hhi2019csv %>% left_join(sub_wrk2019csv, by ="nohhold")
 netherlands_survey_data <- join %>%  left_join(sub_inc2019csv, by = "nohhold")
 
 summary(netherlands_survey_data) %>% head()
 
-# We decide to drop
-sum(is.na(netherlands_survey_data$in49a))
 
+sum(is.na(netherlands_survey_data$in49a))
 netherlands_survey_clean <- netherlands_survey_data %>% as_data_frame()  %>% drop_na(in49a)
 
 
@@ -97,7 +88,6 @@ netherlands_survey_clean <- netherlands_survey_clean %>% mutate(
                           "tenancy" = woning,
                           "industry" = branche)
                           
-#netherlands_survey_clean$income_K <- as.factor(netherlands_survey_clean$income_K)                         
 ```
 # **Research Question**
 The selection of circumstances is a key aspect for an empirical analysis of inequality of opportunity, because estimates have been shown to be sensitive to the number of types considered [@brunori20].
@@ -167,33 +157,6 @@ rpart.plot(Rtree, nn=FALSE, type=2)
 ```
 
 
-
-
-
-```{r message=FALSE, error=FALSE, warning=FALSE,  eval=FALSE}
-test$prediction_Rtree <- predict(Rtree, newdata = test, type = c())
-
-test$prediction_Rtree <- as.factor(test$prediction_Rtree)
-test$income_K <- as.factor(test$income_K)
-
-class(test$income_K)
-class(test$prediction_Rtree)
-
-confusionR <- confusionMatrix(test$income_K, test$prediction_Rtree, mode="sens_spec")
-confusionR
-
-
-summary(test$prediction_Rtree)
-summary(test$income_K)
-
-
-test$prediction_Rtree <- predict(Rtree, newdata = test, type = c("class"))
-confusionR <- confusionMatrix(test$vote, test$prediction_Rtree,positive = "ÖVP", mode="sens_spec")
-confusionR
-
-
-```
-
 ```{r message=FALSE, error=FALSE, warning=FALSE, eval=FALSE}
 control <- trainControl(method = "repeatedcv", number = 10, repeats = 10, savePredictions = T, classProbs = T, summaryFunction = multiClassSummary)
 
@@ -203,7 +166,6 @@ tuning_grid
 tree_caret <- train(data = netherlands_survey_clean, formula , method = "rpart", trControl = control, tuneGrid = tuning_grid, metric = "Accuracy", na.action = na.pass)
 tree_caret
 ```
-
 
 
 # **Conditional inference tree**
