@@ -1,0 +1,62 @@
+---
+title: "Equality of Opportunity Seminar Paper"
+author: "Leonard Fidlin, Daniel Jost, Anne Valder"
+date: "14 1 2021"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 2
+    number_sections: false
+subtitle: Data Science and Machine Learning 2187 & 2087
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(include = TRUE)
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(error = TRUE)
+knitr::opts_chunk$set(fig.align = 'center')
+```
+
+# **Introduction**
+```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
+library(rpart)
+library(rpart.plot) 
+library(precrec)
+library(caret)       
+library(party)
+library(tidyverse)
+library(vcd)
+library(RColorBrewer)
+library(knitr)
+library(glmnet)  
+library(haven)
+library(fst)
+library(ranger)
+library(tuneRanger)
+library(xgboost)
+```
+
+
+# **Research Question**
+The selection of circumstances is a key aspect for an empirical analysis of inequality of opportunity, because estimates have been shown to be sensitive to the number of types considered. (Brunori 2020).
+
+
+# **Data & Method**
+Brunori choose the circumstances based on the data quality in their survey data. Opting for fewer missing entries in each catetgory than other characteristics. In their German focused paper they use: sex, migration background, resident in either East or West Germany (not important for our Dutch sample), Father's and Mother's education and training, Father's and Mother's occupation measured by the ISCO code, number of siblings, and an indicator of dissability. Their sample is further restricted to ages 30-60.
+In their "original" EU-SILC data paper the use the following circumstances which we could find in the Dutch data: 
+
+General Household Information:
+Respondents sex (male, female) (GESLACHT), number of household members (AANTALHH), number of children in the household (AANTALKI), Highest level of education completed (OPLMET), primary occupation of the respondent (BEZIGHEI), type of accommodation (WONING).
+
+Questionaire Household and Work:
+Marital Status (BURGST), Father/Mother main occupation/job (BRANCHE), 
+
+Total Gross Income Category (IJ16BR thru IJ16BR3), Total Net income of household (INKHH)
+Inheritance? If yes then: Inheritance of 100,000 or 500,000 should make sense: (HER2), (HER3)
+
+
+# **Results**
+
+# **Conclusion**
