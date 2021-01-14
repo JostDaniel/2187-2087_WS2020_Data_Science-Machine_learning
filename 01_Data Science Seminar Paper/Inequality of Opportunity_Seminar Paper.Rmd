@@ -38,6 +38,7 @@ library(ranger)
 library(tuneRanger)
 library(xgboost)
 library(readr)
+library(e1071)
 ```
 # **Data Wrangling**
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
@@ -93,9 +94,9 @@ netherlands_survey_clean <- netherlands_survey_clean %>% mutate(
                           "region"= regio,
                           "hhold_type" = woonvorm,
                           "tenancy" = woning,
-                          "industry" = branche,
-                         )
-
+                          "industry" = branche)
+                          
+#netherlands_survey_clean$income_K <- as.factor(netherlands_survey_clean$income_K)                         
 ```
 # **Research Question**
 The selection of circumstances is a key aspect for an empirical analysis of inequality of opportunity, because estimates have been shown to be sensitive to the number of types considered [@brunori20].
@@ -164,6 +165,29 @@ tree <- rpart(formula, data = train, cp=.01)
 tree
 
 rpart.plot(tree, nn=FALSE, type=2)
+```
+
+```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
+test$prediction_tree <- predict(tree, newdata = test, type = c())
+
+test$prediction_tree <- as.factor(test$prediction_tree)
+test$income_K <- as.factor(test$income_K)
+
+class(test$income_K)
+ class(test$prediction_tree)
+
+confusion <- confusionMatrix(test$income_K, test$prediction_tree, mode="sens_spec")
+confusion
+
+
+summary(test$prediction_tree)
+summary(test$income_K)
+
+
+test$prediction_tree <- predict(tree, newdata = test, type = c("class"))
+confusion <- confusionMatrix(test$vote, test$prediction_tree,positive = "ÖVP", mode="sens_spec")
+confusion
+
 
 ```
 
