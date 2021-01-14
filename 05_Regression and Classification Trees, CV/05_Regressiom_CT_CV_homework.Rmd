@@ -33,6 +33,7 @@ library(vcd)
 library(RColorBrewer)
 library(knitr)
 library(glmnet)     
+
 ```
 
 Here we set the relative working directory and read in the voting data set. After inspecting the data we clean it by mutating and renaming some of the variables we want to use now & later on. On top, we change w1_q24 (prospective party choice) our dependent variable to a factor and rename it. 

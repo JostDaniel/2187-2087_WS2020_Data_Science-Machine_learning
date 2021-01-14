@@ -37,8 +37,31 @@ library(ranger)
 library(tuneRanger)
 library(xgboost)
 ```
+# *1* Data Wrangling
+```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
+data_path ="."
+getwd()
+hhi2019 <- read_sav(file.path(data_path,"wetransfer-a0b059", "hhi2019en_1.0.sav"))
+hse2019 <- read_sav(file.path(data_path,"wetransfer-a0b059", "hse2019en_1.0.sav"))
+wrk2019 <- read_sav(file.path(data_path,"wetransfer-a0b059", "wrk2019en_1.2.sav"))
+inc2019 <- read_sav(file.path(data_path,"wetransfer-a0b059", "inc2019en_1.0.sav"))
+
+# hhi2019 %>% left_join(select(wrk2019 %>% select(c(nohhold,burgst, branche)), by = "nohhold"))
+
+sub_wrk2019 <- wrk2019 %>% select(c(nohhold,burgst, branche))
+
+sub_inc <- inc2019 %>% select(c(nohhold, ij161, in49a))
 
 
+join <- hhi2019 %>% left_join(sub_wrk2019, by ="nohhold")
+netherlands_survey_data <- join %>%  left_join(sub_inc, by = "nohhold")
+
+summary(netherlands_survey_data) %>% head()
+
+# We decide to drop
+sum(is.na(netherlands_survey_data$in49a))
+
+```
 # **Research Question**
 The selection of circumstances is a key aspect for an empirical analysis of inequality of opportunity, because estimates have been shown to be sensitive to the number of types considered. (Brunori 2020).
 
@@ -53,9 +76,12 @@ Respondents sex (male, female) (GESLACHT), number of household members (AANTALHH
 Questionaire Household and Work:
 Marital Status (BURGST), Father/Mother main occupation/job (BRANCHE), 
 
-Total Gross Income Category (IJ16BR thru IJ16BR3), Total Net income of household (INKHH)
+Total Gross Income Category (IJ161BR thru IJ16BR3), Total Net income of household (INKHH)
 Inheritance? If yes then: Inheritance of 100,000 or 500,000 should make sense: (HER2), (HER3)
 
+Questionaire on Accommodation and mortgages: tenancy status (WO1)
+
+What we dont have is migration status, number of wokring adults in households, managerial position of father/mother
 
 # **Results**
 
