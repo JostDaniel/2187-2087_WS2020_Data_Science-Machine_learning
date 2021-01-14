@@ -157,7 +157,6 @@ netherlands_survey_clean <- netherlands_survey_clean %>%
 train <- netherlands_survey_clean %>% filter(train_index=="train")
 test <- netherlands_survey_clean %>% filter(train_index=="test")
 
-<<<<<<< HEAD
 formula <- income_K  ~gender + educ + occupation + num_hhold_memb + num_hhold_children +  urbanization + region + hhold_type + tenancy + industry
 
 tree <- rpart(formula, data = train, cp=.01)
@@ -167,7 +166,8 @@ tree
 rpart.plot(tree, nn=FALSE, type=2)
 
 ```
-```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
+
+#```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 control <- trainControl(method = "repeatedcv", number = 10, repeats = 10, savePredictions = T, classProbs = T, summaryFunction = multiClassSummary)
 
 tuning_grid <- expand.grid(cp = seq(0, 0.02, by= 0.005))
