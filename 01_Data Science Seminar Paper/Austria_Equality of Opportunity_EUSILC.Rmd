@@ -24,6 +24,7 @@ knitr::opts_chunk$set(fig.align = 'center')
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 library(rpart)
 library(rpart.plot) 
+library(precrec)
 library(caret)       
 library(party)
 library(partykit)
@@ -32,6 +33,7 @@ library(vcd)
 library(RColorBrewer)
 library(knitr)
 library(glmnet)  
+library(haven)
 library(fst)
 library(ranger)
 library(tuneRanger)
@@ -39,10 +41,19 @@ library(xgboost)
 library(readr)
 ```
 # **Data Wrangling**
+We use the EU-SILC data from 2011 as it was the survey when additionally there were questions on inter-generational transmission. These were questions on the parents of the respondents. We want to see, whether it is possible using only the information given about the parents to predict the correct income of the respondents and what the outstanding circumstances are for the trees we grow.
+
+The unique identifier used in all  four data sets is the household ID identifier: RX030 in the Personal Register, PX030 in the Personal Data, DB030 in the Household Register, and HB030 in the Household Data file.
+
+We use the following variables for circumstances: Respondent's sex (PB150), Respondent's country of birth (Citizenship? PB220A), Presence of parents at home (PT010), Number of adults (18 or older) in respondents household (PT020), Number of working adults (18 or older) in respondents household (PT030), Father/Mother country of birth and citizenship (PT060, PT070, PT090, PT100), Father/mother education (PT110, PT120), Father/mother occupational status (PT130, PT160), Father/mother main occupation (PT150,PT180), Managerial position of father/mother(PT140,PT170), Tenancy status of the house in which respondent was living as a child (PT210).
+
+Outcome Variables i.e. Income: Total Household gross income (HY010), Total Disposable Income (HY020), Dwelling Type (HH010), Housing (HH030).
+
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 data_path ="."
 getwd()
 
-personal_data <- read.csv(file.path(data_path, "AT_2011_EUSILC", "AT_2011p_EUSILC"))
+persnal_data <- read.csv(file.path(data_path, "AT_2011p_EUSILC.csv"))
+household_data <- read.csv(file.path(data_path, "AT_2011h_EUSILC.csv"))
 
 ```
