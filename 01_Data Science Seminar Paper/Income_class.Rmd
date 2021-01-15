@@ -225,7 +225,7 @@ confusion
 
 # **Decision tree caret**
 
-```{r message=FALSE, error=FALSE, warning=FALSE,  eval=FALSE}
+```{r message=FALSE, error=FALSE, warning=FALSE,  eval=TRUE}
 control <- trainControl(method = "repeatedcv", number = 10, repeats = 10, savePredictions = T, classProbs = T, summaryFunction = multiClassSummary)
 
 tuning_grid <- expand.grid(cp = seq(0, 0.02, by= 0.001))
@@ -236,7 +236,7 @@ tree_caret
 ```
 # **Decision tree caret Confusion matrix**
 
-```{r message=FALSE, error=FALSE, warning=FALSE,  eval=FALSE}
+```{r message=FALSE, error=FALSE, warning=FALSE,  eval=TRUE}
 test$prediction_tree_caret <- predict.train(tree_caret, newdata = test, type = c("raw"), na.action = na.rpart)
 
 levels(test$prediction_tree_caret)
@@ -247,14 +247,14 @@ confusion2
 ```
 
 # **Decision tree caret plot 1**
-```{r message=FALSE, error=FALSE, warning=FALSE,  eval=FALSE}
+```{r message=FALSE, error=FALSE, warning=FALSE,  eval=TRUE}
 
 tree_caret_final <- tree_caret$finalModel
 rpart.plot(tree_caret_final, nn=FALSE, type=2)
 ```
 
 # **Decision tree caret plot 1**
-```{r message=FALSE, error=FALSE, warning=FALSE,  eval=FALSE}
+```{r message=FALSE, error=FALSE, warning=FALSE,  eval=TRUE}
 
 plot(tree_caret)
 plotcp(tree)
@@ -279,7 +279,7 @@ plot(Ctree)
 dev.off()
 ```
 
-```{r message=FALSE, warning=FALSE, eval=FALSE}
+```{r message=FALSE, warning=FALSE, eval=TRUE}
 test2$prediction_Ctree <- predict(Ctree, newdata = test2, type = c())
 
 test2$prediction_Ctree <- as.factor(test2$prediction_Ctree)
@@ -288,8 +288,8 @@ test2$income_K <- as.factor(test2$income_K)
 class(test2$income_K)
 class(test2$prediction_Ctree)
 
-confusionR <- confusionMatrix(test2$income_K, test2$prediction_Ctree, mode="sens_spec")
-confusionR
+#confusionR <- confusionMatrix(test2$income_K, test2$prediction_Ctree, mode="sens_spec")
+#confusionR
 ```
 
 
