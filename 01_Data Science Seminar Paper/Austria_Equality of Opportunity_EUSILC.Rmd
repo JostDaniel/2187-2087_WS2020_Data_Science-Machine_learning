@@ -1,0 +1,48 @@
+---
+title: "Equality of Opportunity Seminar Paper"
+author: "Leonard Fidlin, Daniel Jost, Anne Valder"
+date: "14 1 2021"
+bibliography: bibliography.bib
+output: 
+  html_document:
+    toc: true
+    toc_depth: 2
+    number_sections: false
+subtitle: Data Science and Machine Learning 2187 & 2087
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(include = TRUE)
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(error = TRUE)
+knitr::opts_chunk$set(fig.align = 'center')
+```
+
+# **Introduction**
+```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
+library(rpart)
+library(rpart.plot) 
+library(caret)       
+library(party)
+library(partykit)
+library(tidyverse)
+library(vcd)
+library(RColorBrewer)
+library(knitr)
+library(glmnet)  
+library(fst)
+library(ranger)
+library(tuneRanger)
+library(xgboost)
+library(readr)
+```
+# **Data Wrangling**
+```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
+data_path ="."
+getwd()
+
+personal_data <- read.csv(file.path(data_path, "AT_2011_EUSILC", "AT_2011p_EUSILC"))
+
+```
