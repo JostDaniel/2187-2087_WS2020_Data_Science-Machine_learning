@@ -65,23 +65,98 @@ household_data <- household_data %>% rename("PX030" = HB030)
 equality_data <- personal_data %>%  left_join(household_data, by = "PX030")
 
 # Renaming important variables for readability of tree
-equality_data <- equality_data %>% 
+equality_data <- equality_data %>% mutate(
+  
+  income_k = (HY010/1000)) %>% 
   rename("Sex" = PB150,
          "Citizenship" = PB220A,
-         "Parents Present" = PT010,
-         "Adults at home" = PT020, 
-         "Working Adults" = PT030,
-         "Father CoB" = PT060,
-         "Father Cit" = PT070,
-         "Mother CoB" = PT090,
-         "Mother Cit" = PT100,
-         "Father Educ" = PT110,
-         "Mother Educ" = PT120,
-         "Father Occup Stat" = PT130,
-         "Mother Occup Stat" = PT160,
-         "Father Main Occup" = PT150,
-         "Mother Main Occup" = PT180,
-         "Father Manag" = PT140,
-         "Mother Manag" = PT170,
+         "Parents_Present" = PT010,
+         "Adults_home" = PT020, 
+         "Working_Adults" = PT030,
+         "Father_CoB" = PT060,
+         "Father_Cit" = PT070,
+         "Mother_CoB" = PT090,
+         "Mother_Cit" = PT100,
+         "Father_Educ" = PT110,
+         "Mother_Educ" = PT120,
+         "Father_Occup_Stat" = PT130,
+         "Mother_Occup_Stat" = PT160,
+         "Father_Main_Occup" = PT150,
+         "Mother_Main_Occup" = PT180,
+         "Father_Manag" = PT140,
+         "Mother_Manag" = PT170,
          "Tenancy" = PT210,)
 ```
+# **Method**: Conditional Inference Trees
+
+* `ctree` from party package in R
+* recursive partitioning just like `rpart`
+* `rpart`: maximizing an information measure
+* `ctree`: significance test procedure
+
+### Advantages
+
+**Advantages of Trees:** straightforward to interpret
+
+**Advantages of Trees over linear regression models:** very large set of observations can be used & model speciﬁcation is no longer exogenously given
+
+**Advantages of Conditional Inference Trees over Regression and Classification Trees (CART):** the algorithm automatically provides a test for the null hypothesis of equality of opportunity & prevents overfitting while CART "cannot distinguish between a significant and an insignificant improvement in the information measure" (Mingers 1987, as cited in @hot, 2) & consider the distributional properties of the measures.
+
+
+### Procedure 
+
+The algorithm follows a stepwise procedure [@brunori20, 7-8]:
+
+1. **Choose confidence level**
+2. **Choose feature:** test all the null hypotheses of independence between the individual outcome and each of all the observable circumstances
+    i) no hypothesis can be rejected: stop
+    ii) one or more circumstance is siginificant: select the circumstance with the smallest p-value and proceed
+3. **Choose split:** for every possible way the selected circumstance can divide the sample into two subgroups, test the hypothesis of same mean outcome in the two resulting subgroups. Choose the splitting point with the smallest p-value
+4. **Repeat :)**
+
+
+# **Results**
+```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
+set.seed(123)
+
+equality_data <- equality_data %>%
+  mutate(train_index = sample(c("train", "test"), nrow(equality_data), replace=TRUE, prob=c(0.85, 0.15)))
+
+train <- equality_data %>% filter(train_index=="train")
+test <- equality_data %>% filter(train_index=="test")
+
+formula <- income_k ~ Sex + Citizenship + Parents_Present + Adults_home + Father_CoB + Father_Cit + Mother_CoB + Mother_Cit + Father_Educ + Mother_Educ + Father_Occup_Stat + Mother_Occup_Stat + Father_Main_Occup + Mother_Main_Occup + Father_Manag + Mother_Manag + Tenancy
+
+tree <- rpart(formula, data = train, cp=.001)
+
+tree
+
+rpart.plot(tree, box.palette="RdBu", nn=FALSE, type=2)
+
+```
+*Confusion Matrix
+```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
+test$prediction_tree <- predict(tree, newdata = test, type = c("matrix"))
+
+class(test$prediction_tree)
+levels(test$prediction_tree)
+
+confusion <- confusionMatrix(test$income_k, test$prediction_tree, mode="everything")
+confusion
+```
+
+```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
+control <- trainControl(method = "repeatedcv", number = 10, repeats = 10, savePredictions = T, classProbs = T, summaryFunction = multiClassSummary)
+
+tuning_grid <- expand.grid(cp = seq(0, 0.02, by= 0.005))
+tuning_grid
+
+tree_caret <- train(data = equality_data, formula, method = "rpart", trControl = control, tuneGrid = tuning_grid, metric = "Accuracy", na.action = na.pass)
+tree_caret
+```
+# **Conclusion**
+=======
+# **Conclusion**
+
+# **References**
+>>>>>>> 8860f3d4dd72f45073c60dda2f3226dd505e53a1
