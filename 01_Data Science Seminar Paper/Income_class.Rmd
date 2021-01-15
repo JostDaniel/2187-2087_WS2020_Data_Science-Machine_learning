@@ -65,7 +65,7 @@ wrk2019csv <- read.csv(file.path(data_path, "wrk2019.csv"))
 # Creating subsamples of the datasets containing only the variables we will need.
 
 sub_wrk2019csv <- wrk2019csv %>% select(c(nohhold,burgst, branche))
-sub_inc2019csv <- inc2019csv %>% select(c(nohhold, ij161, in50))
+sub_inc2019csv <- inc2019csv %>% select(c(nohhold, ij161, in50, in49a))
 
 # Joining the data to the general information on the household dataset
 
@@ -78,7 +78,8 @@ summary(netherlands_survey_data) %>% head()
 # We decide to drop the NAs 
 sum(is.na(netherlands_survey_data$in50))
 
-netherlands_survey_clean <- netherlands_survey_data %>% as_data_frame()  %>% drop_na(in50)
+netherlands_survey_clean <- netherlands_survey_data %>% as_data_frame()  %>% drop_na(in50)  
+netherlands_survey_clean_2 <- netherlands_survey_data %>% as_data_frame() %>% drop_na(in49a)
 
 # mutation and renaming of some of our exxplanatory variables 
 
@@ -86,7 +87,8 @@ netherlands_survey_clean <- netherlands_survey_clean %>% mutate(
                     #drop_na(in49a),
                     #income_K = (in50/1000),
                     age = as.numeric(2019 - gebjaar),
-                    income  = as.factor(in50)) %>% 
+                    income  = as.factor(in50),
+                     income_K = (in49a/1000)) %>% 
                     rename(
                           "household_ID" = nohhold,
                           "birthyear" = gebjaar,
@@ -106,6 +108,24 @@ summary(netherlands_survey_clean) %>% head()
 # changing to "readable" classes
 levels(netherlands_survey_clean$income)
 levels(netherlands_survey_clean$income) <- c("first_class", "second_class", "third_class", "fourth_class", "fifth_class", "sixth_class", "seventh_class", "eigth_class", "ninth_class", "tenth_class", "eleventh_class" )
+
+# different income variable for ctree
+netherlands_survey_clean2 <- netherlands_survey_clean_2 %>% mutate( 
+                    age = as.numeric(2019 - gebjaar),
+                     income_K = (in49a/1000)) %>% 
+                    rename(
+                          "household_ID" = nohhold,
+                          "birthyear" = gebjaar,
+                          "gender" = geslacht,
+                          "educ" = oplmet,
+                          "occupation" = bezighei,
+                          "num_hhold_memb" = aantalhh,
+                          "num_hhold_children" = aantalki,
+                          "urbanization" =  sted,
+                          "region"= regio,
+                          "hhold_type" = woonvorm,
+                          "tenancy" = woning,
+                          "industry" = branche)
 ```
 
 # **Research Question**
@@ -168,6 +188,16 @@ netherlands_survey_clean <- netherlands_survey_clean %>%
 train <- netherlands_survey_clean %>% filter(train_index=="train")
 test <- netherlands_survey_clean %>% filter(train_index=="test")
 
+
+netherlands_survey_clean2 <- netherlands_survey_clean2 %>%
+  mutate(train_index = sample(c("train", "test"), nrow(netherlands_survey_clean2), replace=TRUE, prob=c(0.85, 0.15)))
+
+train2 <- netherlands_survey_clean2 %>% filter(train_index=="train")
+test2 <- netherlands_survey_clean2 %>% filter(train_index=="test")
+
+```
+
+```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 formula <- income  ~ gender + educ + occupation  + num_hhold_children +  urbanization + region + hhold_type + tenancy + industry + age
 
 tree <- rpart(formula, data = train, cp=.01)
@@ -229,3 +259,40 @@ rpart.plot(tree_caret_final, nn=FALSE, type=2)
 plot(tree_caret)
 plotcp(tree)
 ```
+
+# **Conditional inference tree**
+
+```{r}
+formula2 <- income_K  ~ gender + educ + occupation  + num_hhold_children +  urbanization + region + hhold_type + tenancy + industry + age
+
+Ctree <- ctree(formula2, data = train2)
+Ctree
+
+plot(Ctree, gp = gpar(fontsize = 4),
+  inner_panel=node_inner,
+  ip_args=list(id = FALSE))
+```
+
+```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+png("Ctree.png", res=80, height=800, width=1600) 
+plot(Ctree)
+dev.off()
+```
+
+```{r message=FALSE, warning=FALSE, eval=FALSE}
+test2$prediction_Ctree <- predict(Ctree, newdata = test2, type = c())
+
+test2$prediction_Ctree <- as.factor(test2$prediction_Ctree)
+test2$income_K <- as.factor(test2$income_K)
+
+class(test2$income_K)
+class(test2$prediction_Ctree)
+
+confusionR <- confusionMatrix(test2$income_K, test2$prediction_Ctree, mode="sens_spec")
+confusionR
+```
+
+
+# **Conclusion**
+
+# **References**
