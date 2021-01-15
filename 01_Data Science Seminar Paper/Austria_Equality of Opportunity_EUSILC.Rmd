@@ -50,10 +50,38 @@ We use the following variables for circumstances: Respondent's sex (PB150), Resp
 Outcome Variables i.e. Income: Total Household gross income (HY010), Total Disposable Income (HY020), Dwelling Type (HH010), Housing (HH030).
 
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
+# setting the data path
 data_path ="."
 getwd()
 
-persnal_data <- read.csv(file.path(data_path, "AT_2011p_EUSILC.csv"))
+# accessing the data
+personal_data <- read.csv(file.path(data_path, "AT_2011p_EUSILC.csv"))
 household_data <- read.csv(file.path(data_path, "AT_2011h_EUSILC.csv"))
 
+# change the name of the identifier variable
+household_data <- household_data %>% rename("PX030" = HB030)
+
+# joining the data
+equality_data <- personal_data %>%  left_join(household_data, by = "PX030")
+
+# Renaming important variables for readability of tree
+equality_data <- equality_data %>% 
+  rename("Sex" = PB150,
+         "Citizenship" = PB220A,
+         "Parents Present" = PT010,
+         "Adults at home" = PT020, 
+         "Working Adults" = PT030,
+         "Father CoB" = PT060,
+         "Father Cit" = PT070,
+         "Mother CoB" = PT090,
+         "Mother Cit" = PT100,
+         "Father Educ" = PT110,
+         "Mother Educ" = PT120,
+         "Father Occup Stat" = PT130,
+         "Mother Occup Stat" = PT160,
+         "Father Main Occup" = PT150,
+         "Mother Main Occup" = PT180,
+         "Father Manag" = PT140,
+         "Mother Manag" = PT170,
+         "Tenancy" = PT210,)
 ```
