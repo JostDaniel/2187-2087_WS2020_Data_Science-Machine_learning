@@ -1,0 +1,99 @@
+---
+title: "AT2019 Data Wrangling"
+author: "Daniel Jost"
+date: "1/31/2021"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 2
+    number_sections: false
+subtitle: Data Science and Machine Learning 2187 & 2087
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(error = TRUE)
+knitr::opts_chunk$set(fig.align = 'center')
+```
+
+# **Introduction**
+```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
+library(tidyverse)
+library(readr)
+library(rpart)
+
+# library(rpart.plot) 
+# library(precrec)
+# library(caret)       
+# library(party)
+# library(partykit)
+# library(vcd)
+# library(RColorBrewer)
+# library(knitr)
+# library(glmnet)  
+# library(haven)
+# library(fst)
+# library(ranger)
+# library(tuneRanger)
+# library(xgboost)
+```
+# **Data Wrangling**
+
+
+
+```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
+# setting the data path
+data_path ="./AT2019"
+
+# accessing the data
+data19_p <- read.csv(file.path(data_path, "p_silc2019_ext.csv"), sep = ";")  # personal data
+# data19_pID <- read.csv(file.path(data_path, "id_schluessel_r_ext.csv"), sep = ";")  # personal ID
+# data19_h <- read.csv(file.path(data_path, "h_silc2019_ext.csv"), sep = ";")  # household data
+# data19_hID <- read.csv(file.path(data_path, "id_schluessel_d_ext.csv"), sep = ";")  # household ID
+
+# Renaming important variables for readability of tree
+data19 <- data19_p %>% 
+  select(sex, P038004, P110000nu, P111010nu, alter, M009010, M010000, M014000, M016000, M017000, M020010, M021000, M025000, M027000, M028000, M004000, M001300, M001510, M003100) %>% 
+  rename("inc_net" = P038004,               # net income
+         "birth" = P110000nu,               # country of birth
+         "citizenship" = P111010nu,         # citizenship
+         "age" = alter,
+         
+         #"father_birth" = ????,            # country of birth of father at age 14
+         "father_cit" = M009010,            # citizenship of father at age 14
+         "father_edu" = M010000,            # education of father at age 14
+         "father_act" = M014000,            # occupational status of father at age 14
+         "father_occup" = M016000,          # main occupation of father at age 14
+         "father_manag" = M017000,          # managerial position of father at age 14
+         #"mother_birth" = ????,            # country of birth of mother at age 14
+         "mother_cit" = M020010,            # citizenship of mother at age 14
+         "mother_edu" = M021000,            # education of mother at age 14
+         "mother_act" = M025000,            # occupational status of mother at age 14
+         "mother_occup" = M027000,          # main occupation of mother at age 14
+         "mother_manag" = M028000,          # managerial position of mother at age 14
+         "tenancy" = M004000,               # tenancy at age 14
+         "children" = M001300,              # number of children (under 18) in respondent’s household at age 14
+         "adults" = M001510,                # number of adults (aged 18 or more) in respondent’s household
+         "adults_working" = M003100) %>%    # number of working adults (aged 18 or more) in respondent’s household
+  mutate("inc_net_log" = log(inc_net))      # logged net income
+
+  # Included but not renamed:  sex
+```
+
+```{r}
+formula = inc_net_log ~ birth + citizenship + father_cit + father_edu + father_act + father_occup + father_manag + mother_cit + mother_edu + mother_act + mother_occup + mother_manag + tenancy + children + adults + adults_working
+
+data19 <- data19 %>%
+  mutate(train_index = sample(c("train", "test"), nrow(data19), replace=TRUE, prob=c(0.8, 0.2)))
+
+train <- data19 %>% filter(train_index=="train")
+test <- data19 %>% filter(train_index=="test")
+
+tree <- rpart(formula, data = train, cp=.002)
+tree
+
+rpart.plot(tree, box.palette="RdBu", nn=FALSE, type=2)
+
+```
+
