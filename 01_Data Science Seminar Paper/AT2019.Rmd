@@ -17,13 +17,18 @@ knitr::opts_chunk$set(error = TRUE)
 knitr::opts_chunk$set(fig.align = 'center')
 ```
 
-# **Introduction**
+**Libraries**
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 library(tidyverse)
-library(readr)
-library(rpart)
+library(readr)          # import
 
-# library(rpart.plot) 
+library(rpart)          # regression trees
+library(rpart.plot)     # regression tree plots
+
+library(summarytools)   # summary statistics
+
+library(party)          # ctree
+
 # library(precrec)
 # library(caret)       
 # library(party)
@@ -38,10 +43,8 @@ library(rpart)
 # library(tuneRanger)
 # library(xgboost)
 ```
-# **Data Wrangling**
 
-
-
+**Data import**
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 # setting the data path
 data_path ="./AT2019"
@@ -51,14 +54,17 @@ data19_p <- read.csv(file.path(data_path, "p_silc2019_ext.csv"), sep = ";")  # p
 # data19_pID <- read.csv(file.path(data_path, "id_schluessel_r_ext.csv"), sep = ";")  # personal ID
 # data19_h <- read.csv(file.path(data_path, "h_silc2019_ext.csv"), sep = ";")  # household data
 # data19_hID <- read.csv(file.path(data_path, "id_schluessel_d_ext.csv"), sep = ";")  # household ID
+```
 
+**Data Wrangling**
+```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 # Renaming important variables for readability of tree
 data19 <- data19_p %>% 
   select(sex, P038004, P110000nu, P111010nu, alter, M009010, M010000, M014000, M016000, M017000, M020010, M021000, M025000, M027000, M028000, M004000, M001300, M001510, M003100) %>% 
-  rename("inc_net" = P038004,               # net income
-         "birth" = P110000nu,               # country of birth
-         "citizenship" = P111010nu,         # citizenship
-         "age" = alter,
+  rename("inc_net" = P038004,               # net income per month of respondent
+         "birth" = P110000nu,               # country of birth of respondent
+         "citizenship" = P111010nu,         # citizenship of respondent
+         "age" = alter,                     # age of respondent
          
          #"father_birth" = ????,            # country of birth of father at age 14
          "father_cit" = M009010,            # citizenship of father at age 14
@@ -76,11 +82,59 @@ data19 <- data19_p %>%
          "children" = M001300,              # number of children (under 18) in respondent’s household at age 14
          "adults" = M001510,                # number of adults (aged 18 or more) in respondent’s household
          "adults_working" = M003100) %>%    # number of working adults (aged 18 or more) in respondent’s household
-  mutate("inc_net_log" = log(inc_net))      # logged net income
-
-  # Included but not renamed:  sex
+  mutate("inc_net_log" = log(inc_net+3))    # logged net income per month of respondent
+  
+  data19$sex<-factor(ifelse(as.numeric(data19$sex)==2, 1,0))   # recoding sex from (m=1, f=2) to (0, 1)
 ```
 
+**Data Exploration and Visualization**
+The ad-hoc module on intergenerational transmission of disadvantages only includes "selected respondents aged over 24 years and less than 60 years". This is why we exclude them: coding '-6' means that year of birth is outside of 1969 and 1994 range or the interviw was a proxy interview. Additionally, we exclude all respondents that where not part of this ad-hoc modul even if of the desired age.  
+
+mother/father_edu: -3: not applicable (no mother/father, mother/father not present....)
+
+```{r}
+# data19 %>% 
+# filter(age>=25, age<=58) %>% 
+# summarize(n = n(), min(age), max(age))
+
+data19 <- data19 %>% 
+filter(mother_act != -6)
+
+print(dfSummary(data19), method="render")
+```
+
+Age pyramide
+```{r}
+# library("RColorBrewer")
+# display.brewer.all()
+data19 %>% 
+ggplot(aes(x = age, fill=sex))  + 
+  geom_bar(data = subset(data19, sex==1)) +
+  geom_bar(data = subset(data19, sex==0), aes(y=..count..*(-1))) + 
+  scale_x_continuous(breaks = seq(24,59,2), labels=abs(seq(25,59,2))) +
+  scale_fill_manual(name = "Sex", labels = c("Male", "Female"), values=c("springgreen2", "slateblue1")) +
+  labs(title = "Age pyramide of ad-hoc module on intergenerational transmission of disadvantages", x = "Age", y = "") +
+  theme_bw() +
+  coord_flip()
+
+```
+
+
+Correlation plot
+```{r}
+library(corrplot)
+library(Hmisc)
+
+class(data19)
+
+rcorr <- rcorr(as.matrix(data19))
+
+corrplot(rcorr, type = "upper", order = "hclust", 
+         tl.col = "black", tl.srt = 45)
+
+```
+
+**Regression Tree**
 ```{r}
 formula = inc_net_log ~ birth + citizenship + father_cit + father_edu + father_act + father_occup + father_manag + mother_cit + mother_edu + mother_act + mother_occup + mother_manag + tenancy + children + adults + adults_working
 
@@ -96,4 +150,12 @@ tree
 rpart.plot(tree, box.palette="RdBu", nn=FALSE, type=2)
 
 ```
+**Conditional inference tree**
+```{r}
+Ctree <- ctree(formula, data = train)
+Ctree
 
+plot(Ctree, gp = gpar(fontsize = 4),
+  inner_panel=node_inner,
+  ip_args=list(id = FALSE))
+```
