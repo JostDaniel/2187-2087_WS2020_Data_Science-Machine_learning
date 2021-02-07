@@ -24,21 +24,22 @@ knitr::opts_chunk$set(fig.align = 'center')
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 library(rpart)
 library(rpart.plot) 
-library(precrec)
+# library(precrec)
 library(caret)       
 library(party)
-library(partykit)
+# library(partykit)
 library(tidyverse)
-library(vcd)
+# library(vcd)
 library(RColorBrewer)
 library(knitr)
-library(glmnet)  
-library(haven)
-library(fst)
-library(ranger)
-library(tuneRanger)
-library(xgboost)
+# library(glmnet)  
+# library(haven)
+# library(fst)
+# library(ranger)
+# library(tuneRanger)
+# library(xgboost)
 library(readr)
+library(summarytools)
 ```
 # **Data Wrangling**
 We use the EU-SILC data from 2011 as it was the survey when additionally there were questions on inter-generational transmission. These were questions on the parents of the respondents. We want to see, whether it is possible using only the information given about the parents to predict the correct income of the respondents and what the outstanding circumstances are for the trees we grow.
@@ -51,7 +52,7 @@ Outcome Variables i.e. Income: Total Household gross income (HY010), Total Dispo
 
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 # setting the data path
-data_path ="."
+data_path ="./AT2011"
 getwd()
 
 # accessing the data
@@ -67,7 +68,10 @@ equality_data <- personal_data %>%  left_join(household_data, by = "PX030")
 # Renaming important variables for readability of tree
 equality_data <- equality_data %>% mutate(
   
-  income_k = (HY010/1000)) %>% 
+  log_income = log(HY010 + 3)) %>% mutate( #We add 3 to the Income variable to get rid of negative values, we assume that this does not significantly impact the distribution of the variable over all. 
+    # This is questionable, we should remove those with negative answers instead. And do the Winsorize Method to clean the Income Data
+    Age = (2011 - PB140)
+  ) %>% #Age Is currently Missing
   rename("Sex" = PB150,
          "Citizenship" = PB220A,
          "Parents_Present" = PT010,
@@ -86,6 +90,14 @@ equality_data <- equality_data %>% mutate(
          "Father_Manag" = PT140,
          "Mother_Manag" = PT170,
          "Tenancy" = PT210,)
+
+equality_data_1 <- equality_data %>% select( # Age is missing!
+  Sex, Age, Citizenship, Parents_Present, Adults_home, Working_Adults, Father_CoB, Father_Cit, Mother_CoB, Mother_Cit, Father_Educ, Mother_Educ, Father_Occup_Stat, Mother_Occup_Stat, Father_Main_Occup, Mother_Main_Occup, Father_Manag, Mother_Manag, Tenancy, log_income
+)
+
+
+print(dfSummary(equality_data_1), method="render")
+
 ```
 # **Method**: Conditional Inference Trees
 
