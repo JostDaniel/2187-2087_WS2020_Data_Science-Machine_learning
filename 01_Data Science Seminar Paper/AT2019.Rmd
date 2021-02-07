@@ -17,6 +17,22 @@ knitr::opts_chunk$set(error = TRUE)
 knitr::opts_chunk$set(fig.align = 'center')
 ```
 
+** To Do's **
+
+Adapt new data to the Graphs and Summary Statistics
+
+CV, Training and Test Data,
+Train with Caret package
+Random forrest of Inference Tree, and/or a Boosted Regression Tree
+Confusion Matrix, ROC etc.
+Graphs
+
+Apply the Data Wrangling Stept to the Synthetic EU Silc data
+Combine all the data in one RMD file - Dont Confuse names
+
+Compare Cross-Country Results
+
+
 **Libraries**
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 library(tidyverse)
@@ -27,7 +43,7 @@ library(summarytools)   # summary statistics
 library(party)          # ctree
 
 # library(precrec)
-# library(caret)       
+library(caret)       
 # library(party)
 # library(partykit)
 # library(vcd)
@@ -57,14 +73,12 @@ data19_p <- read.csv(file.path(data_path, "p_silc2019_ext.csv"), sep = ";")  # p
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 # Renaming important variables for readability of tree
 
-# fehlt: M001100 (Presence of parents at home) father, M001200 (mutter), M002000 - lebensform ohne eltern, M001500 mit anderen erwachsenen
-
-
+# "no_parents_present" = M002000, "with_other_adults" = M001500
 # recode age, sex, und ??? staatsburgerschaft 
 
 
 data19 <- data19_p %>% 
-  select(sex, P038004, P110000nu, P111010nu, alter, M009010, M010000, M014000, M016000, M017000, M020010, M021000, M025000, M027000, M028000, M004000, M001300, M001510, M003100) %>% 
+  select(sex, P038004, P110000nu, P111010nu, alter, M009010, M010000, M014000, M016000, M017000, M020010, M021000, M025000, M027000, M028000, M004000, M001300, M001510, M003100, M001100, M001200, M002000, M001500) %>% 
   rename("inc_net" = P038004,               # net income per month of respondent
          "country_birth" = P110000nu,               # country of birth of respondent
          "citizenship" = P111010nu,         # citizenship of respondent
@@ -84,10 +98,21 @@ data19 <- data19_p %>%
          "tenancy" = M004000,               # tenancy at age 14
          "children" = M001300,              # number of children (under 18) in respondent’s household at age 14
          "adults" = M001510,                # number of adults (aged 18 or more) in respondent’s household
-         "adults_working" = M003100) %>%    # number of working adults (aged 18 or more) in respondent’s household
-  mutate("inc_net_log" = log(inc_net+3))    # logged net income per month of respondent
+         "adults_working" = M003100, # number of working adults (aged 18 or more) in respondent’s household
+         "father_present" = M001100,
+         "mother_present" = M001200,
+         ) %>%    # number of working adults (aged 18 or more) in respondent’s household
+  filter(age %in% (27:59), inc_net >= 0, mother_present > 0, father_present > 0, father_cit > 0, mother_cit > 0)  %>%      # We drop all answers where the respondents refused or were not able to provide information
+  mutate("inc_net_log" = log(inc_net),  "both_parents_present" = father_present + mother_present, # 4 = none present, 3 = one present, 2 = both present
+         sex = factor(ifelse(as.numeric(sex)==2, 1,0)), 
+         country_birth = factor(country_birth, labels = c(1, 2, 2, 2, 3, 3)), # Austria, EU, Non-EU
+         father_cit = ifelse(father_cit == 1, 1, 2), # Austria and Other
+         mother_cit = ifelse(mother_cit == 1, 1, 2))       # recode(country_birth, "1" = "Austria", "EU" = 2, "EU" = 3, "EU" = 4, "non-EU" = 5, "non-EU" = 6)) # logged net income per month of respondent
   
-  data19$sex<-factor(ifelse(as.numeric(data19$sex)==2, 1,0))   # recoding sex from (m=1, f=2) to (0, 1)
+  # data19$sex<-factor(ifelse(as.numeric(data19$sex)==2, 1,0))   # recoding sex from (m=1, f=2) to (0, 1)
+
+# We want to group Country of Birth  Answers 1 = Austria remains, Answer 2,3,4 are grouped as EU, and Answers 5,6 are grouped as outside EU
+#, father_edu > 0, mother_edu > 0
 ```
 
 **Data Exploration and Visualization**
@@ -96,12 +121,6 @@ The ad-hoc module on intergenerational transmission of disadvantages only includ
 mother/father_edu: -3: not applicable (no mother/father, mother/father not present....)
 
 ```{r}
-# data19 %>% 
-# filter(age>=25, age<=58) %>% 
-# summarize(n = n(), min(age), max(age))
-
-data19 <- data19 %>% 
-filter(mother_act != -6)
 
 print(dfSummary(data19), method="render")
 ```
@@ -139,7 +158,7 @@ corrplot(rcorr, type = "upper", order = "hclust",
 
 **Regression Tree**
 ```{r}
-formula = inc_net_log ~ birth + citizenship + father_cit + father_edu + father_act + father_occup + father_manag + mother_cit + mother_edu + mother_act + mother_occup + mother_manag + tenancy + children + adults + adults_working
+formula = inc_net_log ~ country_birth + citizenship + father_cit + father_edu + father_occup_stat + father_occup + father_manag + mother_cit + mother_edu + mother_occup_stat + mother_occup + mother_manag + tenancy + children + adults + adults_working + father_present + mother_present + both_parents_present
 
 data19 <- data19 %>%
   mutate(train_index = sample(c("train", "test"), nrow(data19), replace=TRUE, prob=c(0.8, 0.2)))
@@ -147,14 +166,14 @@ data19 <- data19 %>%
 train <- data19 %>% filter(train_index=="train")
 test <- data19 %>% filter(train_index=="test")
 
-tree <- rpart(formula, data = train, cp=.002)
+tree <- rpart(formula, data = train, cp=.005)
 tree
 
 rpart.plot(tree, box.palette="RdBu", nn=FALSE, type=2)
-
 ```
 **Conditional inference tree**
 ```{r}
+# For the Inference Tree to work, we must have all variables as numeric data
 Ctree <- ctree(formula, data = train)
 Ctree
 
