@@ -21,12 +21,9 @@ knitr::opts_chunk$set(fig.align = 'center')
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 library(tidyverse)
 library(readr)          # import
-
 library(rpart)          # regression trees
 library(rpart.plot)     # regression tree plots
-
 library(summarytools)   # summary statistics
-
 library(party)          # ctree
 
 # library(precrec)
@@ -59,23 +56,29 @@ data19_p <- read.csv(file.path(data_path, "p_silc2019_ext.csv"), sep = ";")  # p
 **Data Wrangling**
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 # Renaming important variables for readability of tree
+
+# fehlt: M001100 (Presence of parents at home) father, M001200 (mutter), M002000 - lebensform ohne eltern, M001500 mit anderen erwachsenen
+
+
+# recode age, sex, und ??? staatsburgerschaft 
+
+
 data19 <- data19_p %>% 
   select(sex, P038004, P110000nu, P111010nu, alter, M009010, M010000, M014000, M016000, M017000, M020010, M021000, M025000, M027000, M028000, M004000, M001300, M001510, M003100) %>% 
   rename("inc_net" = P038004,               # net income per month of respondent
-         "birth" = P110000nu,               # country of birth of respondent
+         "country_birth" = P110000nu,               # country of birth of respondent
          "citizenship" = P111010nu,         # citizenship of respondent
          "age" = alter,                     # age of respondent
-         
          #"father_birth" = ????,            # country of birth of father at age 14
          "father_cit" = M009010,            # citizenship of father at age 14
-         "father_edu" = M010000,            # education of father at age 14
-         "father_act" = M014000,            # occupational status of father at age 14
+         "father_edu" = M010000,            # education of father at age 14 (höchster abschluss)
+         "father_occup_stat" = M014000,            # occupational status of father at age 14
          "father_occup" = M016000,          # main occupation of father at age 14
          "father_manag" = M017000,          # managerial position of father at age 14
          #"mother_birth" = ????,            # country of birth of mother at age 14
          "mother_cit" = M020010,            # citizenship of mother at age 14
          "mother_edu" = M021000,            # education of mother at age 14
-         "mother_act" = M025000,            # occupational status of mother at age 14
+         "mother_occup_stat" = M025000,     # occupational status of mother at age 14
          "mother_occup" = M027000,          # main occupation of mother at age 14
          "mother_manag" = M028000,          # managerial position of mother at age 14
          "tenancy" = M004000,               # tenancy at age 14
