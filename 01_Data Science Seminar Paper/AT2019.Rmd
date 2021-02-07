@@ -21,6 +21,7 @@ knitr::opts_chunk$set(fig.align = 'center')
 
 Adapt new data to the Graphs and Summary Statistics
 
+Winsorize Income Variable
 CV, Training and Test Data,
 Train with Caret package
 Random forrest of Inference Tree, and/or a Boosted Regression Tree
