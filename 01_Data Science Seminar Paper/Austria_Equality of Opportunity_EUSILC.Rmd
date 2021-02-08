@@ -27,11 +27,13 @@ library(rpart.plot)
 # library(precrec)
 library(caret)       
 library(party)
-# library(partykit)
+library(partykit)# Ctree
+library(ggparty)
 library(tidyverse)
 # library(vcd)
 library(RColorBrewer)
 library(knitr)
+# library(robustHD) # Winsorize Function
 # library(glmnet)  
 # library(haven)
 # library(fst)
@@ -412,7 +414,7 @@ AT_equality_data <- AT_equality_data %>%
 AT_train <- AT_equality_data %>% filter(train_index=="train")
 AT_test <- AT_equality_data %>% filter(train_index=="test")
 
-formula <- log_income ~ sex + citizenship + parents_present + adults_home + children_14 + father_cob + father_cit + mother_coB + mother_cit + father_edu + mother_edu + father_occup_stat + mother_occup_stat + father_occup + mother_occup + father_manag + mother_manag + tenancy
+formula <- log_income ~ sex + citizenship + parents_present + adults_home + children_home + father_cob + father_cit + mother_cob + mother_cit + father_edu + mother_edu + father_occup_stat + mother_occup_stat + father_occup + mother_occup + father_manag + mother_manag + tenancy
 
 AT_tree <- rpart(formula, data = AT_train, cp=.005)
 
@@ -431,6 +433,47 @@ levels(AT_test$prediction_tree)
 confusion <- confusionMatrix(AT_test$log_income, AT_test$prediction_tree, mode="everything")
 confusion
 ```
+```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
+set.seed(1786)
+
+FR_equality_data <- FR_equality_data %>%
+  mutate(train_index = sample(c("train", "test"), nrow(FR_equality_data), replace=TRUE, prob=c(0.7, 0.3)))
+
+FR_train <- FR_equality_data %>% filter(train_index=="train")
+FR_test <- FR_equality_data %>% filter(train_index=="test")
+
+formula <- log_income ~ sex + citizenship + parents_present + adults_home + children_home + father_cob + father_cit + mother_cob + mother_cit + father_edu + mother_edu + father_occup_stat + mother_occup_stat + father_occup + mother_occup + father_manag + mother_manag + tenancy
+
+FR_tree <- rpart(formula, data = FR_train, cp=.005)
+
+FR_tree
+
+rpart.plot(FR_tree, box.palette="RdBu", nn=FALSE, type=2)
+```
+
+```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
+ES_equality_data <- ES_equality_data %>%
+  mutate(train_index = sample(c("train", "test"), nrow(ES_equality_data), replace=TRUE, prob=c(0.7, 0.3)))
+
+ES_train <- ES_equality_data %>% filter(train_index=="train")
+ES_test <- ES_equality_data %>% filter(train_index=="test")
+
+formula <- log_income ~ sex + citizenship + parents_present + adults_home + children_home + father_cob + father_cit + mother_cob + mother_cit + father_edu + mother_edu + father_occup_stat + mother_occup_stat + father_occup + mother_occup + father_manag + mother_manag + tenancy
+
+ES_tree <- rpart(formula, data = ES_train, cp=.005)
+
+ES_tree
+
+rpart.plot(ES_tree, box.palette="RdBu", nn=FALSE, type=2)
+```
+
+```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
+
+```
+
+```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
+
+```
 
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 control <- trainControl(method = "repeatedcv", number = 10, repeats = 10, savePredictions = T, classProbs = T, summaryFunction = multiClassSummary)
@@ -445,13 +488,63 @@ tree_caret
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 set.seed(456)
 
-Ctree <- ctree(formula, data = train)
-Ctree
+AT_Ctree <- ctree(formula, data = AT_train)
+AT_Ctree
 
-plot(Ctree, gp = gpar(fontsize = 4),
+plot(AT_Ctree, type = "simple",gp = gpar(fontsize = 6),
   inner_panel=node_inner,
-  ip_args=list(id = FALSE))
+  ip_args=list(abbreviate = TRUE,id = FALSE), main = "Conditional Inference Tree for Austria 2011")
+
 ```
+```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
+
+set.seed(789)
+
+FR_Ctree <- ctree(formula, data = FR_train)
+FR_Ctree
+
+plot(FR_Ctree, type = "simple",gp = gpar(fontsize = 6),
+  inner_panel=node_inner,
+  ip_args=list(abbreviate = TRUE,id = FALSE), main = "Conditional Inference Tree for France 2011")
+
+
+```
+```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
+set.seed(19823)
+ES_Ctree <- ctree(formula, data = ES_train)
+ES_Ctree
+
+plot(ES_Ctree, type = "simple",gp = gpar(fontsize = 6),
+  inner_panel=node_inner,
+  ip_args=list(abbreviate = TRUE,id = FALSE), main = "Conditional Inference Tree for Spain 2011")
+```
+
+```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
+IT_Ctree <- ctree(formula, data = IT_train)
+IT_Ctree
+
+plot(IT_Ctree, type = "simple",gp = gpar(fontsize = 6),
+  inner_panel=node_inner,
+  ip_args=list(abbreviate = TRUE,id = FALSE), main = "Conditional Inference Tree for Italy 2011")
+```
+
+```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
+LV_Ctree <- ctree(formula, data = LV_train)
+LV_Ctree
+
+plot(LV_Ctree, type = "simple",gp = gpar(fontsize = 6),
+  inner_panel=node_inner,
+  ip_args=list(abbreviate = TRUE,id = FALSE), main = "Conditional Inference Tree for Latvia 2011")
+```
+
+```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
+
+```
+
+```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
+
+```
+
 # **Conclusion**
 =======
 # **Conclusion**
