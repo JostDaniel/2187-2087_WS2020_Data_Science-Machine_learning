@@ -52,53 +52,328 @@ Outcome Variables i.e. Income: Total Household gross income (HY010), Total Dispo
 
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 # setting the data path
-data_path ="./AT2011"
+data_path ="./SILC_2011"
 getwd()
 
 # accessing the data
-personal_data <- read.csv(file.path(data_path, "AT_2011p_EUSILC.csv"))
-household_data <- read.csv(file.path(data_path, "AT_2011h_EUSILC.csv"))
+AT_personal_data <- read.csv(file.path(data_path, "AT_2011p_EUSILC.csv"))
+AT_household_data <- read.csv(file.path(data_path, "AT_2011h_EUSILC.csv"))
 
 # change the name of the identifier variable
-household_data <- household_data %>% rename("PX030" = HB030)
+AT_household_data <- AT_household_data %>% rename("PX030" = HB030)
 
 # joining the data
-equality_data <- personal_data %>%  left_join(household_data, by = "PX030")
+AT_equality_data <- AT_personal_data %>%  left_join(AT_household_data, by = "PX030")
 
 # Renaming important variables for readability of tree
-equality_data <- equality_data %>% mutate(
-  
-  log_income = log(HY010 + 3)) %>% mutate( #We add 3 to the Income variable to get rid of negative values, we assume that this does not significantly impact the distribution of the variable over all. 
-    # This is questionable, we should remove those with negative answers instead. And do the Winsorize Method to clean the Income Data
-    Age = (2011 - PB140)
-  ) %>% #Age Is currently Missing
-  rename("Sex" = PB150,
-         "Citizenship" = PB220A,
-         "Parents_Present" = PT010,
-         "Adults_home" = PT020, 
-         "Working_Adults" = PT030,
-         "Father_CoB" = PT060,
-         "Father_Cit" = PT070,
-         "Mother_CoB" = PT090,
-         "Mother_Cit" = PT100,
-         "Father_Educ" = PT110,
-         "Mother_Educ" = PT120,
-         "Father_Occup_Stat" = PT130,
-         "Mother_Occup_Stat" = PT160,
-         "Father_Main_Occup" = PT150,
-         "Mother_Main_Occup" = PT180,
-         "Father_Manag" = PT140,
-         "Mother_Manag" = PT170,
-         "Tenancy" = PT210,)
+AT_equality_data <- AT_equality_data %>% select(
+  PB140, HY010, PB150, PB220A, PT010, PT020, PT030, PT060, PT070, PT090, PT100, PT110, PT120, PT130, PT160, PT150, PT180, PT140, PT170, PT210, PY200G) %>% mutate(
+    age = (2011 - PB140), log_income = log(HY010 + 1)
+  ) %>% filter(
+    age %in% (27:59)
+  ) %>% mutate(
+    citizenship = factor(PB220A, labels = c(1,2,3))
+  ) %>% 
+  rename(
+    "year_of_birth" = PB140,
+    "annual_income" = HY010,
+    "sex" = PB150,
+    "parents_present" = PT010,
+    "adults_home" = PT020,
+    "children_home" = PT030,
+    "father_cob" = PT060,
+    "father_cit" = PT070,
+    "mother_cob" = PT090,
+    "mother_cit" = PT100,
+    "father_edu" = PT110,
+    "mother_edu" = PT120,
+    "father_occup_stat" = PT130,
+    "mother_occup_stat" = PT160,
+    "father_occup" = PT150,
+    "mother_occup" = PT180,
+    "father_manag" = PT140,
+    "mother_manag" = PT170,
+    "tenancy" = PT210,
+    "monthly_income" = PY200G)
+```                                                                                                                                           
 
-equality_data_1 <- equality_data %>% select( # Age is missing!
-  Sex, Age, Citizenship, Parents_Present, Adults_home, Working_Adults, Father_CoB, Father_Cit, Mother_CoB, Mother_Cit, Father_Educ, Mother_Educ, Father_Occup_Stat, Mother_Occup_Stat, Father_Main_Occup, Mother_Main_Occup, Father_Manag, Mother_Manag, Tenancy, log_income
-)
+```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 
-
-print(dfSummary(equality_data_1), method="render")
+print(dfSummary(AT_equality_data), method="render")
 
 ```
+
+```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
+# Here we repeat the Data Wrangling steps for other EU Member States
+# France
+FR_personal_data <- read.csv(file.path(data_path, "FR_2011p_EUSILC.csv"))
+FR_household_data <- read.csv(file.path(data_path, "FR_2011h_EUSILC.csv"))
+FR_household_data <- FR_household_data %>% rename("PX030" = HB030)
+FR_equality_data <- FR_personal_data %>%  left_join(FR_household_data, by = "PX030")
+
+FR_equality_data <- FR_equality_data %>% select(
+  PB140, HY010, PB150, PB220A, PT010, PT020, PT030, PT060, PT070, PT090, PT100, PT110, PT120, PT130, PT160, PT150, PT180, PT140, PT170, PT210, PY200G) %>% mutate(
+    age = (2011 - PB140), log_income = log(HY010 + 1)
+  ) %>% filter(
+    age %in% (27:59)
+  ) %>% mutate(
+    citizenship = factor(PB220A, labels = c(1,2,3))
+  ) %>% 
+  rename(
+    "year_of_birth" = PB140,
+    "annual_income" = HY010,
+    "sex" = PB150,
+    "parents_present" = PT010,
+    "adults_home" = PT020,
+    "children_home" = PT030,
+    "father_cob" = PT060,
+    "father_cit" = PT070,
+    "mother_cob" = PT090,
+    "mother_cit" = PT100,
+    "father_edu" = PT110,
+    "mother_edu" = PT120,
+    "father_occup_stat" = PT130,
+    "mother_occup_stat" = PT160,
+    "father_occup" = PT150,
+    "mother_occup" = PT180,
+    "father_manag" = PT140,
+    "mother_manag" = PT170,
+    "tenancy" = PT210,
+    "monthly_income" = PY200G)
+# Denmark
+DK_personal_data <- read.csv(file.path(data_path, "DK_2011p_EUSILC.csv"))
+DK_household_data <- read.csv(file.path(data_path, "DK_2011h_EUSILC.csv"))
+DK_household_data <- DK_household_data %>% rename("PX030" = HB030)
+DK_equality_data <- DK_personal_data %>%  left_join(DK_household_data, by = "PX030")
+
+DK_equality_data <- DK_equality_data %>% select(
+  PB140, HY010, PB150, PB220A, PT010, PT020, PT030, PT060, PT070, PT090, PT100, PT110, PT120, PT130, PT160, PT150, PT180, PT140, PT170, PT210, PY200G) %>% mutate(
+    age = (2011 - PB140), log_income = log(HY010 + 1)
+  ) %>% filter(
+    age %in% (27:59)
+  ) %>% mutate(
+    citizenship = factor(PB220A, labels = c(1,2,3))
+  ) %>% 
+  rename(
+    "year_of_birth" = PB140,
+    "annual_income" = HY010,
+    "sex" = PB150,
+    "parents_present" = PT010,
+    "adults_home" = PT020,
+    "children_home" = PT030,
+    "father_cob" = PT060,
+    "father_cit" = PT070,
+    "mother_cob" = PT090,
+    "mother_cit" = PT100,
+    "father_edu" = PT110,
+    "mother_edu" = PT120,
+    "father_occup_stat" = PT130,
+    "mother_occup_stat" = PT160,
+    "father_occup" = PT150,
+    "mother_occup" = PT180,
+    "father_manag" = PT140,
+    "mother_manag" = PT170,
+    "tenancy" = PT210,
+    "monthly_income" = PY200G)
+# Spain
+ES_personal_data <- read.csv(file.path(data_path, "ES_2011p_EUSILC.csv"))
+ES_household_data <- read.csv(file.path(data_path, "ES_2011h_EUSILC.csv"))
+ES_household_data <- ES_household_data %>% rename("PX030" = HB030)
+ES_equality_data <- ES_personal_data %>%  left_join(ES_household_data, by = "PX030")
+
+ES_equality_data <- ES_equality_data %>% select(
+  PB140, HY010, PB150, PB220A, PT010, PT020, PT030, PT060, PT070, PT090, PT100, PT110, PT120, PT130, PT160, PT150, PT180, PT140, PT170, PT210, PY200G) %>% mutate(
+    age = (2011 - PB140), log_income = log(HY010 + 1)
+  ) %>% filter(
+    age %in% (27:59)
+  ) %>% mutate(
+    citizenship = factor(PB220A, labels = c(1,2,3))
+  ) %>% 
+  rename(
+    "year_of_birth" = PB140,
+    "annual_income" = HY010,
+    "sex" = PB150,
+    "parents_present" = PT010,
+    "adults_home" = PT020,
+    "children_home" = PT030,
+    "father_cob" = PT060,
+    "father_cit" = PT070,
+    "mother_cob" = PT090,
+    "mother_cit" = PT100,
+    "father_edu" = PT110,
+    "mother_edu" = PT120,
+    "father_occup_stat" = PT130,
+    "mother_occup_stat" = PT160,
+    "father_occup" = PT150,
+    "mother_occup" = PT180,
+    "father_manag" = PT140,
+    "mother_manag" = PT170,
+    "tenancy" = PT210,
+    "monthly_income" = PY200G)
+# Finland
+FI_personal_data <- read.csv(file.path(data_path, "FI_2011p_EUSILC.csv"))
+FI_household_data <- read.csv(file.path(data_path, "FI_2011h_EUSILC.csv"))
+FI_household_data <- FI_household_data %>% rename("PX030" = HB030)
+FI_equality_data <- FI_personal_data %>%  left_join(FI_household_data, by = "PX030")
+
+FI_equality_data <- FI_equality_data %>% select(
+  PB140, HY010, PB150, PB220A, PT010, PT020, PT030, PT060, PT070, PT090, PT100, PT110, PT120, PT130, PT160, PT150, PT180, PT140, PT170, PT210, PY200G) %>% mutate(
+    age = (2011 - PB140), log_income = log(HY010 + 1)
+  ) %>% filter(
+    age %in% (27:59)
+  ) %>% mutate(
+    citizenship = factor(PB220A, labels = c(1,2,3))
+  ) %>% 
+  rename(
+    "year_of_birth" = PB140,
+    "annual_income" = HY010,
+    "sex" = PB150,
+    "parents_present" = PT010,
+    "adults_home" = PT020,
+    "children_home" = PT030,
+    "father_cob" = PT060,
+    "father_cit" = PT070,
+    "mother_cob" = PT090,
+    "mother_cit" = PT100,
+    "father_edu" = PT110,
+    "mother_edu" = PT120,
+    "father_occup_stat" = PT130,
+    "mother_occup_stat" = PT160,
+    "father_occup" = PT150,
+    "mother_occup" = PT180,
+    "father_manag" = PT140,
+    "mother_manag" = PT170,
+    "tenancy" = PT210,
+    "monthly_income" = PY200G)
+# Italy
+IT_personal_data <- read.csv(file.path(data_path, "IT_2011p_EUSILC.csv"))
+IT_household_data <- read.csv(file.path(data_path, "IT_2011h_EUSILC.csv"))
+IT_household_data <- IT_household_data %>% rename("PX030" = HB030)
+IT_equality_data <- IT_personal_data %>%  left_join(IT_household_data, by = "PX030")
+
+IT_equality_data <- IT_equality_data %>% select(
+  PB140, HY010, PB150, PB220A, PT010, PT020, PT030, PT060, PT070, PT090, PT100, PT110, PT120, PT130, PT160, PT150, PT180, PT140, PT170, PT210, PY200G) %>% mutate(
+    age = (2011 - PB140), log_income = log(HY010 + 1)
+  ) %>% filter(
+    age %in% (27:59)
+  ) %>% mutate(
+    citizenship = factor(PB220A, labels = c(1,2,3))
+  ) %>% 
+  rename(
+    "year_of_birth" = PB140,
+    "annual_income" = HY010,
+    "sex" = PB150,
+    "parents_present" = PT010,
+    "adults_home" = PT020,
+    "children_home" = PT030,
+    "father_cob" = PT060,
+    "father_cit" = PT070,
+    "mother_cob" = PT090,
+    "mother_cit" = PT100,
+    "father_edu" = PT110,
+    "mother_edu" = PT120,
+    "father_occup_stat" = PT130,
+    "mother_occup_stat" = PT160,
+    "father_occup" = PT150,
+    "mother_occup" = PT180,
+    "father_manag" = PT140,
+    "mother_manag" = PT170,
+    "tenancy" = PT210,
+    "monthly_income" = PY200G)
+# # Bulgaria
+# BG_personal_data <- read.csv(file.path(data_path, "BG_2011p_EUSILC.csv"))
+# BG_household_data <- read.csv(file.path(data_path, "BG_2011h_EUSILC.csv"))
+# BG_household_data <- BG_household_data %>% rename("PX030" = HB030)
+# BG_equality_data <- BG_personal_data %>%  left_join(BG_household_data, by = "PX030")
+# 
+# BG_equality_data <- BG_equality_data %>% select(
+#   PB140, HY010, PB150, PB220A, PT010, PT020, PT030, PT060, PT070, PT090, PT100, PT110, PT120, PT130, PT160, PT150, PT180, PT140, PT170, PT210, PY200G) %>% mutate(
+#     age = (2011 - PB140), log_income = log(HY010 + 1)
+#   ) %>% filter(
+#     age %in% (27:59)
+#   ) %>% mutate(
+#     citizenship = factor(PB220A, labels = c(1,2,3))
+#   ) %>% 
+#   rename(
+#     "year_of_birth" = PB140,
+#     "annual_income" = HY010,
+#     "sex" = PB150,
+#     "parents_present" = PT010,
+#     "adults_home" = PT020,
+#     "children_home" = PT030,
+#     "father_cob" = PT060,
+#     "father_cit" = PT070,
+#     "mother_cob" = PT090,
+#     "mother_cit" = PT100,
+#     "father_edu" = PT110,
+#     "mother_edu" = PT120,
+#     "father_occup_stat" = PT130,
+#     "mother_occup_stat" = PT160,
+#     "father_occup" = PT150,
+#     "mother_occup" = PT180,
+#     "father_manag" = PT140,
+#     "mother_manag" = PT170,
+#     "tenancy" = PT210,
+#     "monthly_income" = PY200G)
+# Latvia
+LV_personal_data <- read.csv(file.path(data_path, "LV_2011p_EUSILC.csv"))
+LV_household_data <- read.csv(file.path(data_path, "LV_2011h_EUSILC.csv"))
+LV_household_data <- LV_household_data %>% rename("PX030" = HB030)
+LV_equality_data <- LV_personal_data %>%  left_join(LV_household_data, by = "PX030")
+
+LV_equality_data <- LV_equality_data %>% select(
+  PB140, HY010, PB150, PB220A, PT010, PT020, PT030, PT060, PT070, PT090, PT100, PT110, PT120, PT130, PT160, PT150, PT180, PT140, PT170, PT210, PY200G) %>% mutate(
+    age = (2011 - PB140), log_income = log(HY010 + 1)
+  ) %>% filter(
+    age %in% (27:59)
+  ) %>% mutate(
+    citizenship = factor(PB220A, labels = c(1,2,3))
+  ) %>% 
+  rename(
+    "year_of_birth" = PB140,
+    "annual_income" = HY010,
+    "sex" = PB150,
+    "parents_present" = PT010,
+    "adults_home" = PT020,
+    "children_home" = PT030,
+    "father_cob" = PT060,
+    "father_cit" = PT070,
+    "mother_cob" = PT090,
+    "mother_cit" = PT100,
+    "father_edu" = PT110,
+    "mother_edu" = PT120,
+    "father_occup_stat" = PT130,
+    "mother_occup_stat" = PT160,
+    "father_occup" = PT150,
+    "mother_occup" = PT180,
+    "father_manag" = PT140,
+    "mother_manag" = PT170,
+    "tenancy" = PT210,
+    "monthly_income" = PY200G)
+
+```
+
+```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
+
+print(dfSummary(FR_equality_data), method="render")
+
+
+print(dfSummary(DK_equality_data), method="render") #We have maybe too many missing values for Denmark
+
+
+print(dfSummary(ES_equality_data), method="render")
+
+
+print(dfSummary(FI_equality_data), method="render") #We have maybe too many missing values for Finland
+
+
+print(dfSummary(IT_equality_data), method="render")
+
+
+print(dfSummary(LV_equality_data), method="render")
+
+```
+
 # **Method**: Conditional Inference Trees
 
 * `ctree` from party package in R
@@ -131,29 +406,29 @@ The algorithm follows a stepwise procedure [@brunori20, 7-8]:
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 set.seed(123)
 
-equality_data <- equality_data %>%
-  mutate(train_index = sample(c("train", "test"), nrow(equality_data), replace=TRUE, prob=c(0.85, 0.15)))
+AT_equality_data <- AT_equality_data %>%
+  mutate(train_index = sample(c("train", "test"), nrow(AT_equality_data), replace=TRUE, prob=c(0.7, 0.3)))
 
-train <- equality_data %>% filter(train_index=="train")
-test <- equality_data %>% filter(train_index=="test")
+AT_train <- AT_equality_data %>% filter(train_index=="train")
+AT_test <- AT_equality_data %>% filter(train_index=="test")
 
-formula <- income_k ~ Sex + Citizenship + Parents_Present + Adults_home + Father_CoB + Father_Cit + Mother_CoB + Mother_Cit + Father_Educ + Mother_Educ + Father_Occup_Stat + Mother_Occup_Stat + Father_Main_Occup + Mother_Main_Occup + Father_Manag + Mother_Manag + Tenancy
+formula <- log_income ~ sex + citizenship + parents_present + adults_home + children_14 + father_cob + father_cit + mother_coB + mother_cit + father_edu + mother_edu + father_occup_stat + mother_occup_stat + father_occup + mother_occup + father_manag + mother_manag + tenancy
 
-tree <- rpart(formula, data = train, cp=.001)
+AT_tree <- rpart(formula, data = AT_train, cp=.005)
 
-tree
+AT_tree
 
-rpart.plot(tree, box.palette="RdBu", nn=FALSE, type=2)
+rpart.plot(AT_tree, box.palette="RdBu", nn=FALSE, type=2)
 
 ```
 *Confusion Matrix
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
-test$prediction_tree <- predict(tree, newdata = test, type = c("matrix"))
+AT_test$prediction_tree <- predict(AT_tree, newdata = AT_test, type = c("matrix"))
 
-class(test$prediction_tree)
-levels(test$prediction_tree)
+class(AT_test$prediction_tree)
+levels(AT_test$prediction_tree)
 
-confusion <- confusionMatrix(test$income_k, test$prediction_tree, mode="everything")
+confusion <- confusionMatrix(AT_test$log_income, AT_test$prediction_tree, mode="everything")
 confusion
 ```
 
@@ -165,6 +440,17 @@ tuning_grid
 
 tree_caret <- train(data = equality_data, formula, method = "rpart", trControl = control, tuneGrid = tuning_grid, metric = "Accuracy", na.action = na.pass)
 tree_caret
+```
+
+```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
+set.seed(456)
+
+Ctree <- ctree(formula, data = train)
+Ctree
+
+plot(Ctree, gp = gpar(fontsize = 4),
+  inner_panel=node_inner,
+  ip_args=list(id = FALSE))
 ```
 # **Conclusion**
 =======

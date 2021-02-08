@@ -157,12 +157,15 @@ corrplot(rcorr, type = "upper", order = "hclust",
 
 ```
 
-**Regression Tree**
+**Regression & Classification Tree**
 ```{r}
+set.seed(123)
+
+
 formula = inc_net_log ~ country_birth + citizenship + father_cit + father_edu + father_occup_stat + father_occup + father_manag + mother_cit + mother_edu + mother_occup_stat + mother_occup + mother_manag + tenancy + children + adults + adults_working + father_present + mother_present + both_parents_present
 
 data19 <- data19 %>%
-  mutate(train_index = sample(c("train", "test"), nrow(data19), replace=TRUE, prob=c(0.8, 0.2)))
+  mutate(train_index = sample(c("train", "test"), nrow(data19), replace=TRUE, prob=c(0.7, 0.3)))
 
 train <- data19 %>% filter(train_index=="train")
 test <- data19 %>% filter(train_index=="test")
@@ -175,6 +178,8 @@ rpart.plot(tree, box.palette="RdBu", nn=FALSE, type=2)
 **Conditional inference tree**
 ```{r}
 # For the Inference Tree to work, we must have all variables as numeric data
+set.seed(456)
+
 Ctree <- ctree(formula, data = train)
 Ctree
 
