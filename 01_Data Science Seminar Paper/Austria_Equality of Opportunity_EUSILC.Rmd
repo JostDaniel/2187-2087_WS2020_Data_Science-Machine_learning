@@ -409,7 +409,7 @@ The algorithm follows a stepwise procedure [@brunori20, 7-8]:
 set.seed(123)
 
 AT_equality_data <- AT_equality_data %>%
-  mutate(train_index = sample(c("train", "test"), nrow(AT_equality_data), replace=TRUE, prob=c(0.7, 0.3)))
+  mutate(train_index = sample(c("train", "test"), nrow(AT_equality_data), replace=TRUE, prob=c(0.75, 0.25)))
 
 AT_train <- AT_equality_data %>% filter(train_index=="train")
 AT_test <- AT_equality_data %>% filter(train_index=="test")
@@ -423,6 +423,19 @@ AT_tree
 rpart.plot(AT_tree, box.palette="RdBu", nn=FALSE, type=2)
 
 ```
+
+```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
+fitControl <- trainControl(method = "cv", number = 10)
+AT_caretTree <- train(formula, data = AT_train, method = "ctree", trControl = fitControl)
+```
+
+
+
+
+
+
+
+
 *Confusion Matrix
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 AT_test$prediction_tree <- predict(AT_tree, newdata = AT_test, type = c("matrix"))

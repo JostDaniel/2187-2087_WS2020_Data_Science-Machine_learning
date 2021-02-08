@@ -42,11 +42,10 @@ library(rpart)          # regression trees
 library(rpart.plot)     # regression tree plots
 library(summarytools)   # summary statistics
 library(party)          # ctree
-
+library(partykit)       # ctree
 # library(precrec)
 library(caret)       
 # library(party)
-# library(partykit)
 # library(vcd)
 # library(RColorBrewer)
 # library(knitr)
@@ -165,7 +164,7 @@ set.seed(123)
 formula = inc_net_log ~ country_birth + citizenship + father_cit + father_edu + father_occup_stat + father_occup + father_manag + mother_cit + mother_edu + mother_occup_stat + mother_occup + mother_manag + tenancy + children + adults + adults_working + father_present + mother_present + both_parents_present
 
 data19 <- data19 %>%
-  mutate(train_index = sample(c("train", "test"), nrow(data19), replace=TRUE, prob=c(0.7, 0.3)))
+  mutate(train_index = sample(c("train", "test"), nrow(data19), replace=TRUE, prob=c(0.75, 0.25)))
 
 train <- data19 %>% filter(train_index=="train")
 test <- data19 %>% filter(train_index=="test")
@@ -180,10 +179,24 @@ rpart.plot(tree, box.palette="RdBu", nn=FALSE, type=2)
 # For the Inference Tree to work, we must have all variables as numeric data
 set.seed(456)
 
-Ctree <- ctree(formula, data = train)
+Ctree <- ctree(formula, data = train, control = ctree_control(testtype = "Bonferroni")) #I think that this already include the Control for inference trees, there is a possibility to do it with CV and caret, but it did not work out yet
 Ctree
 
-plot(Ctree, gp = gpar(fontsize = 4),
+plot(Ctree,gp = gpar(fontsize = 6),
   inner_panel=node_inner,
-  ip_args=list(id = FALSE))
+  ip_args=list(id = FALSE), main = "Conditional Inference Tree for Austria 2019")
+```
+
+```{r}
+fitControl <- trainControl(method = "cv", number = 10)
+caret_ctree <- train(formula, data = train, method = "ctree", trControl = fitControl, na.action = na.exclude)
+caret_rpart <- train(formula, data = train, method = "rpart", trControl = fitControl, na.action = na.exclude)
+caret_ctree
+caret_rpart
+```
+
+
+```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
+plot(caret_ctree$finalModel)
+
 ```
