@@ -21,11 +21,9 @@ knitr::opts_chunk$set(fig.align = 'center')
 
 Adapt new data to the Graphs and Summary Statistics
 
-Winsorize Income Variable
-CV, Training and Test Data,
-Train with Caret package
+
 Random forrest of Inference Tree, and/or a Boosted Regression Tree
-Confusion Matrix, ROC etc.
+Confusion Matrix (Problem since regression and not classification - need some other measure of model predictive performance), ROC etc.
 Graphs
 
 Apply the Data Wrangling Stept to the Synthetic EU Silc data
@@ -44,7 +42,9 @@ library(summarytools)   # summary statistics
 library(party)          # ctree
 library(partykit)       # ctree
 # library(precrec)
-library(caret)       
+library(caret)
+library(forecast)
+library(ineq) #Gini
 # library(party)
 # library(vcd)
 # library(RColorBrewer)
@@ -63,10 +63,12 @@ library(caret)
 data_path ="./AT2019"
 
 # accessing the data
-data19_p <- read.csv(file.path(data_path, "p_silc2019_ext.csv"), sep = ";")  # personal data
+data19_p <- read.csv(file.path(data_path, "p_silc2019_ext.csv"), sep = ";")# personal data
 # data19_pID <- read.csv(file.path(data_path, "id_schluessel_r_ext.csv"), sep = ";")  # personal ID
 # data19_h <- read.csv(file.path(data_path, "h_silc2019_ext.csv"), sep = ";")  # household data
 # data19_hID <- read.csv(file.path(data_path, "id_schluessel_d_ext.csv"), sep = ";")  # household ID
+
+# data19_h <- data19_h %>% select(hy020, Hid) 
 ```
 
 **Data Wrangling**
@@ -75,11 +77,13 @@ data19_p <- read.csv(file.path(data_path, "p_silc2019_ext.csv"), sep = ";")  # p
 
 # "no_parents_present" = M002000, "with_other_adults" = M001500
 # recode age, sex, und ??? staatsburgerschaft 
+# data19_p <- data19_p %>%  left_join(data19_h, by = "Hid")
 
+# A big problem is that the actualy annual income variable (hy010) is coded as a character variable and not as a numeric variable as it should be in the EU-Silc dataset and as we have it in our synthetic set
 
 data19 <- data19_p %>% 
   select(sex, P038004, P110000nu, P111010nu, alter, M009010, M010000, M014000, M016000, M017000, M020010, M021000, M025000, M027000, M028000, M004000, M001300, M001510, M003100, M001100, M001200, M002000, M001500) %>% 
-  rename("inc_net" = P038004,               # net income per month of respondent
+  rename("inc_net" = P038004,               # gross monthly income
          "country_birth" = P110000nu,               # country of birth of respondent
          "citizenship" = P111010nu,         # citizenship of respondent
          "age" = alter,                     # age of respondent
@@ -102,7 +106,7 @@ data19 <- data19_p %>%
          "father_present" = M001100,
          "mother_present" = M001200,
          ) %>%    # number of working adults (aged 18 or more) in respondent’s household
-  filter(age %in% (27:59), inc_net >= 0, mother_present > 0, father_present > 0, father_cit > 0, mother_cit > 0)  %>%      # We drop all answers where the respondents refused or were not able to provide information
+  filter(age %in% (27:59), inc_net > 0, mother_present > 0, father_present > 0, father_cit > 0, mother_cit > 0)  %>%      # We drop all answers where the respondents refused or were not able to provide information
   mutate("inc_net_log" = log(inc_net),  "both_parents_present" = father_present + mother_present, # 4 = none present, 3 = one present, 2 = both present
          sex = factor(ifelse(as.numeric(sex)==2, 1,0)), 
          country_birth = factor(country_birth, labels = c(1, 2, 2, 2, 3, 3)), # Austria, EU, Non-EU
@@ -121,8 +125,10 @@ The ad-hoc module on intergenerational transmission of disadvantages only includ
 mother/father_edu: -3: not applicable (no mother/father, mother/father not present....)
 
 ```{r}
-
 print(dfSummary(data19), method="render")
+
+ineq(data19$inc_net, type = "Gini")
+plot(Lc(data19$inc_net), col = "darkred", lwd = 3)
 ```
 
 Age pyramide
@@ -161,7 +167,7 @@ corrplot(rcorr, type = "upper", order = "hclust",
 set.seed(123)
 
 
-formula = inc_net_log ~ country_birth + citizenship + father_cit + father_edu + father_occup_stat + father_occup + father_manag + mother_cit + mother_edu + mother_occup_stat + mother_occup + mother_manag + tenancy + children + adults + adults_working + father_present + mother_present + both_parents_present
+formula = inc_net_log ~ country_birth + citizenship + father_cit + father_edu + father_occup_stat + father_occup + father_manag + mother_cit + mother_edu + mother_occup_stat + mother_occup + mother_manag + tenancy + children + adults + adults_working + both_parents_present
 
 data19 <- data19 %>%
   mutate(train_index = sample(c("train", "test"), nrow(data19), replace=TRUE, prob=c(0.75, 0.25)))
@@ -169,7 +175,7 @@ data19 <- data19 %>%
 train <- data19 %>% filter(train_index=="train")
 test <- data19 %>% filter(train_index=="test")
 
-tree <- rpart(formula, data = train, cp=.005)
+tree <- rpart(formula, data = train, cp=.008)
 tree
 
 rpart.plot(tree, box.palette="RdBu", nn=FALSE, type=2)
@@ -194,9 +200,42 @@ caret_rpart <- train(formula, data = train, method = "rpart", trControl = fitCon
 caret_ctree
 caret_rpart
 ```
-
-
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 plot(caret_ctree$finalModel)
+
+```
+*Confusion Matrix and ROC*
+```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
+test$AT_testpred <- predict(caret_ctree, test, type = "raw")
+
+test$AT_testpred <- as.factor(test$AT_testpred)
+test$inc_net_log <- as.factor(test$inc_net_log)
+
+CM <- confusionMatrix(test$AT_testpred, test$inc_net_log)
+
+plot(caret_ctree) # RMSE vs p-value our resampling parameter
+```
+*Random Forest*
+```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
+AT_cforest <- cforest(formula, data19, na.action = na.pass, control = ctree_control())
+
+vi <- varimp(AT_cforest)
+
+
+
+AT_cforest
+# cf_1 = AT_cforest$finalModel
+# 
+# pred_ATcf <- predict(AT_cforest, data19)
+
+# AT_cftpred <- predict(AT_cforest, newdata = NULL)
+# gettree(AT_cforest, tree = 2L)
+# 
+# plot(formula, data = data19)
+# lines(AT_cfpred )
+
+```
+*Boosted Inference Tree*
+```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 
 ```
