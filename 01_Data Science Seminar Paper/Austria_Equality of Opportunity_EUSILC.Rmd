@@ -457,8 +457,6 @@ rpart.plot(AT_tree, box.palette="RdBu", nn=FALSE, type=2)
 ```
 
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
-set.seed(1786)
-
 FR_equality_data <- FR_equality_data %>%
   mutate(train_index = sample(c("train", "test"), nrow(FR_equality_data), replace=TRUE, prob=c(0.8, 0.2)))
 
@@ -536,7 +534,7 @@ rpart.plot(LV_tree, box.palette="RdBu", nn=FALSE, type=2)
 # tree_caret <- train(data = equality_data, formula, method = "rpart", trControl = control, tuneGrid = tuning_grid, metric = "Accuracy", na.action = na.pass)
 # tree_caret
 ```
-
+# **Conditional Inference Trees**
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 set.seed(456)
 
@@ -548,39 +546,31 @@ plot(AT_Ctree, type = "simple",gp = gpar(fontsize = 6),
   ip_args=list(abbreviate = FALSE,id = FALSE), main = "Conditional Inference Tree for Austria 2011")
 ```
 
-
+*Cross Validation using the Caret package*
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 AT_fitControl <- trainControl(method = "cv", number = 10)
 AT_cctree <- train(formula, data = AT_train, method = "ctree", trControl = AT_fitControl, na.action = na.pass)
 
-AT_cctree #
+AT_cctree #This is the suggested tree we get from applying Caret
 
 
-AT_cct <- ctree(formula, data = AT_train, mincriterion = 0.99)
+AT_cct <- ctree(formula, data = AT_train, mincriterion = 0.99) #Using the suggestion we generate a Conditional Inference Tree and plot it as our final result
 
 plot(AT_cct, type = "simple",gp = gpar(fontsize = 8),
   inner_panel=node_inner,
   ip_args=list(abbreviate = FALSE,id = FALSE), main = "Conditional Inference Tree for Austria 2011 - Cross Validated")
-# AT_final_cTree <- AT_cctree$finalModel
-# 
-# plot(AT_final_cTree, type = "simple",gp = gpar(fontsize = 2),
-#   inner_panel=node_inner,
-#   ip_args=list(abbreviate = TRUE,id = FALSE), main = "Conditional Inference Tree for Austria 2011 - Cross Validated")
+
 ```
 
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
-
-set.seed(789)
-
 FR_Ctree <- ctree(formula, data = FR_train)
 FR_Ctree
 
 plot(FR_Ctree, type = "simple",gp = gpar(fontsize = 6),
   inner_panel=node_inner,
   ip_args=list(abbreviate = FALSE,id = FALSE), main = "Conditional Inference Tree for France 2011")
-
-
 ```
+
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 set.seed(19823)
 ES_Ctree <- ctree(formula, data = ES_train)
@@ -616,6 +606,18 @@ plot(LV_Ctree, type = "simple",gp = gpar(fontsize = 6),
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 
 ```
+# **Conditional Forest**
+```{r}
+AT_cf <- cforest(formula, AT_equality_data, na.action = na.pass, control = ctree_control(teststat = "quadratic", testtype = "Bonferroni", mincriterion = 0.99), ytrafo = NULL, scores = NULL, ntree = 500L, perturb = list(replace = FALSE, fraction = 0.8))
+
+AThat_cf <- predict(AT_cf, newdata = AT_test, OOB = TRUE, type = "response")
+
+varimp(AT_cf, mincriterion = 0, OOB = TRUE) 
+
+
+```
+
+
 
 # **Conclusion**
 =======
