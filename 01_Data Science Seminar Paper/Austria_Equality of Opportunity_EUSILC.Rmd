@@ -422,7 +422,7 @@ AT_equality_data <- AT_equality_data %>%
 AT_train <- AT_equality_data %>% filter(train_index=="train")
 AT_test <- AT_equality_data %>% filter(train_index=="test")
 
-formula <- log_income ~ sex + citizenship + parents_present + adults_home + children_home + father_cob + father_cit + mother_cob + mother_cit + father_edu + mother_edu + father_occup_stat + mother_occup_stat + father_occup + mother_occup + father_manag + mother_manag + tenancy
+formula <- log_income ~ sex + parents_present + adults_home + children_home + father_cob + father_cit + mother_cob + mother_cit + father_edu + mother_edu + father_occup_stat + mother_occup_stat + father_occup + mother_occup + father_manag + mother_manag + tenancy
 
 AT_tree <- rpart(formula, data = AT_train, cp=.008)
 
@@ -430,6 +430,7 @@ AT_tree
 
 rpart.plot(AT_tree, box.palette="RdBu", nn=FALSE, type=2)
 
+# sex + citizenship +
 ```
 
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
@@ -544,9 +545,29 @@ AT_Ctree
 
 plot(AT_Ctree, type = "simple",gp = gpar(fontsize = 6),
   inner_panel=node_inner,
-  ip_args=list(abbreviate = TRUE,id = FALSE), main = "Conditional Inference Tree for Austria 2011")
-
+  ip_args=list(abbreviate = FALSE,id = FALSE), main = "Conditional Inference Tree for Austria 2011")
 ```
+
+
+```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
+AT_fitControl <- trainControl(method = "cv", number = 10)
+AT_cctree <- train(formula, data = AT_train, method = "ctree", trControl = AT_fitControl, na.action = na.pass)
+
+AT_cctree #
+
+
+AT_cct <- ctree(formula, data = AT_train, mincriterion = 0.99)
+
+plot(AT_cct, type = "simple",gp = gpar(fontsize = 8),
+  inner_panel=node_inner,
+  ip_args=list(abbreviate = FALSE,id = FALSE), main = "Conditional Inference Tree for Austria 2011 - Cross Validated")
+# AT_final_cTree <- AT_cctree$finalModel
+# 
+# plot(AT_final_cTree, type = "simple",gp = gpar(fontsize = 2),
+#   inner_panel=node_inner,
+#   ip_args=list(abbreviate = TRUE,id = FALSE), main = "Conditional Inference Tree for Austria 2011 - Cross Validated")
+```
+
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 
 set.seed(789)
@@ -556,7 +577,7 @@ FR_Ctree
 
 plot(FR_Ctree, type = "simple",gp = gpar(fontsize = 6),
   inner_panel=node_inner,
-  ip_args=list(abbreviate = TRUE,id = FALSE), main = "Conditional Inference Tree for France 2011")
+  ip_args=list(abbreviate = FALSE,id = FALSE), main = "Conditional Inference Tree for France 2011")
 
 
 ```
