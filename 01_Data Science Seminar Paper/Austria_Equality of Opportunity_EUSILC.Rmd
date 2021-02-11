@@ -33,6 +33,11 @@ library(tidyverse)
 # library(vcd)
 library(RColorBrewer)
 library(knitr)
+library(knitcitations); cleanbib()
+cite_options(citation_format = "pandoc", check.entries=FALSE)
+library(bibtex)
+
+
 # library(robustHD) # Winsorize Function
 # library(glmnet)  
 # library(haven)
@@ -44,7 +49,7 @@ library(readr)
 library(summarytools)
 ```
 # **Data Wrangling**
-We use the EU-SILC data from 2011 as it was the survey when additionally there were questions on inter-generational transmission. These were questions on the parents of the respondents. We want to see, whether it is possible using only the information given about the parents to predict the correct income of the respondents and what the outstanding circumstances are for the trees we grow.
+We use the EU-SILC data from 2011 as it was the survey when additionally there were questions on inter-generational transmission. These were questions on the parents of the respondents. We want to see, whether it is possible using only the information given about the parents to predict the correct income of the respondents and what the outstanding circumstances are for the trees we grow
 
 The unique identifier used in all  four data sets is the household ID identifier: RX030 in the Personal Register, PX030 in the Personal Data, DB030 in the Household Register, and HB030 in the Household Data file.
 
@@ -396,11 +401,14 @@ print(dfSummary(LV_equality_data), method="render")
 
 The algorithm follows a stepwise procedure [@brunori20, 7-8]:
 
-1. **Choose confidence level**
-2. **Choose feature:** test all the null hypotheses of independence between the individual outcome and each of all the observable circumstances
-    i) no hypothesis can be rejected: stop
-    ii) one or more circumstance is siginificant: select the circumstance with the smallest p-value and proceed
-3. **Choose split:** for every possible way the selected circumstance can divide the sample into two subgroups, test the hypothesis of same mean outcome in the two resulting subgroups. Choose the splitting point with the smallest p-value
+1. **Choose confidence level** Test the null hypothesis of independence, $H_0^{C^p} : D(Y|C^P) = D(Y)$, for each input variable $C^P  \in \hat{\Omega}$, and obtain a p-value associated with each test, $p^{C^p}$.
+$\implies$ We adjust the p-values for multiple hypothesis testing, such that $p_{adj.}^{C^p} = 1-(1-p^{Cp})^P$, which essentially means that we use the so called *Bonferroni Correction*.
+2. **Choose feature:** test all the null hypotheses of independence between the individual outcome and each of all the observable circumstances (variables). The model selects a variable, $C^*$, with the lowest adjusted p-value. Essentially we choose such that $C^* = \{C^P : \text{argmin} ~ p_{adj.}^{C^p} \}$.
+    i) no hypothesis can be rejected: stop $\implies$ If $p_{adj.}^{C^p} > \alpha$: Exit the algorithm. 
+    ii) one or more circumstance is siginificant: select the circumstance with the smallest p-value and proceed $\rightarrow$ If $p_{adj.}^{C^p} \leq \alpha$: Continue, and select $C^*$ as the splitting variable.
+  3. **Choose split:** for every possible way the selected circumstance can divide the sample into two subgroups, test the hypothesis of same mean outcome in the two resulting subgroups. Choose the splitting point with the smallest p-value. Technically, we test the discrepancy between the subsamples for each possible binary partition, _s_, based on $C^*$, meaning that $Y_s = \{Y_i : C^*_i < x^p \}$ and $Y_{-s} = \{Y_i : C^*_i \geq x^p \}$, and obtain a p-value associated with each test, $p^{C^*_s}$.
+
+$\implies$ The the Split sample based on $C^*_s$, by choosing the split point s that yields the lowest p-value, which is $C^*_s = \{C^*_s : \text{argmin} ~ p^{C^*_s} \}$.
 4. **Repeat :)**
 
 
@@ -409,14 +417,14 @@ The algorithm follows a stepwise procedure [@brunori20, 7-8]:
 set.seed(123)
 
 AT_equality_data <- AT_equality_data %>%
-  mutate(train_index = sample(c("train", "test"), nrow(AT_equality_data), replace=TRUE, prob=c(0.75, 0.25)))
+  mutate(train_index = sample(c("train", "test"), nrow(AT_equality_data), replace=TRUE, prob=c(0.8, 0.2)))
 
 AT_train <- AT_equality_data %>% filter(train_index=="train")
 AT_test <- AT_equality_data %>% filter(train_index=="test")
 
 formula <- log_income ~ sex + citizenship + parents_present + adults_home + children_home + father_cob + father_cit + mother_cob + mother_cit + father_edu + mother_edu + father_occup_stat + mother_occup_stat + father_occup + mother_occup + father_manag + mother_manag + tenancy
 
-AT_tree <- rpart(formula, data = AT_train, cp=.005)
+AT_tree <- rpart(formula, data = AT_train, cp=.008)
 
 AT_tree
 
@@ -425,8 +433,8 @@ rpart.plot(AT_tree, box.palette="RdBu", nn=FALSE, type=2)
 ```
 
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
-fitControl <- trainControl(method = "cv", number = 10)
-AT_caretTree <- train(formula, data = AT_train, method = "ctree", trControl = fitControl)
+#fitControl <- trainControl(method = "cv", number = 10)
+#AT_caretTree <- train(formula, data = AT_train, method = "ctree", trControl = fitControl)
 ```
 
 
@@ -438,26 +446,27 @@ AT_caretTree <- train(formula, data = AT_train, method = "ctree", trControl = fi
 
 *Confusion Matrix
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
-AT_test$prediction_tree <- predict(AT_tree, newdata = AT_test, type = c("matrix"))
-
-class(AT_test$prediction_tree)
-levels(AT_test$prediction_tree)
-
-confusion <- confusionMatrix(AT_test$log_income, AT_test$prediction_tree, mode="everything")
-confusion
+# AT_test$prediction_tree <- predict(AT_tree, newdata = AT_test, type = c("matrix"))
+# 
+# class(AT_test$prediction_tree)
+# levels(AT_test$prediction_tree)
+# 
+# confusion <- confusionMatrix(AT_test$log_income, AT_test$prediction_tree, mode="everything")
+# confusion
 ```
+
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 set.seed(1786)
 
 FR_equality_data <- FR_equality_data %>%
-  mutate(train_index = sample(c("train", "test"), nrow(FR_equality_data), replace=TRUE, prob=c(0.7, 0.3)))
+  mutate(train_index = sample(c("train", "test"), nrow(FR_equality_data), replace=TRUE, prob=c(0.8, 0.2)))
 
 FR_train <- FR_equality_data %>% filter(train_index=="train")
 FR_test <- FR_equality_data %>% filter(train_index=="test")
 
 formula <- log_income ~ sex + citizenship + parents_present + adults_home + children_home + father_cob + father_cit + mother_cob + mother_cit + father_edu + mother_edu + father_occup_stat + mother_occup_stat + father_occup + mother_occup + father_manag + mother_manag + tenancy
 
-FR_tree <- rpart(formula, data = FR_train, cp=.005)
+FR_tree <- rpart(formula, data = FR_train, cp=.008)
 
 FR_tree
 
@@ -466,14 +475,14 @@ rpart.plot(FR_tree, box.palette="RdBu", nn=FALSE, type=2)
 
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 ES_equality_data <- ES_equality_data %>%
-  mutate(train_index = sample(c("train", "test"), nrow(ES_equality_data), replace=TRUE, prob=c(0.7, 0.3)))
+  mutate(train_index = sample(c("train", "test"), nrow(ES_equality_data), replace=TRUE, prob=c(0.8, 0.2)))
 
 ES_train <- ES_equality_data %>% filter(train_index=="train")
 ES_test <- ES_equality_data %>% filter(train_index=="test")
 
 formula <- log_income ~ sex + citizenship + parents_present + adults_home + children_home + father_cob + father_cit + mother_cob + mother_cit + father_edu + mother_edu + father_occup_stat + mother_occup_stat + father_occup + mother_occup + father_manag + mother_manag + tenancy
 
-ES_tree <- rpart(formula, data = ES_train, cp=.005)
+ES_tree <- rpart(formula, data = ES_train, cp=.007)
 
 ES_tree
 
@@ -481,21 +490,50 @@ rpart.plot(ES_tree, box.palette="RdBu", nn=FALSE, type=2)
 ```
 
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
+IT_equality_data <- IT_equality_data %>%
+  mutate(train_index = sample(c("train", "test"), nrow(IT_equality_data), replace=TRUE, prob=c(0.8, 0.2)))
 
+IT_train <- IT_equality_data %>% filter(train_index=="train")
+IT_test <- IT_equality_data %>% filter(train_index=="test")
+
+formula <- log_income ~ sex + citizenship + parents_present + adults_home + children_home + father_cob + father_cit + mother_cob + mother_cit + father_edu + mother_edu + father_occup_stat + mother_occup_stat + father_occup + mother_occup + father_manag + mother_manag + tenancy
+
+IT_tree <- rpart(formula, data = IT_train, cp=.008)
+
+IT_tree
+
+rpart.plot(IT_tree, box.palette="RdBu", nn=FALSE, type=2)
 ```
 
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
+LV_equality_data <- LV_equality_data %>%
+  mutate(train_index = sample(c("train", "test"), nrow(LV_equality_data), replace=TRUE, prob=c(0.8, 0.2)))
+
+LV_train <- LV_equality_data %>% filter(train_index=="train")
+LV_test <- LV_equality_data %>% filter(train_index=="test")
+
+formula <- log_income ~ sex + citizenship + parents_present + adults_home + children_home + father_cob + father_cit + mother_cob + mother_cit + father_edu + mother_edu + father_occup_stat + mother_occup_stat + father_occup + mother_occup + father_manag + mother_manag + tenancy
+
+LV_tree <- rpart(formula, data = LV_train, cp=.007)
+
+LV_tree
+
+rpart.plot(LV_tree, box.palette="RdBu", nn=FALSE, type=2)
+```
+
+```{r}
 
 ```
 
+
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
-control <- trainControl(method = "repeatedcv", number = 10, repeats = 10, savePredictions = T, classProbs = T, summaryFunction = multiClassSummary)
-
-tuning_grid <- expand.grid(cp = seq(0, 0.02, by= 0.005))
-tuning_grid
-
-tree_caret <- train(data = equality_data, formula, method = "rpart", trControl = control, tuneGrid = tuning_grid, metric = "Accuracy", na.action = na.pass)
-tree_caret
+# control <- trainControl(method = "repeatedcv", number = 10, repeats = 10, savePredictions = T, classProbs = T, summaryFunction = multiClassSummary)
+# 
+# tuning_grid <- expand.grid(cp = seq(0, 0.02, by= 0.005))
+# tuning_grid
+# 
+# tree_caret <- train(data = equality_data, formula, method = "rpart", trControl = control, tuneGrid = tuning_grid, metric = "Accuracy", na.action = na.pass)
+# tree_caret
 ```
 
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
@@ -547,7 +585,7 @@ LV_Ctree
 
 plot(LV_Ctree, type = "simple",gp = gpar(fontsize = 6),
   inner_panel=node_inner,
-  ip_args=list(abbreviate = TRUE,id = FALSE), main = "Conditional Inference Tree for Latvia 2011")
+  ip_args=list(abbreviate = FALSE,id = FALSE), main = "Conditional Inference Tree for Latvia 2011")
 ```
 
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
