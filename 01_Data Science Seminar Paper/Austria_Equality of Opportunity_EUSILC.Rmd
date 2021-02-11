@@ -558,7 +558,7 @@ AT_cct <- ctree(formula, data = AT_train, mincriterion = 0.99) #Using the sugges
 
 plot(AT_cct, type = "simple",gp = gpar(fontsize = 8),
   inner_panel=node_inner,
-  ip_args=list(abbreviate = FALSE,id = FALSE), main = "Conditional Inference Tree for Austria 2011 - Cross Validated")
+  ip_args=list(abbreviate = FALSE,id = FALSE), main = "Opportunity Conditional Inference Tree for Austria 2011 - Cross Validated")
 
 ```
 
@@ -569,16 +569,40 @@ FR_Ctree
 plot(FR_Ctree, type = "simple",gp = gpar(fontsize = 6),
   inner_panel=node_inner,
   ip_args=list(abbreviate = FALSE,id = FALSE), main = "Conditional Inference Tree for France 2011")
+
+FR_fitControl <- trainControl(method = "cv", number = 10)
+FR_cctree <- train(formula, data = FR_train, method = "ctree", trControl = FR_fitControl, na.action = na.pass)
+
+FR_cctree #This is the suggested tree we get from applying Caret
+
+
+FR_cct <- ctree(formula, data = FR_train, mincriterion = 0.5) #Using the suggestion we generate a Conditional Inference Tree and plot it as our final result
+
+plot(FR_cct, type = "simple",gp = gpar(fontsize = 8),
+  inner_panel=node_inner,
+  ip_args=list(abbreviate = FALSE,id = FALSE), main = "Opportunity Conditional Inference Tree for France 2011 - Cross Validated")
+
 ```
 
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
-set.seed(19823)
 ES_Ctree <- ctree(formula, data = ES_train)
 ES_Ctree
 
 plot(ES_Ctree, type = "simple",gp = gpar(fontsize = 6),
   inner_panel=node_inner,
-  ip_args=list(abbreviate = TRUE,id = FALSE), main = "Conditional Inference Tree for Spain 2011")
+  ip_args=list(abbreviate = FALSE,id = FALSE), main = "Conditional Inference Tree for Spain 2011")
+
+ES_fitControl <- trainControl(method = "cv", number = 10)
+ES_cctree <- train(formula, data = ES_train, method = "ctree", trControl = ES_fitControl, na.action = na.pass)
+
+ES_cctree #This is the suggested tree we get from applying Caret
+
+
+ES_cct <- ctree(formula, data = ES_train, mincriterion = 0.99) #Using the suggestion we generate a Conditional Inference Tree and plot it as our final result
+
+plot(ES_cct, type = "simple",gp = gpar(fontsize = 8),
+  inner_panel=node_inner,
+  ip_args=list(abbreviate = FALSE,id = FALSE), main = "Opportunity Conditional Inference Tree for Spain 2011 - Cross Validated")
 ```
 
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
