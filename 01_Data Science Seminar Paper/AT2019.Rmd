@@ -118,6 +118,24 @@ data19 <- data19_p %>%
 
 # We want to group Country of Birth  Answers 1 = Austria remains, Answer 2,3,4 are grouped as EU, and Answers 5,6 are grouped as outside EU
 #, father_edu > 0, mother_edu > 0
+summary(data19) %>% head()
+summary(data19$inc_net)
+
+plot(data19$inc_net)
+
+data19$inc_classes <- with(data19, ifelse(inc_net >= 10000, 1,ifelse(inc_net >= 9000,2, ifelse(inc_net >= 8000,3, ifelse(inc_net >= 7000,4, ifelse(inc_net >= 6000,5, ifelse(inc_net >= 5000,6, ifelse(inc_net >= 4000,7, ifelse(inc_net >= 3000,8, ifelse(inc_net >= 2000,9,ifelse(inc_net >= 1000,10, 11)))))))))))
+
+levels(data19$inc_classes) <- c("first_class", "second_class", "third_class", "fourth_class", "fifth_class", "sixth_class", "seventh_class", "eigth_class", "ninth_class", "tenth_class", "eleventh_class" )
+
+data19$inc_classes 
+
+
+
+data19$inc_classes <- as.factor(data19$inc_classes)
+
+levels(data19$inc_classes)
+
+
 ```
 
 **Data Exploration and Visualization**
@@ -167,7 +185,7 @@ corrplot(rcorr, type = "upper", order = "hclust",
 ```{r}
 set.seed(123)
 
-formula = inc_net_log ~ country_birth + citizenship + father_cit + father_edu + father_occup_stat + father_occup + father_manag + mother_cit + mother_edu + mother_occup_stat + mother_occup + mother_manag + tenancy + children + adults + adults_working + both_parents_present
+formula = inc_classes ~ country_birth + citizenship + father_cit + father_edu + father_occup_stat + father_occup + father_manag + mother_cit + mother_edu + mother_occup_stat + mother_occup + mother_manag + tenancy + children + adults + adults_working + both_parents_present
 
 data19 <- data19 %>%
   mutate(train_index = sample(c("train", "test"), nrow(data19), replace=TRUE, prob=c(0.80, 0.20)))
@@ -175,10 +193,21 @@ data19 <- data19 %>%
 train <- data19 %>% filter(train_index=="train")
 test <- data19 %>% filter(train_index=="test")
 
-tree_1 <- rpart(formula, data = train, cp=.002)
+tree_1 <- rpart(formula, data = train, cp=.003)
 tree_1
 
+
 rpart.plot(tree_1, box.palette="RdBu", nn=FALSE, type=2)
+
+test$prediction_tree <- predict(tree_1, newdata = test, type = c("class"))
+
+class(test$prediction_tree)
+levels(test$prediction_tree)
+
+confusion <- confusionMatrix(test$inc_classes, test$prediction_tree, mode="sens_spec")
+confusion
+
+
 ```
 **Conditional inference tree**
 ```{r}
@@ -195,7 +224,7 @@ plot(Ctree,gp = gpar(fontsize = 6),
 ```
 
 ```{r}
-fitControl <- trainControl(method = "repeatedcv", number = 10, repeats = 10, savePredictions = T)
+fitControl <- trainControl(method = "repeatedcv", number = 10, repeats = 10, savePredictions = T, classProbs = T, summaryFunction = multiClassSummary)
 
 tuning_grid <- expand.grid(cp = seq(0, 0.02, by= 0.005))
 tuning_grid
@@ -203,7 +232,7 @@ tuning_grid
 ### data = in data 2019 geändert von train!
 caret_ctree <- train(formula, data = data19, method = "ctree", trControl = fitControl, na.action = na.pass)
 
-caret_rpart <- train(formula, data = data19, method = "rpart", trControl = fitControl, tuneGrid = tuning_grid, metric = "RMSE", na.action = na.pass)
+caret_rpart <- train(formula, data = data19, method = "rpart", trControl = fitControl, tuneGrid = tuning_grid, metric = "Accuracy", na.action = na.pass)
 
 caret_ctree
 caret_rpart
@@ -229,15 +258,19 @@ test$prediction_ctree <- predict.train(caret_ctree, newdata = test, type = c("ra
 class(test$prediction_tree_caret)
 class(test$prediction_tree_ctree)
 
+#round(test$prediction_tree_caret,0)
+
+test$prediction_tree_caret <- as.factor(test$prediction_tree_caret)
 test$prediction_tree_ctree <- as.factor(test$prediction_tree_ctree)
-test$inc_net_log <- as.factor(test$inc_net_log)
 
-# define classes before!
-CM_caret <- confusionMatrix(test$prediction_tree_caret, test$inc_net_log)
+CM_caret <- confusionMatrix(test$prediction_tree_caret, test$inc_classes,mode="sens_spec")
+CM_caret
 
-CM_ctree <- confusionMatrix(test$prediction_tree_ctree,test$inc_net_log, mode="sens_spec")
+#geht nicht fehler schon bei prediction
+CM_ctree <- confusionMatrix(test$prediction_tree_ctree,test$inc_classes, mode="sens_spec")
 
-confusionR
+CM_ctree
+
 
 plot(caret_ctree) # RMSE vs p-value our resampling parameter
 plot(caret_rpart)
@@ -246,9 +279,9 @@ plotcp(tree_1)
 *Linear Model for comparison*
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 
-lm <- lm(formula, data = data19)
+logit <- glm(formula, data = data19)
 
-test$prediction_lm <- predict(lm, newdata = test, type = c("response"))
+test$prediction_logit <- predict(lm, newdata = test, type = c("response"))
 
 test <- test %>% 
   drop_na(prediction_lm) %>% 
