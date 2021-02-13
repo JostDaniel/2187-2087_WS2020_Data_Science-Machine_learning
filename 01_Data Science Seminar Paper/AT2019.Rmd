@@ -19,13 +19,15 @@ knitr::opts_chunk$set(fig.align = 'center')
 
 ** To Do's **
 
-Adapt new data to the Graphs and Summary Statistics
+Adapt Graphs and Summary Statistics
 
 Combine all the data in one RMD file - Dont Confuse names
 
 Apply forest to different countries
 
 Compare Cross-Country Results - Variable Importance synthetic countries comparison, Gini comparison across countries
+
+RMSE für Forest berechnen
 
 Text schreiben
 
@@ -43,7 +45,7 @@ library(caret)
 library(forecast)
 library(ineq) #Gini
 library(precrec) # ROC curves
-library(mboost)
+# library(mboost)
 # library(vcd)
 library(RColorBrewer)
 # library(knitr)
@@ -279,13 +281,12 @@ We find that the variable sex, is the single most important variable in determin
 *Boosted Inference Tree*
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 
-cf_boosted <- blackboost(formula, data = data19, na.action = na.pass, control = boost_control(), tree_controls = partykit::ctree_control())
-cf_boosted
-
-cf_boosted_2 <- train(formula, data19, method = "ctree2", trControl = fitControl, tuneGrid = NULL, na.action = na.pass)
-cf_boosted_2
-
-plot(cf_boosted_2$finalModel, type = "simple")
+# cf_boosted <- blackboost(formula, data = data19, na.action = na.pass, control = boost_control(), tree_controls = partykit::ctree_control())
+# cf_boosted
+# 
+ cf_boosted_2 <- train(formula, data19, method = "ctree2", trControl = fitControl, tuneGrid = NULL, na.action = na.pass)
+ cf_boosted_2
+ plot(cf_boosted_2$finalModel, type = "simple")
 
 # Calc RMSE!!
 
