@@ -31,6 +31,12 @@ RMSE für Forest berechnen
 
 Text schreiben
 
+Aufbau 1. Austria 2019 mit der ausführlichen Erklärung der Vorgehensweise und der einzelnen Schritte. Daten sollten genau erklärt werden.
+
+2. Warum synthetisches Datenset abweicht, detaillierter auf Austria 2011. Die restlichen Länder eher im Appendix. 
+
+3. Ländervergleich Cforest Var importance. Tree complexity und Gini? (p.51 paper)
+
 
 **Libraries**
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
