@@ -544,8 +544,8 @@ plot(AT_Ctree, type = "simple",gp = gpar(fontsize = 6),
 
 *Cross Validation using the Caret package*
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
-fitControl <- trainControl(method = "repeatedcv", number = 10)
-AT_cctree1 <- train(formula, data = AT_train, method = "ctree", trControl = AT_fitControl, na.action = na.pass)
+fitControl <- trainControl(method = "repeatedcv", number = 10, repeats = 10, savePredictions = T)
+AT_cctree1 <- train(formula, data = AT_train, method = "ctree", trControl = fitControl, na.action = na.pass)
 
 AT_cctree1 #This is the suggested tree we get from applying Caret
 
@@ -557,13 +557,25 @@ plot(AT_cct, type = "simple",gp = gpar(fontsize = 8),
   ip_args=list(abbreviate = FALSE,id = FALSE), main = "Opportunity Conditional Inference Tree for Austria 2011 - Cross Validated")
 
 
-AT_ctree2 <- ctree(formula, data = AT_equality_data, control = ctree_control(testtype = "Bonferroni")) 
+AT_ctree2 <- ctree(formula, data = AT_equality_data, control = ctree_control(testtype = "Bonferroni", mincriterion = 0.99)) 
 AT_ctree2
 
 plot(AT_ctree2, type = "simple",gp = gpar(fontsize = 6),
   inner_panel=node_inner,
   ip_args=list(abbreviate = FALSE,id = FALSE), main = "Opportunity Conditional Inference Tree for Austria 2011 - Cross Validated")
 ```
+```{r}
+AT_test$P_AtCt <- predict(AT_ctree2, newdata = as.data.frame(AT_test))
+
+AT_test$perror <- (AT_test$P_AtCt - AT_test$log_income)^2
+
+AT_test$RMSE <- sqrt((sum((AT_test$P_AtCt - AT_test$log_income)^2))/1337)
+
+plot(AT_test$RMSE)
+
+plot(AT_test$P_AtCt, AT_test$log_income)
+```
+
 
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 FR_Ctree <- ctree(formula, data = FR_train)
