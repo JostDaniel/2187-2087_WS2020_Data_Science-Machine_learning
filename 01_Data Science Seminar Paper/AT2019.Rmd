@@ -22,7 +22,7 @@ knitr::opts_chunk$set(fig.align = 'center')
 Adapt new data to the Graphs and Summary Statistics
 
 
-Random forrest of Inference Tree, and/or a Boosted Regression Tree
+Inference Tree
 Confusion Matrix (Problem since regression and not classification - need some other measure of model predictive performance), ROC etc.
 Graphs
 
@@ -265,6 +265,24 @@ plot(caret_ctree) # RMSE vs p-value our resampling parameter
 plot(caret_rpart)
 plotcp(tree_1)
 ```
+
+
+```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
+test$P_AtCt <- predict(Ctree, newdata = as.data.frame(test))
+test$perror <- (test$P_AtCt - test$inc_net_log)^2
+test$RMSE <- sqrt((sum((test$P_AtCt - test$inc_net_log)^2))/701)
+head(test$RMSE)
+plot(test$P_AtCt, test$inc_net_log)
+
+test$P_AtCt_caret <- predict(caret_rpart, newdata = as.data.frame(test))
+test$perror_caret <- (test$P_AtCt_caret - test$inc_net_log)^2
+test$RMSE_caret <- sqrt((sum((test$P_AtCt_caret - test$inc_net_log)^2))/701)
+head(test$RMSE_caret)
+```
+
+
+
+
 *Linear Model for comparison*
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 
