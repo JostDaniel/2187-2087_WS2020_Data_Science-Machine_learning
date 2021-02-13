@@ -417,7 +417,7 @@ $\implies$ The the Split sample based on $C^*_s$, by choosing the split point s 
 set.seed(123)
 
 AT_equality_data <- AT_equality_data %>%
-  mutate(train_index = sample(c("train", "test"), nrow(AT_equality_data), replace=TRUE, prob=c(0.8, 0.2)))
+  mutate(train_index = sample(c("train", "test"), nrow(AT_equality_data), replace=TRUE, prob=c(0.67, 0.33)))
 
 AT_train <- AT_equality_data %>% filter(train_index=="train")
 AT_test <- AT_equality_data %>% filter(train_index=="test")
@@ -571,9 +571,7 @@ AT_test$perror <- (AT_test$P_AtCt - AT_test$log_income)^2
 
 AT_test$RMSE <- sqrt((sum((AT_test$P_AtCt - AT_test$log_income)^2))/1337)
 
-plot(AT_test$RMSE)
-
-plot(AT_test$P_AtCt, AT_test$log_income)
+# Plot the Errors somehow
 ```
 
 
@@ -675,7 +673,7 @@ importance_cf <- importance_cf  %>% arrange( desc(importance))
 ggplot(importance_cf, aes(x = var_name, y = importance)) +
     geom_point() +
     scale_x_discrete(limits = importance_cf$var_name[order(importance_cf$importance)]) +
-    labs(title = "Conditional Random Forest variable importance", subtitle = "presented as the mean decrease in the sum of squared residuals when the variable is included in a tree split", x = "", y = "Mean decrease in sum of squared residuals") +
+    labs(title = "Conditional Forest variable importance - Austria 2011", x = "", y = "Mean decrease in sum of squared residuals") +
     coord_flip() +
     theme(axis.text.y = element_text(hjust = 0))
 ```
