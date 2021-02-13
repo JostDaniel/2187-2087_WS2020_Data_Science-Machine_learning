@@ -25,7 +25,7 @@ Combine all the data in one RMD file - Dont Confuse names
 
 Apply forest to different countries
 
-Compare Cross-Country Results - Variable Importance synthetic countries comparison
+Compare Cross-Country Results - Variable Importance synthetic countries comparison, Gini comparison across countries
 
 Text schreiben
 
@@ -39,15 +39,13 @@ library(rpart.plot)     # regression tree plots
 library(summarytools)   # summary statistics
 library(party)          # ctree
 library(partykit)       # ctree
-# library(precrec)
 library(caret)
 library(forecast)
 library(ineq) #Gini
 library(precrec) # ROC curves
-
-# library(party)
+library(mboost)
 # library(vcd)
-# library(RColorBrewer)
+library(RColorBrewer)
 # library(knitr)
 # library(glmnet)  
 # library(haven)
@@ -56,8 +54,8 @@ library(precrec) # ROC curves
 # library(tuneRanger)
 # library(xgboost)
 ```
-
 **Data import**
+TEXT
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 # setting the data path
 data_path ="./AT2019"
@@ -69,30 +67,28 @@ data19_p <- read.csv(file.path(data_path, "p_silc2019_ext.csv"), sep = ";")# per
 # data19_hID <- read.csv(file.path(data_path, "id_schluessel_d_ext.csv"), sep = ";")  # household ID
 # data19_h <- data19_h %>% select(hy020, Hid) 
 ```
-
 **Data Wrangling**
+TEXT
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 # Renaming important variables for readability of tree
 
-# "no_parents_present" = M002000, "with_other_adults" = M001500
-# recode age, sex, und ??? staatsburgerschaft 
 # data19_p <- data19_p %>%  left_join(data19_h, by = "Hid")
 
-# A big problem is that the actualy annual income variable (hy010) is coded as a character variable and not as a numeric variable as it should be in the EU-Silc dataset and as we have it in our synthetic set
+# A big problem is that the actualy annual income variable (hy010) is coded as a character variable and not as a numeric variable as it should be in the EU-Silc dataset and as we have it in our synthetic set.
+
+# Problem the Austrian dataset does not contain information on the mother or the fathers country of birth, but merely their citizenship
 
 data19 <- data19_p %>% 
   select(sex, P038004, P110000nu, P111010nu, alter, M009010, M010000, M014000, M016000, M017000, M020010, M021000, M025000, M027000, M028000, M004000, M001300, M001510, M003100, M001100, M001200, M002000, M001500) %>% 
   rename("inc_net" = P038004,               # gross monthly income
-         "country_birth" = P110000nu,               # country of birth of respondent
+         "country_birth" = P110000nu,       # country of birth of respondent
          "citizenship" = P111010nu,         # citizenship of respondent
          "age" = alter,                     # age of respondent
-         #"father_birth" = ????,            # country of birth of father at age 14
          "father_cit" = M009010,            # citizenship of father at age 14
          "father_edu" = M010000,            # education of father at age 14 (höchster abschluss)
-         "father_occup_stat" = M014000,            # occupational status of father at age 14
+         "father_occup_stat" = M014000,     # occupational status of father at age 14
          "father_occup" = M016000,          # main occupation of father at age 14
-         "father_manag" = M017000,          # managerial position of father at age 14
-         #"mother_birth" = ????,            # country of birth of mother at age 14
+         "father_manag" = M017000,          # managerial position of father at age 14            
          "mother_cit" = M020010,            # citizenship of mother at age 14
          "mother_edu" = M021000,            # education of mother at age 14
          "mother_occup_stat" = M025000,     # occupational status of mother at age 14
@@ -101,25 +97,16 @@ data19 <- data19_p %>%
          "tenancy" = M004000,               # tenancy at age 14
          "children" = M001300,              # number of children (under 18) in respondent’s household at age 14
          "adults" = M001510,                # number of adults (aged 18 or more) in respondent’s household
-         "adults_working" = M003100, # number of working adults (aged 18 or more) in respondent’s household
+         "adults_working" = M003100,        # number of working adults (aged 18 or more) in respondent’s household
          "father_present" = M001100,
          "mother_present" = M001200,
-         ) %>%    # number of working adults (aged 18 or more) in respondent’s household
+         ) %>%    
   filter(age %in% (27:59), inc_net > 0, mother_present > 0, father_present > 0, father_cit > 0, mother_cit > 0)  %>%      # We drop all answers where the respondents refused or were not able to provide information
   mutate("inc_net_log" = log(inc_net),  "both_parents_present" = father_present + mother_present, # 4 = none present, 3 = one present, 2 = both present
          sex = factor(ifelse(as.numeric(sex)==2, 1,0)), 
          country_birth = factor(country_birth, labels = c(1, 2, 2, 2, 3, 3)), # Austria, EU, Non-EU
-         father_cit = ifelse(father_cit == 1, 1, 2), # Austria and Other
-         mother_cit = ifelse(mother_cit == 1, 1, 2))       # recode(country_birth, "1" = "Austria", "EU" = 2, "EU" = 3, "EU" = 4, "non-EU" = 5, "non-EU" = 6)) # logged net income per month of respondent
-  
-  # data19$sex<-factor(ifelse(as.numeric(data19$sex)==2, 1,0))   # recoding sex from (m=1, f=2) to (0, 1)
-
-# We want to group Country of Birth  Answers 1 = Austria remains, Answer 2,3,4 are grouped as EU, and Answers 5,6 are grouped as outside EU
-#, father_edu > 0, mother_edu > 0
-
-
-
-
+         father_cit = ifelse(father_cit == 1, 1, 2),                          # Austria and Other
+         mother_cit = ifelse(mother_cit == 1, 1, 2))                          # recode(country_birth, "1" = "Austria", "EU" = 2, "EU" = 3, "EU" = 4, "non-EU" = 5, "non-EU" = 6)) # logged net income per month of respondent
 ```
 
 **Data Exploration and Visualization**
@@ -129,7 +116,9 @@ mother/father_edu: -3: not applicable (no mother/father, mother/father not prese
 
 ```{r}
 print(dfSummary(data19), method="render")
+```
 
+```{r}
 ineq(data19$inc_net, type = "Gini")
 plot(Lc(data19$inc_net), col = "darkred", lwd = 3)
 ```
@@ -151,7 +140,7 @@ ggplot(aes(x = age, fill=sex))  +
 ```
 
 
-Correlation plot
+DANIEL ?! Correlation plot DANIEL?!
 ```{r}
 library(corrplot)
 library(Hmisc)
@@ -165,11 +154,11 @@ corrplot(rcorr, type = "upper", order = "hclust",
 
 ```
 
-**Regression & Classification Tree**
+**Regression Tree**
 ```{r}
 set.seed(123)
 
-formula = inc_net_log ~ country_birth + father_cit + father_edu + father_occup_stat + father_occup + father_manag + mother_cit + mother_edu + mother_occup_stat + mother_occup + mother_manag + tenancy + children + adults + adults_working + both_parents_present
+formula = inc_net_log ~ sex + country_birth + father_cit + father_edu + father_occup_stat + father_occup + father_manag + mother_cit + mother_edu + mother_occup_stat + mother_occup + mother_manag + tenancy + children + adults + adults_working + both_parents_present
 
 data19 <- data19 %>%
   mutate(train_index = sample(c("train", "test"), nrow(data19), replace=TRUE, prob=c(0.80, 0.20)))
@@ -177,37 +166,14 @@ data19 <- data19 %>%
 train <- data19 %>% filter(train_index=="train")
 test <- data19 %>% filter(train_index=="test")
 
-tree_1 <- rpart(formula, data = train, cp=.003)
-tree_1
+# tree_1 <- rpart(formula, data = train, cp=.003)
+# tree_1
 
-rpart.plot(tree_1, box.palette="RdBu", nn=FALSE, type=2)
+# rpart.plot(tree_1, box.palette="RdBu", nn=FALSE, type=2)
 
-test$prediction_tree <- predict(tree_1, newdata = test, type = c("matrix"))
+# test$prediction_tree <- predict(tree_1, newdata = test, type = c("matrix"))
 
 # Here we could add the MSE or RMSE measure to compare performance
-
-
-
-class(test$prediction_tree)
-levels(test$prediction_tree)
-
-confusion <- confusionMatrix(test$inc_net_log, test$prediction_tree, mode="sens_spec")
-confusion
-
-
-```
-**Conditional inference tree**
-```{r}
-# For the Inference Tree to work, we must have all variables as numeric data
-#set.seed(456)
-
-Ctree <- ctree(formula, data = train, control = ctree_control(testtype = "Bonferroni")) #I think that this already include the Control for inference trees, there is a possibility to do it with CV and caret, but it did not work out yet
-Ctree
-
-plot(Ctree,gp = gpar(fontsize = 6),
-  inner_panel=node_inner,
-  ip_args=list(id = FALSE), main = "Conditional Inference Tree for Austria 2019")
-
 ```
 
 ```{r}
@@ -216,119 +182,87 @@ fitControl <- trainControl(method = "repeatedcv", number = 10, repeats = 10, sav
 tuning_grid <- expand.grid(cp = seq(0, 0.02, by= 0.005))
 tuning_grid
 
-### data = in data 2019 geändert von train!
-caret_ctree <- train(formula, data = data19, method = "ctree", trControl = fitControl, na.action = na.pass)
-
 caret_rpart <- train(formula, data = data19, method = "rpart", trControl = fitControl, tuneGrid = tuning_grid, metric = "RMSE", na.action = na.pass)
 
-caret_ctree
 caret_rpart
+```
 
-Cctree <- ctree(formula, data = data19, control = ctree_control(testtype = "Bonferroni", mincriterion = 0.99)) 
-Cctree
+```{r}
+tree_caret_final <- caret_rpart$finalModel
+rpart.plot(tree_caret_final, box.palette="RdBu", nn=FALSE, type=2)
+```
 
-plot(Cctree,gp = gpar(fontsize = 6),
+**Conditional inference tree**
+```{r}
+# For the Inference Tree to work, we must have all variables as numeric data
+
+Ctree <- ctree(formula, data = train, control = ctree_control(testtype = "Bonferroni")) #I think that this already include the Control for inference trees, there is a possibility to do it with CV and caret, but it did not work out yet
+Ctree
+
+plot(Ctree, type = "simple",gp = gpar(fontsize = 6),
+  inner_panel=node_inner,
+  ip_args=list(id = FALSE), main = "Conditional Inference Tree for Austria 2019") #Überschrift größe ändern
+
+```
+Instead of the default tuning function we use the caret package for cross validation
+```{r}
+### data = in data 2019 geändert von train!
+caret_ctree <- train(formula, data = data19, method = "ctree", trControl = fitControl, na.action = na.pass)
+caret_ctree
+
+
+caret_ctree_B <- ctree(formula, data = data19, control = ctree_control(testtype = "Bonferroni", mincriterion = 0.99)) 
+caret_ctree_B
+
+plot(caret_ctree_B,gp = gpar(fontsize = 6),
   inner_panel=node_inner,
   ip_args=list(abbreviate = FALSE,id = FALSE), main = "Opportunity Conditional Inference Tree for Austria 2019 - Cross Validated")
 ```
 
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
-
+# Das ist der gleiche Baum wie oben, nur mit anderem Package erstellt. Sieht aber scheiße aus
 plot(caret_ctree,gp = gpar(fontsize = 6),
   inner_panel=node_inner,
   ip_args=list(id = FALSE))
 
-plot(caret_ctree$finalModel)
-
-tree_caret_final <- caret_rpart$finalModel
-rpart.plot(tree_caret_final, box.palette="RdBu", nn=FALSE, type=2)
+plot(caret_ctree$finalModel, type = "simple")
 ```
-*Confusion Matrix and ROC*
+*Graphic representation of the tuning parameters*
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
-test$prediction_tree_caret <- predict.train(caret_rpart, newdata = test, type = c("raw"), na.action = na.rpart)
-
-test$prediction_ctree <- predict.train(caret_ctree, newdata = test, type = c("raw"), na.action = na.rpart)
-
-class(test$prediction_tree_caret)
-class(test$prediction_tree_ctree)
-
-#round(test$prediction_tree_caret,0)
-
-test$prediction_tree_caret <- as.factor(test$prediction_tree_caret)
-test$prediction_tree_ctree <- as.factor(test$prediction_tree_ctree)
-
-CM_caret <- confusionMatrix(test$prediction_tree_caret, test$inc_classes,mode="sens_spec")
-CM_caret
-
-#geht nicht fehler schon bei prediction
-CM_ctree <- confusionMatrix(test$prediction_tree_ctree,test$inc_classes, mode="sens_spec")
-
-CM_ctree
-
-
 plot(caret_ctree) # RMSE vs p-value our resampling parameter
 plot(caret_rpart)
-plotcp(tree_1)
+# plotcp(tree_1)
 ```
 
-
+*Predictions*
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 test$P_AtCt <- predict(Ctree, newdata = as.data.frame(test))
 test$perror <- (test$P_AtCt - test$inc_net_log)^2
-test$RMSE <- sqrt((sum((test$P_AtCt - test$inc_net_log)^2))/701)
+test$RMSE <- sqrt(sum((test$P_AtCt - test$inc_net_log)^2/nrow(test), na.rm = T))
 head(test$RMSE)
-plot(test$P_AtCt, test$inc_net_log)
+
+plot(test$P_AtCt, test$inc_net_log) #ADD GGPLOT und machs schön!
 
 test$P_AtCt_caret <- predict(caret_rpart, newdata = as.data.frame(test))
 test$perror_caret <- (test$P_AtCt_caret - test$inc_net_log)^2
-test$RMSE_caret <- sqrt((sum((test$P_AtCt_caret - test$inc_net_log)^2))/701)
+test$RMSE_caret <- sqrt(sum((test$P_AtCt_caret - test$inc_net_log)^2/nrow(test), na.rm = T))
 head(test$RMSE_caret)
 ```
-
-
-
-
-*Linear Model for comparison*
-```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
-
-# lm <- lm(formula, data = data19)
-# 
-# test$prediction_lm <- predict(lm, newdata = test, type = c("response"))
-# 
-# test <- test %>% 
-#   drop_na(prediction_lm) %>% 
-#   mutate(prediction_lm = as.factor(prediction_lm))
-# 
-# 
-# confusion <- confusionMatrix(test$prediction_lm,test$inc_net_log)
-# confusion
-# 
-# test$prediction_tree_caret_scores <- predict(caret_rpart, test ,type = c("raw"))
-# test$prediction_lm_scores <- predict(lm, test ,type = c("response"))
-# 
-# precrec_obj <- evalmod(scores = cbind(test$prediction_tree_scores,test$prediction_lm_scores), 
-#                        labels = cbind(test$survived,test$survived), 
-#                        modnames = c("classification tree","lm"),
-#                        raw_curves = FALSE, ties_method="first")
-# autoplot(precrec_obj)
-# auc(precrec_obj)
-
-
-```
-
 *Random Forest*
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 cf <- cforest(formula, data19, na.action = na.pass, control = ctree_control(teststat = "quadratic", testtype = "Bonferroni", mincriterion = 0.99), ytrafo = NULL, scores = NULL, ntree = 500L, perturb = list(replace = FALSE, fraction = 0.8))
 
 hat_cf <- predict(cf, newdata = test, OOB = TRUE, type = "response")
 
-varimp(cf, mincriterion = 0, OOB = TRUE) 
+# Calculate the RMSE by hand for cforest and boosted ctree to compare 
 
+varimp(cf, mincriterion = 0, OOB = TRUE) 
 importance_cf <- data.frame(varimp(cf, mincriterion = 0, OOB = TRUE))
 names(importance_cf) <- "importance"
 importance_cf$var_name = rownames(importance_cf)
 importance_cf <- importance_cf  %>% arrange( desc(importance))
 ```
+
 ```{r}
 ggplot(importance_cf, aes(x = var_name, y = importance)) +
     geom_point() +
@@ -337,8 +271,30 @@ ggplot(importance_cf, aes(x = var_name, y = importance)) +
     coord_flip() +
     theme(axis.text.y = element_text(hjust = 0))
 ```
+We find that the variable sex, is the single most important variable in determining ones income in Austria. However, sex is not a generationally transmittable circumstance and, while it is a circumstance it is not exactly what we were trying to answer with our exercise. Therefore, we exclude it in the next step and create a new conditional inference forest.
+```{r}
+
+```
 
 *Boosted Inference Tree*
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
+
+cf_boosted <- blackboost(formula, data = data19, na.action = na.pass, control = boost_control(), tree_controls = partykit::ctree_control())
+cf_boosted
+
+cf_boosted_2 <- train(formula, data19, method = "ctree2", trControl = fitControl, tuneGrid = NULL, na.action = na.pass)
+cf_boosted_2
+
+plot(cf_boosted_2$finalModel, type = "simple")
+
+# Calc RMSE!!
+
+```
+Variable Importance Boosted Inference Tree
+```{r}
+
+
+
+
 
 ```
