@@ -677,7 +677,31 @@ ggplot(importance_cf, aes(x = var_name, y = importance)) +
     coord_flip() +
     theme(axis.text.y = element_text(hjust = 0))
 ```
+```{r}
+FR_cf <- cforest(formula, FR_equality_data, na.action = na.pass, control = ctree_control(teststat = "quadratic", testtype = "Bonferroni", mincriterion = 0.99), ytrafo = NULL, scores = NULL, ntree = 500L, perturb = list(replace = FALSE, fraction = 0.8))
 
+IT_cf <- cforest(formula, IT_equality_data, na.action = na.pass, control = ctree_control(teststat = "quadratic", testtype = "Bonferroni", mincriterion = 0.99), ytrafo = NULL, scores = NULL, ntree = 500L, perturb = list(replace = FALSE, fraction = 0.8))
+
+importance_cf_FR <- data.frame(varimp(FR_cf, mincriterion = 0, OOB = TRUE))
+names(importance_cf_FR) <- "importance"
+importance_cf_FR$var_name = rownames(importance_cf_FR)
+importance_cf_FR <- importance_cf_FR  %>% arrange( desc(importance))
+
+importance_cf_IT <- data.frame(varimp(IT_cf, mincriterion = 0, OOB = TRUE)) #Italy has to many missing entries, furthermore the distribution of Incomes is not realistic.
+
+
+
+
+```
+
+```{r}
+ggplot(importance_cf_FR, aes(x = var_name, y = importance)) +
+    geom_point() +
+    scale_x_discrete(limits = importance_cf$var_name[order(importance_cf$importance)]) +
+    labs(title = "Conditional Forest variable importance - France 2011", x = "", y = "Mean decrease in sum of squared residuals") +
+    coord_flip() +
+    theme(axis.text.y = element_text(hjust = 0))
+```
 
 # **Conclusion**
 =======
