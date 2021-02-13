@@ -21,15 +21,13 @@ knitr::opts_chunk$set(fig.align = 'center')
 
 Adapt new data to the Graphs and Summary Statistics
 
-
-Inference Tree
-Confusion Matrix (Problem since regression and not classification - need some other measure of model predictive performance), ROC etc.
-Graphs
-
-Apply the Data Wrangling Stept to the Synthetic EU Silc data
 Combine all the data in one RMD file - Dont Confuse names
 
-Compare Cross-Country Results
+Apply forest to different countries
+
+Compare Cross-Country Results - Variable Importance synthetic countries comparison
+
+Text schreiben
 
 
 **Libraries**
@@ -186,7 +184,7 @@ rpart.plot(tree_1, box.palette="RdBu", nn=FALSE, type=2)
 
 test$prediction_tree <- predict(tree_1, newdata = test, type = c("matrix"))
 
-
+# Here we could add the MSE or RMSE measure to compare performance
 
 
 
@@ -225,6 +223,13 @@ caret_rpart <- train(formula, data = data19, method = "rpart", trControl = fitCo
 
 caret_ctree
 caret_rpart
+
+Cctree <- ctree(formula, data = data19, control = ctree_control(testtype = "Bonferroni", mincriterion = 0.99)) 
+Cctree
+
+plot(Cctree,gp = gpar(fontsize = 6),
+  inner_panel=node_inner,
+  ip_args=list(abbreviate = FALSE,id = FALSE), main = "Opportunity Conditional Inference Tree for Austria 2019 - Cross Validated")
 ```
 
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
@@ -286,51 +291,53 @@ head(test$RMSE_caret)
 *Linear Model for comparison*
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 
-lm <- lm(formula, data = data19)
-
-test$prediction_lm <- predict(lm, newdata = test, type = c("response"))
-
-test <- test %>% 
-  drop_na(prediction_lm) %>% 
-  mutate(prediction_lm = as.factor(prediction_lm))
-
-
-confusion <- confusionMatrix(test$prediction_lm,test$inc_net_log)
-confusion
-
-test$prediction_tree_caret_scores <- predict(caret_rpart, test ,type = c("raw"))
-test$prediction_lm_scores <- predict(lm, test ,type = c("response"))
-
-precrec_obj <- evalmod(scores = cbind(test$prediction_tree_scores,test$prediction_lm_scores), 
-                       labels = cbind(test$survived,test$survived), 
-                       modnames = c("classification tree","lm"),
-                       raw_curves = FALSE, ties_method="first")
-autoplot(precrec_obj)
-auc(precrec_obj)
+# lm <- lm(formula, data = data19)
+# 
+# test$prediction_lm <- predict(lm, newdata = test, type = c("response"))
+# 
+# test <- test %>% 
+#   drop_na(prediction_lm) %>% 
+#   mutate(prediction_lm = as.factor(prediction_lm))
+# 
+# 
+# confusion <- confusionMatrix(test$prediction_lm,test$inc_net_log)
+# confusion
+# 
+# test$prediction_tree_caret_scores <- predict(caret_rpart, test ,type = c("raw"))
+# test$prediction_lm_scores <- predict(lm, test ,type = c("response"))
+# 
+# precrec_obj <- evalmod(scores = cbind(test$prediction_tree_scores,test$prediction_lm_scores), 
+#                        labels = cbind(test$survived,test$survived), 
+#                        modnames = c("classification tree","lm"),
+#                        raw_curves = FALSE, ties_method="first")
+# autoplot(precrec_obj)
+# auc(precrec_obj)
 
 
 ```
 
 *Random Forest*
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
-AT_cforest <- cforest(formula, data19, na.action = na.pass, control = ctree_control())
+cf <- cforest(formula, data19, na.action = na.pass, control = ctree_control(teststat = "quadratic", testtype = "Bonferroni", mincriterion = 0.99), ytrafo = NULL, scores = NULL, ntree = 500L, perturb = list(replace = FALSE, fraction = 0.8))
 
-vi <- varimp(AT_cforest)
+hat_cf <- predict(cf, newdata = test, OOB = TRUE, type = "response")
 
+varimp(cf, mincriterion = 0, OOB = TRUE) 
 
-
-AT_cforest
-# cf_1 = AT_cforest$finalModel
-# 
-# pred_ATcf <- predict(AT_cforest, data19)
-
-# AT_cftpred <- predict(AT_cforest, newdata = NULL)
-# gettree(AT_cforest, tree = 2L)
-# 
-# plot(formula, data = data19)
-# lines(AT_cfpred )
-
+importance_cf <- data.frame(varimp(cf, mincriterion = 0, OOB = TRUE))
+names(importance_cf) <- "importance"
+importance_cf$var_name = rownames(importance_cf)
+importance_cf <- importance_cf  %>% arrange( desc(importance))
 ```
+```{r}
+ggplot(importance_cf, aes(x = var_name, y = importance)) +
+    geom_point() +
+    scale_x_discrete(limits = importance_cf$var_name[order(importance_cf$importance)]) +
+    labs(title = "Conditional Forest variable importance - Austria 2019", x = "", y = "Mean decrease in sum of squared residuals") +
+    coord_flip() +
+    theme(axis.text.y = element_text(hjust = 0))
+```
+
 *Boosted Inference Tree*
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 
