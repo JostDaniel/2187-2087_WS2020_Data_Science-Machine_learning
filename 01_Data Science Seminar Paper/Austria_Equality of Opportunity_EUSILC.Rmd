@@ -664,9 +664,21 @@ AThat_cf <- predict(AT_cf, newdata = AT_test, OOB = TRUE, type = "response")
 
 varimp(AT_cf, mincriterion = 0, OOB = TRUE) 
 
+importance_cf <- data.frame(varimp(AT_cf, mincriterion = 0, OOB = TRUE))
+names(importance_cf) <- "importance"
+importance_cf$var_name = rownames(importance_cf)
+importance_cf <- importance_cf  %>% arrange( desc(importance))
 
 ```
 
+```{r}
+ggplot(importance_cf, aes(x = var_name, y = importance)) +
+    geom_point() +
+    scale_x_discrete(limits = importance_cf$var_name[order(importance_cf$importance)]) +
+    labs(title = "Conditional Random Forest variable importance", subtitle = "presented as the mean decrease in the sum of squared residuals when the variable is included in a tree split", x = "", y = "Mean decrease in sum of squared residuals") +
+    coord_flip() +
+    theme(axis.text.y = element_text(hjust = 0))
+```
 
 
 # **Conclusion**
