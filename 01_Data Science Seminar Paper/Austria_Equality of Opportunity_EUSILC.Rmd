@@ -21,41 +21,36 @@ knitr::opts_chunk$set(fig.align = 'center')
 ```
 
 # **Introduction**
+In this part of the seminar paper, we attempt to reproduce the findings of [@brunori20], but unfortunately we do not have access to the actual EU-SILC data from 2011. Instead we reproduce the findings using the synthetic data provided by the European office of statistics (Eurostat) (https://ec.europa.eu/eurostat/web/microdata/statistics-on-income-and-living-conditions). 
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 library(rpart)
 library(rpart.plot) 
-# library(precrec)
 library(caret)       
 library(party)
-library(partykit)# Ctree
+library(partykit) #Ctree
 library(ggparty)
 library(tidyverse)
-# library(vcd)
 library(RColorBrewer)
 library(knitr)
 library(knitcitations); cleanbib()
 cite_options(citation_format = "pandoc", check.entries=FALSE)
 library(bibtex)
-
-
-# library(robustHD) # Winsorize Function
-# library(glmnet)  
-# library(haven)
-# library(fst)
-# library(ranger)
-# library(tuneRanger)
-# library(xgboost)
 library(readr)
 library(summarytools)
 ```
 # **Data Wrangling**
-We use the EU-SILC data from 2011 as it was the survey when additionally there were questions on inter-generational transmission. These were questions on the parents of the respondents. We want to see, whether it is possible using only the information given about the parents to predict the correct income of the respondents and what the outstanding circumstances are for the trees we grow
+The original data is not provided as the EU protects the privacy of the original respondents. The idea of the public microdata, is that it allows us to train and write the code using the actual variable names, but not obtaining true results. The EU-SILC public microdata files are fully synthetic and they were simulated using statistical modeling and show the statistical distributions of the original data. The main caveats of this data are, that it cannot be used for statistical inference to the wider population. The results and conclusion obtained from this public microdata are to be taken with a big grain of salt. Luckily, the individual country datasets are grouped in a coherent manner.
+We use the EU-SILC data from 2011 as it was the survey when additionally there were questions on inter-generational transmission. These were questions about the parents of the respondents. We want to see, whether it is possible using only circumstantial information given about the parents and respondents to predict the income of the respondents.
 
-The unique identifier used in all  four data sets is the household ID identifier: RX030 in the Personal Register, PX030 in the Personal Data, DB030 in the Household Register, and HB030 in the Household Data file.
+The unique identifier used in all  four data sets is the household ID identifier: RX030 in the Personal Register, PX030 in the Personal Data, DB030 in the Household Register, and HB030 in the Household Data file. We only need to combine two of the datasets, namely the Household Register and the Personal Data. Latter contains the Ad-hoc module with the questions on intergenerational characteristics.
 
-We use the following variables for circumstances: Respondent's sex (PB150), Respondent's country of birth (Citizenship? PB220A), Presence of parents at home (PT010), Number of adults (18 or older) in respondents household (PT020), Number of working adults (18 or older) in respondents household (PT030), Father/Mother country of birth and citizenship (PT060, PT070, PT090, PT100), Father/mother education (PT110, PT120), Father/mother occupational status (PT130, PT160), Father/mother main occupation (PT150,PT180), Managerial position of father/mother(PT140,PT170), Tenancy status of the house in which respondent was living as a child (PT210).
+Following [@brunori20] we use the following variables for circumstances: Respondent's sex (PB150), Respondent's country of birth (Citizenship as proxy - PB220A), Presence of parents at home (PT010), Number of adults (18 or older) in respondents household (PT020), Number of working adults (18 or older) in respondents household (PT030), Father/Mother country of birth and citizenship (PT060, PT070, PT090, PT100), Father/mother education (PT110, PT120), Father/mother occupational status (PT130, PT160), Father/mother main occupation (PT150,PT180), Managerial position of father/mother(PT140,PT170), Tenancy status of the house in which respondent was living as a child (PT210).
 
-Outcome Variables i.e. Income: Total Household gross income (HY010), Total Disposable Income (HY020), Dwelling Type (HH010), Housing (HH030).
+Outcome Variables i.e. Income: Total Household gross income (HY010), Total Disposable Income (HY020), Dwelling Type (HH010), Housing (HH030). 
+
+We first use more variables than ultimately used in the analysis. We use the year of birth to calculate the age, and then exclude everyone older than 60 or younger than 27, as was done in the paper we are referring to. We first included both monthly and annual gross income. But in this cross-country analysis we use annual gross income as our outcome variable. 
+
+At first we ran the analysis with the citizenship variable included, but we ultimately decided that it is not really a circumstantial variable as Respondents country of birth would have been. Since it is utltimately possible to obtain a new citizenship. 
 
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 # setting the data path
@@ -103,7 +98,8 @@ AT_equality_data <- AT_equality_data %>% select(
     "tenancy" = PT210,
     "monthly_income" = PY200G)
 ```                                                                                                                                           
-
+*Summary*
+We provide the summary statistics for Austria, which we obtained using the 'dfsummary' from the package 'summarytools'. Similar to the 2019 dataset the 'AT_equality_data' does contain almost 7000 observations and no missing entries in our outcome variable annual income. However, it does contain many missing values across the observed circumstances. We chose to not exclude those and deal with these missing entries using the 'na.action = na.omit' command when doing the statistical analysis.
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 
 print(dfSummary(AT_equality_data), method="render")
@@ -412,7 +408,9 @@ $\implies$ The the Split sample based on $C^*_s$, by choosing the split point s 
 4. **Repeat :)**
 
 
-# **Results**
+# **Regression Trees**
+Following [@brunori20] we split the data into training and testing data by $2/3:1/3$.
+Furthermore, we chose to show the results obtained using regression trees obtained from the 'rpart' package. The training and test data sets will be continually used also for further analysis when we proceed with 'cTree'.
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 set.seed(123)
 
@@ -428,37 +426,13 @@ AT_tree <- rpart(formula, data = AT_train, cp=.008)
 
 AT_tree
 
-rpart.plot(AT_tree, box.palette="RdBu", nn=FALSE, type=2)
-
-# sex + citizenship +
+rpart.plot(AT_tree, box.palette="RdBu", nn=FALSE, type=2, main = "Regression Tree for Austria 2011")
 ```
 
-```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
-#fitControl <- trainControl(method = "cv", number = 10)
-#AT_caretTree <- train(formula, data = AT_train, method = "ctree", trControl = fitControl)
-```
-
-
-
-
-
-
-
-
-*Confusion Matrix
-```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
-# AT_test$prediction_tree <- predict(AT_tree, newdata = AT_test, type = c("matrix"))
-# 
-# class(AT_test$prediction_tree)
-# levels(AT_test$prediction_tree)
-# 
-# confusion <- confusionMatrix(AT_test$log_income, AT_test$prediction_tree, mode="everything")
-# confusion
-```
 
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 FR_equality_data <- FR_equality_data %>%
-  mutate(train_index = sample(c("train", "test"), nrow(FR_equality_data), replace=TRUE, prob=c(0.8, 0.2)))
+  mutate(train_index = sample(c("train", "test"), nrow(FR_equality_data), replace=TRUE, prob=c(0.67, 0.33)))
 
 FR_train <- FR_equality_data %>% filter(train_index=="train")
 FR_test <- FR_equality_data %>% filter(train_index=="test")
@@ -468,12 +442,12 @@ FR_tree <- rpart(formula, data = FR_train, cp=.003)
 
 FR_tree
 
-rpart.plot(FR_tree, box.palette="RdBu", nn=FALSE, type=2)
+rpart.plot(FR_tree, box.palette="RdBu", nn=FALSE, type=2, main = "Regression Tree for France 2011")
 ```
 
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 ES_equality_data <- ES_equality_data %>%
-  mutate(train_index = sample(c("train", "test"), nrow(ES_equality_data), replace=TRUE, prob=c(0.8, 0.2)))
+  mutate(train_index = sample(c("train", "test"), nrow(ES_equality_data), replace=TRUE, prob=c(0.67, 0.33)))
 
 ES_train <- ES_equality_data %>% filter(train_index=="train")
 ES_test <- ES_equality_data %>% filter(train_index=="test")
@@ -483,12 +457,27 @@ ES_tree <- rpart(formula, data = ES_train, cp=.003)
 
 ES_tree
 
-rpart.plot(ES_tree, box.palette="RdBu", nn=FALSE, type=2)
+rpart.plot(ES_tree, box.palette="RdBu", nn=FALSE, type=2, main = "Regression Tree for Spain 2011")
 ```
+```{r}
+DK_equality_data <- DK_equality_data %>%
+  mutate(train_index = sample(c("train", "test"), nrow(DK_equality_data), replace=TRUE, prob=c(0.67, 0.33)))
+
+DK_train <- DK_equality_data %>% filter(train_index=="train")
+DK_test <- DK_equality_data %>% filter(train_index=="test")
+
+
+DK_tree <- rpart(formula, data = DK_train, cp=.003)
+
+DK_tree
+
+rpart.plot(DK_tree, box.palette="RdBu", nn=FALSE, type=2, main = "Regression Tree for Denmark 2011")
+```
+
 
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 IT_equality_data <- IT_equality_data %>%
-  mutate(train_index = sample(c("train", "test"), nrow(IT_equality_data), replace=TRUE, prob=c(0.8, 0.2)))
+  mutate(train_index = sample(c("train", "test"), nrow(IT_equality_data), replace=TRUE, prob=c(0.67, 0.33)))
 
 IT_train <- IT_equality_data %>% filter(train_index=="train")
 IT_test <- IT_equality_data %>% filter(train_index=="test")
@@ -498,12 +487,26 @@ IT_tree <- rpart(formula, data = IT_train, cp=.003)
 
 IT_tree
 
-rpart.plot(IT_tree, box.palette="RdBu", nn=FALSE, type=2)
+rpart.plot(IT_tree, box.palette="RdBu", nn=FALSE, type=2, main = "Regression Tree for Italy 2011")
+```
+```{r}
+FI_equality_data <- FI_equality_data %>%
+  mutate(train_index = sample(c("train", "test"), nrow(FI_equality_data), replace=TRUE, prob=c(0.67, 0.33)))
+
+FI_train <- FI_equality_data %>% filter(train_index=="train")
+FI_test <- FI_equality_data %>% filter(train_index=="test")
+
+
+FI_tree <- rpart(formula, data = FI_train, cp=.003)
+
+FI_tree
+
+rpart.plot(FI_tree, box.palette="RdBu", nn=FALSE, type=2, main = "Regression Tree for Finland 2011")
 ```
 
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 LV_equality_data <- LV_equality_data %>%
-  mutate(train_index = sample(c("train", "test"), nrow(LV_equality_data), replace=TRUE, prob=c(0.8, 0.2)))
+  mutate(train_index = sample(c("train", "test"), nrow(LV_equality_data), replace=TRUE, prob=c(0.67, 0.33)))
 
 LV_train <- LV_equality_data %>% filter(train_index=="train")
 LV_test <- LV_equality_data %>% filter(train_index=="test")
@@ -513,27 +516,11 @@ LV_tree <- rpart(formula, data = LV_train, cp=.003)
 
 LV_tree
 
-rpart.plot(LV_tree, box.palette="RdBu", nn=FALSE, type=2)
+rpart.plot(LV_tree, box.palette="RdBu", nn=FALSE, type=2, main = "Regression Tree for Latvia 2011")
 ```
 
-```{r}
-
-```
-
-
-```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
-# control <- trainControl(method = "repeatedcv", number = 10, repeats = 10, savePredictions = T, classProbs = T, summaryFunction = multiClassSummary)
-# 
-# tuning_grid <- expand.grid(cp = seq(0, 0.02, by= 0.005))
-# tuning_grid
-# 
-# tree_caret <- train(data = equality_data, formula, method = "rpart", trControl = control, tuneGrid = tuning_grid, metric = "Accuracy", na.action = na.pass)
-# tree_caret
-```
 # **Conditional Inference Trees**
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
-set.seed(456)
-
 AT_Ctree <- ctree(formula, data = AT_train)
 AT_Ctree
 
@@ -655,12 +642,29 @@ plot(IT_cct,gp = gpar(fontsize = 8),
 
 #In Italy we have too many NAs among the circumstantial 
 ```
+
 ```{r}
 IT_test$P_Ct <- predict(IT_cct, newdata = as.data.frame(IT_test))
 
 IT_test$perror <- (IT_test$P_Ct - IT_test$log_income)^2
 
 IT_test$RMSE <- sqrt(sum((IT_test$P_Ct - IT_test$log_income)^2/nrow(IT_test), na.rm = T))
+```
+
+```{r}
+# The Denmark set has too many missing values, we cannot evaluate it with the given variables
+
+DK_cctree <- train(formula, data = DK_train, method = "ctree", trControl = fitControl, na.action = na.omit)
+
+DK_cctree
+
+```
+```{r}
+# The Finland set has too many missing values
+FI_cctree <- train(formula, data = FI_train, method = "ctree", trControl = fitControl, na.action = na.omit)
+
+FI_cctree
+
 ```
 
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
