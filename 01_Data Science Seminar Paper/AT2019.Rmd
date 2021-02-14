@@ -17,28 +17,27 @@ knitr::opts_chunk$set(error = TRUE)
 knitr::opts_chunk$set(fig.align = 'center')
 ```
 
-** To Do's **
+```{r echo=T, eval=F, message=F, include=F, error=F, warning=F}
+COMMENTS (not included)
 
-Adapt Graphs and Summary Statistics
+**TO DOs**
+* Adapt Graphs and Summary Statistics
+* Combine all the data in one RMD file - Don't Confuse names
+* Apply forest to different countries
+* Compare Cross-Country Results - Variable Importance synthetic countries comparison, Gini comparison across countries, (Comparison of trees)
+* RMSE für Forest berechnen
+* Texte schreiben
+* Einleitung schreiben
+* Conclusion schreiben
 
-Combine all the data in one RMD file - Dont Confuse names
-
-Apply forest to different countries
-
-Compare Cross-Country Results - Variable Importance synthetic countries comparison, Gini comparison across countries
-
-RMSE für Forest berechnen
-
-Text schreiben
-
-Aufbau 1. Austria 2019 mit der ausführlichen Erklärung der Vorgehensweise und der einzelnen Schritte. Daten sollten genau erklärt werden.
-
+**Aufbau**
+1. Austria 2019 mit der ausführlichen Erklärung der Vorgehensweise und der einzelnen Schritte. Daten sollten genau erklärt werden.
 2. Warum synthetisches Datenset abweicht, detaillierter auf Austria 2011. Die restlichen Länder eher im Appendix. 
-
 3. Ländervergleich Cforest Var importance. Tree complexity und Gini? (p.51 paper)
+```
 
 
-**Libraries**
+# **Libraries**
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 library(tidyverse)
 library(readr)          # import
@@ -49,11 +48,16 @@ library(party)          # ctree
 library(partykit)       # ctree
 library(caret)
 library(forecast)
-library(ineq) #Gini
-library(precrec) # ROC curves
+library(ineq)           # Gini
+library(precrec)        # ROC curves
+library(corrplot)       # Correlation plots
+library(plotly)         # interactive ggplot2 plots :D
+```
+
+```{r echo=T, eval=F, message=F, include=F, error=F, warning=F}
 # library(mboost)
 # library(vcd)
-library(RColorBrewer)
+# library(RColorBrewer)
 # library(knitr)
 # library(glmnet)  
 # library(haven)
@@ -62,107 +66,161 @@ library(RColorBrewer)
 # library(tuneRanger)
 # library(xgboost)
 ```
-**Data import**
+
+# **Data import**
 TEXT
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 # setting the data path
 data_path ="./AT2019"
 
 # accessing the data
-data19_p <- read.csv(file.path(data_path, "p_silc2019_ext.csv"), sep = ";")# personal data
-# data19_pID <- read.csv(file.path(data_path, "id_schluessel_r_ext.csv"), sep = ";")  # personal ID
-# data19_h <- read.csv(file.path(data_path, "h_silc2019_ext.csv"), sep = ";")  # household data
+data19 <- read.csv(file.path(data_path, "p_silc2019_ext.csv"), sep = ";")           # personal data
+```
+
+```{r echo=T, eval=F, message=F, include=F, error=F, warning=F}
+(not included)
+# data19_pID <- read.csv(file.path(data_path, "id_schluessel_r_ext.csv"), sep = ";")   # personal ID
+# data19_h <- read.csv(file.path(data_path, "h_silc2019_ext.csv"), sep = ";")         # household data
 # data19_hID <- read.csv(file.path(data_path, "id_schluessel_d_ext.csv"), sep = ";")  # household ID
 # data19_h <- data19_h %>% select(hy020, Hid) 
-```
-**Data Wrangling**
-TEXT
-```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
-# Renaming important variables for readability of tree
-
 # data19_p <- data19_p %>%  left_join(data19_h, by = "Hid")
+
+```
+
+# **Data Wrangling**
+First, we will select and rename the variables of interest. The we will log net income and recode some of the variables.
+
+```{r echo=T, eval=F, message=F, include=F, error=F, warning=F}
+COMMENTS (not included)
 
 # A big problem is that the actualy annual income variable (hy010) is coded as a character variable and not as a numeric variable as it should be in the EU-Silc dataset and as we have it in our synthetic set.
 
 # Problem the Austrian dataset does not contain information on the mother or the fathers country of birth, but merely their citizenship
 
-data19 <- data19_p %>% 
+# M002000 is nicht renamed und nicht in den models also droppen?
+
+# wir sollten eine parents_present variable machen wie im paper mit den Ausprägungen:
+- Both present
+- Only mother
+- Only father
+- Without parents
+- Lived in a private household without any parent
+
+
+```
+
+```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
+data19 <- data19 %>%
+  
   select(sex, P038004, P110000nu, P111010nu, alter, M009010, M010000, M014000, M016000, M017000, M020010, M021000, M025000, M027000, M028000, M004000, M001300, M001510, M003100, M001100, M001200, M002000, M001500) %>% 
-  rename("inc_net" = P038004,               # gross monthly income
-         "country_birth" = P110000nu,       # country of birth of respondent
-         "citizenship" = P111010nu,         # citizenship of respondent
-         "age" = alter,                     # age of respondent
-         "father_cit" = M009010,            # citizenship of father at age 14
-         "father_edu" = M010000,            # education of father at age 14 (höchster abschluss)
+  
+  rename("inc_net"           = P038004,     # gross monthly income
+         "country_birth"     = P110000nu,   # country of birth of respondent
+         "citizenship"       = P111010nu,   # citizenship of respondent
+         "age"               = alter,       # age of respondent
+         "father_cit"        = M009010,     # citizenship of father at age 14
+         "father_edu"        = M010000,     # education of father at age 14 (höchster abschluss)
          "father_occup_stat" = M014000,     # occupational status of father at age 14
-         "father_occup" = M016000,          # main occupation of father at age 14
-         "father_manag" = M017000,          # managerial position of father at age 14            
-         "mother_cit" = M020010,            # citizenship of mother at age 14
-         "mother_edu" = M021000,            # education of mother at age 14
+         "father_occup"      = M016000,     # main occupation of father at age 14
+         "father_manag"      = M017000,     # managerial position of father at age 14            
+         "mother_cit"        = M020010,     # citizenship of mother at age 14
+         "mother_edu"        = M021000,     # education of mother at age 14
          "mother_occup_stat" = M025000,     # occupational status of mother at age 14
-         "mother_occup" = M027000,          # main occupation of mother at age 14
-         "mother_manag" = M028000,          # managerial position of mother at age 14
-         "tenancy" = M004000,               # tenancy at age 14
-         "children" = M001300,              # number of children (under 18) in respondent’s household at age 14
-         "adults" = M001510,                # number of adults (aged 18 or more) in respondent’s household
-         "adults_working" = M003100,        # number of working adults (aged 18 or more) in respondent’s household
-         "father_present" = M001100,
-         "mother_present" = M001200,
+         "mother_occup"      = M027000,     # main occupation of mother at age 14
+         "mother_manag"      = M028000,     # managerial position of mother at age 14
+         "tenancy"           = M004000,     # tenancy at age 14
+         "children"          = M001300,     # number of children (under 18) in respondent’s household at age 14
+         "adults"            = M001510,     # number of adults (aged 18 or more) in respondent’s household
+         "adults_working"    = M003100,     # number of working adults (aged 18 or more) in respondent’s hhd.
+         "father_present"    = M001100,     # father present in respondent’s household at age 14
+         "mother_present"    = M001200,     # mother present in respondent’s household at age 14
+         "adults_present"    = M001500,     # adults present in respondent’s household at age 14
          ) %>%    
-  filter(age %in% (27:59), inc_net > 0, mother_present > 0, father_present > 0, father_cit > 0, mother_cit > 0)  %>%      # We drop all answers where the respondents refused or were not able to provide information
-  mutate("inc_net_log" = log(inc_net),  "both_parents_present" = father_present + mother_present, # 4 = none present, 3 = one present, 2 = both present
-         sex = factor(ifelse(as.numeric(sex)==2, 1,0)), 
-         country_birth = factor(country_birth, labels = c(1, 2, 2, 2, 3, 3)), # Austria, EU, Non-EU
-         father_cit = ifelse(father_cit == 1, 1, 2),                          # Austria and Other
-         mother_cit = ifelse(mother_cit == 1, 1, 2))                          # recode(country_birth, "1" = "Austria", "EU" = 2, "EU" = 3, "EU" = 4, "non-EU" = 5, "non-EU" = 6)) # logged net income per month of respondent
+  
+  filter(age %in% (27:59), inc_net > 0, mother_present > 0, father_present > 0, father_cit > 0, mother_cit > 0)  %>%
+  # We drop all answers where the respondents refused or were not able to provide information 
+  # D: dropped man dann nicht die ganzen observations??
+  # D und wwenn wir nach age filtern (und nicht die observations mit -6 entfernen) müssen wir erklären warum 27-59 und nicht 25-59 und den text unten ändern, weil ich hab ja einfach die mit -6 (age outside of range) entfernt.
+  
+  mutate("inc_net_log" = log(inc_net),   
+         # logged net income per month of respondent
+         
+         "both_parents_present" = father_present + mother_present,            
+         # 4 = none present, 3 = one present, 2 = both present
+         
+         sex = factor(ifelse(as.numeric(sex)==2, 1, 0)), 
+         # 0 = male, 1 = female
+         
+         country_birth = factor(country_birth, labels = c(1, 2, 2, 2, 3, 3)), 
+         # Austria, EU, Non-EU
+         
+         father_cit = ifelse(father_cit == 1, 1, 2),                          
+         # Austria and Other
+         
+         mother_cit = ifelse(mother_cit == 1, 1, 2))   
+         # Austria and Other
 ```
 
-**Data Exploration and Visualization**
-The ad-hoc module on intergenerational transmission of disadvantages only includes "selected respondents aged over 24 years and less than 60 years". This is why we exclude them: coding '-6' means that year of birth is outside of 1969 and 1994 range or the interviw was a proxy interview. Additionally, we exclude all respondents that where not part of this ad-hoc modul even if of the desired age.  
+# **Data Exploration and Visualization**
+To get a good grasp of our data we will first look at some simple descriptives and a correlaton plot
+The ad-hoc module on intergenerational transmission of disadvantages only includes "selected respondents aged over 24 years and less than 60 years". This is why we exclude them: coding '-6' means that year of birth is outside of 1969 and 1994 range or the interview was a proxy interview. Additionally, we exclude all respondents that where not part of this ad-hoc modul even if of the desired age.
 
-mother/father_edu: -3: not applicable (no mother/father, mother/father not present....)
-
+## Data Summary
 ```{r}
-print(dfSummary(data19), method="render")
+print(dfSummary(data19), method="render", style="grid", plain.ascii = F)
 ```
+The data set includes 25 variables and 3600 observation. There are almost no missing values.<!-- D: haben wir die gedropt? --> There are slight more females (52%) than males (48%). The income distribution is skewed to the right meaning the median income is lower than the mean income. 83% of respondents where born in Austria and 88& are Austrian citizens. In about 85% of respondents household at age 14 both parents where present and in 96% the mother was present....
+<!-- TEXT missing -->
 
+## Gini Index and Lorenz curve
 ```{r}
 ineq(data19$inc_net, type = "Gini")
+```
+The Gini index is 0.25 which is a bit lower than the World Bank estimate for Austria of 0.3 (2017) available at  https://data.worldbank.org/indicator/SI.POV.GINI?locations=AT.
+
+```{r}
 plot(Lc(data19$inc_net), col = "darkred", lwd = 3)
 ```
+The Gini index corresponds to the are below the the black equal distribution line and above the red line of the actual distribution.
 
-Age pyramide
+## Age pyramide
 ```{r}
-# library("RColorBrewer")
-# display.brewer.all()
-data19 %>% 
-ggplot(aes(x = age, fill=sex))  + 
+agepyra <- ggplot(data19, aes(x = age, fill=sex))  + 
   geom_bar(data = subset(data19, sex==1)) +
   geom_bar(data = subset(data19, sex==0), aes(y=..count..*(-1))) + 
   scale_x_continuous(breaks = seq(27,59,2), labels=abs(seq(27,59,2))) +
   scale_fill_manual(name = "Sex", labels = c("Male", "Female"), values=c("springgreen2", "slateblue1")) +
-  labs(title = "Age pyramide of ad-hoc module on intergenerational transmission of disadvantages", x = "Age", y = "") +
+  labs(title = "Age pyramide of ad-hoc module on intergenerational transmission of disadvantages", x = "Age", y = "Number of people") +
   theme_bw() +
   coord_flip()
 
+ggplotly(agepyra)
 ```
+In the Data Frame Summary above we already saw that there are slightly more females (1) than males (0) in the data set and that the median age is 44 - while the age distribution of the sample is quite evenly distribution there are a bit more older than young individuals. 
 
-
-DANIEL ?! Correlation plot DANIEL?!
 ```{r}
-library(corrplot)
-library(Hmisc)
-
-class(data19)
-
-rcorr <- rcorr(as.matrix(data19))
-
-corrplot(rcorr, type = "upper", order = "hclust", 
-         tl.col = "black", tl.srt = 45)
-
+median(data19$age)
 ```
 
-**Regression Tree**
+
+## Correlation plot
+```{r}
+data19cor <- data19
+data19cor$sex <- as.numeric(data19cor$sex)
+data19cor$country_birth <- as.numeric(data19cor$country_birth)
+
+# Dropping the categorical variables father_occup & mother_occup
+data19cor <- select(data19cor, -c(father_occup, mother_occup))
+
+# Computing correlation coefficients and significance thereof 
+data19cor <- cor(data19cor)
+res1 <- cor.mtest(data19cor, conf.level = 0.99)
+
+corrplot(data19cor, method = "ellipse", type = "upper", order = "FPC", diag = FALSE, outline = FALSE, tl.cex = .5, tl.col = "black", title = "Correlation plot", p.mat = res1$p, sig.level = 0.01, insig = "blank", mar=c(2,2,2,2))
+```
+As can be seen from the correlation plot, all variables are significantly related to at least one other variable of the data set (at the 1% significance level). For better visibility insignificant correlations are blanked out. As the correlation matrix is ordered using the first principal component there is some clustering of significant correlations.
+
+# **Regression Tree**
 ```{r}
 set.seed(123)
 
@@ -173,6 +231,10 @@ data19 <- data19 %>%
 
 train <- data19 %>% filter(train_index=="train")
 test <- data19 %>% filter(train_index=="test")
+```
+
+```{r echo=T, eval=F, message=F, include=F, error=F, warning=F}
+COMMENTS (not included)
 
 # tree_1 <- rpart(formula, data = train, cp=.003)
 # tree_1
@@ -200,7 +262,7 @@ tree_caret_final <- caret_rpart$finalModel
 rpart.plot(tree_caret_final, box.palette="RdBu", nn=FALSE, type=2)
 ```
 
-**Conditional inference tree**
+# **Conditional inference tree**
 ```{r}
 # For the Inference Tree to work, we must have all variables as numeric data
 
@@ -212,7 +274,8 @@ plot(Ctree, type = "simple",gp = gpar(fontsize = 6),
   ip_args=list(id = FALSE), main = "Conditional Inference Tree for Austria 2019") #Überschrift größe ändern
 
 ```
-Instead of the default tuning function we use the caret package for cross validation
+
+Instead of the default tuning function we use the caret package for cross validation.
 ```{r}
 ### data = in data 2019 geändert von train!
 caret_ctree <- train(formula, data = data19, method = "ctree", trControl = fitControl, na.action = na.pass)
@@ -235,14 +298,15 @@ plot(caret_ctree,gp = gpar(fontsize = 6),
 
 plot(caret_ctree$finalModel, type = "simple")
 ```
-*Graphic representation of the tuning parameters*
+
+# **Graphic representation of the tuning parameters**
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 plot(caret_ctree) # RMSE vs p-value our resampling parameter
 plot(caret_rpart)
 # plotcp(tree_1)
 ```
 
-*Predictions*
+# **Predictions**
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 test$P_AtCt <- predict(Ctree, newdata = as.data.frame(test))
 test$perror <- (test$P_AtCt - test$inc_net_log)^2
@@ -256,7 +320,7 @@ test$perror_caret <- (test$P_AtCt_caret - test$inc_net_log)^2
 test$RMSE_caret <- sqrt(sum((test$P_AtCt_caret - test$inc_net_log)^2/nrow(test), na.rm = T))
 head(test$RMSE_caret)
 ```
-*Random Forest*
+# **Random Forest**
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 cf <- cforest(formula, data19, na.action = na.pass, control = ctree_control(teststat = "quadratic", testtype = "Bonferroni", mincriterion = 0.99), ytrafo = NULL, scores = NULL, ntree = 500L, perturb = list(replace = FALSE, fraction = 0.8))
 
@@ -272,19 +336,21 @@ importance_cf <- importance_cf  %>% arrange( desc(importance))
 ```
 
 ```{r}
-ggplot(importance_cf, aes(x = var_name, y = importance)) +
-    geom_point() +
+varimpo <- ggplot(importance_cf, aes(x = var_name, y = importance)) +
+    geom_pointrange(shape = 21, colour = "black", fill = "white", size = 3, stroke = 1, aes(ymin = 0, ymax = importance)) +
     scale_x_discrete(limits = importance_cf$var_name[order(importance_cf$importance)]) +
     labs(title = "Conditional Forest variable importance - Austria 2019", x = "", y = "Mean decrease in sum of squared residuals") +
     coord_flip() +
-    theme(axis.text.y = element_text(hjust = 0))
+    theme_light() +
+    theme(axis.line = element_blank(), panel.border = element_blank(), panel.grid.major.y=element_blank())
+
+ggplotly(varimpo)
 ```
 We find that the variable sex, is the single most important variable in determining ones income in Austria. However, sex is not a generationally transmittable circumstance and, while it is a circumstance it is not exactly what we were trying to answer with our exercise. Therefore, we exclude it in the next step and create a new conditional inference forest.
-```{r}
 
-```
+<!-- Brunori hat sex aber schon drinnen gehabt, aber komischerweise kommt es nur im tree von tschechien vor scheint also nciht mal annähernd so wichtig zu sein :O -->
 
-*Boosted Inference Tree*
+# **Boosted Inference Tree**
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 
 # cf_boosted <- blackboost(formula, data = data19, na.action = na.pass, control = boost_control(), tree_controls = partykit::ctree_control())
@@ -297,7 +363,7 @@ We find that the variable sex, is the single most important variable in determin
 # Calc RMSE!!
 
 ```
-Variable Importance Boosted Inference Tree
+## Variable Importance
 ```{r}
 
 
