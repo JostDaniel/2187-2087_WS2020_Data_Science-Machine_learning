@@ -726,27 +726,38 @@ print(dfSummary(LV_equality_data), method="render")
 
 ```
 
-```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
+Summary Statisitcs All Countries
+```{r echo=FALSE, results= 'asis'}
 
-Gini_AT <- (ineq(AT_equality_data$annual_income, type = "Gini"))
-Gini_FR <- (ineq(FR_equality_data$annual_income, type = "Gini"))
-Gini_DK <- (ineq(DK_equality_data$annual_income, type = "Gini"))
-Gini_ES <- (ineq(ES_equality_data$annual_income, type = "Gini"))
-Gini_FI <- (ineq(FI_equality_data$annual_income, type = "Gini"))
-Gini_IT <- (ineq(IT_equality_data$annual_income, type = "Gini"))
-Gini_LV <- (ineq(LV_equality_data$annual_income, type = "Gini"))
+AT <- summarise(AT_equality_data,Country = "AT", "Sample Size" = nrow(AT_equality_data), "Avg. Equ.Income" = mean(annual_income), "Std. dev." = sd(annual_income), "Gini" = ineq(annual_income, type = "Gini")) 
 
-Country <- (c("AT", "FR", "DK", "ES", "FI", "IT", "LV"))
-Gini <- c(Gini_AT,Gini_FR,Gini_DK, Gini_ES, Gini_FI, Gini_IT, Gini_LV )
-Gini <- data.frame(Gini,Country)
+FR <- summarise(FR_equality_data,Country = "FR", "Sample Size" = nrow(FR_equality_data), "Avg. Equ.Income" = mean(annual_income), "Std. dev." = sd(annual_income), "Gini" = ineq(annual_income, type = "Gini"))
 
-ggplot(data = Gini) +
+DK <- summarise(DK_equality_data, Country = "DK","Sample Size" = nrow(DK_equality_data),  "Avg. Equ.Income" = mean(annual_income), "Std. dev." = sd(annual_income), "Gini" = ineq(annual_income, type = "Gini"))
+
+ES <- summarise(ES_equality_data,"Sample Size" = nrow(ES_equality_data),"Avg. Equ.Income" = mean(annual_income), "Std. dev." = sd(annual_income), "Gini" = ineq(ES_equality_data$annual_income, type = "Gini"), Country = "ES")
+
+FI <- summarise(FI_equality_data,Country = "FI", "Sample Size" = nrow(FI_equality_data), "Avg. Equ.Income" = mean(annual_income), "Std. dev." = sd(annual_income), "Gini" = ineq(annual_income, type = "Gini")) 
+
+IT <- summarise(IT_equality_data, Country = "IT","Sample Size" = nrow(IT_equality_data),"Avg. Equ.Income" = mean(annual_income), "Std. dev." = sd(annual_income), "Gini" = ineq(annual_income, type = "Gini"))
+
+LV <- summarise(LV_equality_data,Country = "LV","Sample Size" = nrow(LV_equality_data),"Avg. Equ.Income" = mean(annual_income), "Std. dev." = sd(annual_income), "Gini" = ineq(annual_income, type = "Gini"))
+
+Summary_Stat_all <- full_join(x = AT, y= FR)
+Summary_Stat_all <- full_join(x = Summary_Stat_all, y= DK)                     
+Summary_Stat_all <- full_join(x = Summary_Stat_all, y= ES)     
+Summary_Stat_all <- full_join(x = Summary_Stat_all, y= FI)     
+Summary_Stat_all <- full_join(x = Summary_Stat_all, y= IT)     
+Summary_Stat_all <- full_join(x = Summary_Stat_all, y= LV)     
+
+knitr::kable(Summary_Stat_all, caption = "Country Statistics")
+
+ggplot(data = Summary_Stat_all) +
   geom_point(mapping = aes(x = Country, y = Gini))  +
-  theme_bw() +
+  theme_classic() +
   labs(title = "Comparision of the Gini Index across countries")
 
 ```
-
 
 
 # **Method**: Conditional Inference Trees
