@@ -19,11 +19,12 @@ knitr::opts_chunk$set(fig.align = 'center')
 
 ```{r echo=T, eval=F, message=F, include=F, error=F, warning=F}
 COMMENTS (not included)
-
+ 
 **TO DOs**
-* Adapt Graphs and Summary Statistics
+#* Adapt Graphs and Summary Statistics
 * Compare Cross-Country Results - Variable Importance synthetic countries comparison, Gini comparison across countries, (Comparison of trees)
 * RMSE für Forest berechnen
+*# RMSE für Boosted berechnen
 * Texte schreiben
 * Einleitung schreiben
 * Conclusion schreiben
@@ -810,7 +811,10 @@ AT_tree <- rpart(formula, data = AT_train, cp=.008)
 AT_tree
 
 rpart.plot(AT_tree, box.palette="RdBu", nn=FALSE, type=2, main = "Regression Tree for Austria 2011")
+```
+
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
+
 FR_equality_data <- FR_equality_data %>%
   mutate(train_index = sample(c("train", "test"), nrow(FR_equality_data), replace=TRUE, prob=c(0.67, 0.33)))
 
@@ -1091,7 +1095,9 @@ varimp(AT_cf, mincriterion = 0, OOB = TRUE)
 importance_cf <- data.frame(varimp(AT_cf, mincriterion = 0, OOB = TRUE))
 names(importance_cf) <- "importance"
 importance_cf$var_name = rownames(importance_cf)
-importance_cf <- importance_cf  %>% arrange( desc(importance))
+importance_cf <- importance_cf  %>% 
+  arrange( desc(importance))  %>%
+  mutate(Country = "AT")
 
 ```
 
@@ -1109,7 +1115,7 @@ FR_cf <- cforest(formula, FR_equality_data, na.action = na.pass, control = ctree
 importance_cf_FR <- data.frame(varimp(FR_cf, mincriterion = 0, OOB = TRUE))
 names(importance_cf_FR) <- "importance"
 importance_cf_FR$var_name = rownames(importance_cf_FR)
-importance_cf_FR <- importance_cf_FR  %>% arrange(desc(importance))
+importance_cf_FR <- importance_cf_FR  %>% arrange(desc(importance)) %>% mutate(Country = "FR")
 ```
 
 ```{r}
@@ -1118,7 +1124,7 @@ IT_cf <- cforest(formula, IT_equality_data, na.action = na.pass, control = ctree
 importance_cf_IT <- data.frame(varimp(IT_cf, mincriterion = 0, OOB = TRUE))
 names(importance_cf_IT) <- "importance"
 importance_cf_IT$var_name = rownames(importance_cf_IT)
-importance_cf_IT <- importance_cf_IT  %>% arrange(desc(importance))
+importance_cf_IT <- importance_cf_IT  %>% arrange(desc(importance)) %>% mutate(Country = "IT")
 ```
 
 ```{r}
@@ -1127,10 +1133,21 @@ LV_cf <- cforest(formula, LV_equality_data, na.action = na.pass, control = ctree
 importance_cf_LV <- data.frame(varimp(LV_cf, mincriterion = 0, OOB = TRUE))
 names(importance_cf_LV) <- "importance"
 importance_cf_LV$var_name = rownames(importance_cf_LV)
-importance_cf_LV <- importance_cf_LV  %>% arrange(desc(importance))
+importance_cf_LV <- importance_cf_LV  %>% arrange(desc(importance)) %>% mutate(Country = "LV")
 ```
 
+
+* Variable Importance Countries*
 ```{r}
+
+df <- full_join(importance_cf, importance_cf_FR)
+#df <- full_join(df, importance_cf_IT)
+df <- full_join(df, importance_cf_LV) %>% group_by(Country)
+
+ggplot(df, aes(x = var_name , y = importance, shape = Country)) +
+    geom_point() +
+    scale_x_discrete(limits = importance_cf_FR$var_name[order(importance_cf_FR$importance)]) +
+    labs(title = "Conditional Forest variable importance - Country Comparison", x = "", y = "Variable importance") +theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 
 ```
 
