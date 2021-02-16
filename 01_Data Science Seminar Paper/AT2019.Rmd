@@ -282,7 +282,14 @@ $\implies$ The the Split sample based on $C^*_s$, by choosing the split point s 
 
 In the context of estimating inequality of opportunity conditional inference trees offer a particular structure. Namely each hypothesis is a test for whether equal opportunity exists within a group. If the tree results in no splits we cannot reject the null hypothesis of equality of opportunity. While the deeper the tree is grown, the more types are required to account for inequality of opportunity in the country under consideration. Each split (parent node) thus indicates that the opportunities of the two groups are significantly different, while we cannot say the same for the groups included in the leaf. nodes.
 
+<<<<<<< Updated upstream
 # **Regression Tree**
+=======
+To showcase the difference between the _regression and classification trees_ we discussed in class and the _conditional inference trees_ we also plot the former as comparison. In the following chunk of code we use `set.seed` to generate randomness for reproducability. We define our `formula` which consists of all the circumstances we use for estimation. Furthermore, we split the data into a training and test sample. Finally we define a `fitControl` which is our tuning function for cross validation using the `caret` package.
+
+#**Empirical Analysis**
+## **Regression Tree**
+>>>>>>> Stashed changes
 ```{r}
 set.seed(123)
 
@@ -323,12 +330,15 @@ caret_rpart
 tree_caret_final <- caret_rpart$finalModel
 rpart.plot(tree_caret_final, box.palette="RdBu", nn=FALSE, type=2)
 ```
+The `caret_tree` for Austria shows a tree with five partitions and seven terminal nodes. The splitting variables indicate already which circumstances are most significant in determining the income of the respondents. In Austria, sex is the most important determinant for income.
+However, we only showcase this tree as a comparison to the *conditional inference trees*.
 
-# **Conditional inference tree**
+## **Conditional inference tree**
+The *conditional inference tree* algorithm as it is included in `party` and the `partykit` packages contains various points for adjustment of variable selection and stopping criteria. We use the default `ctree_control` function but see it necessary to explain what it does exactly and why we think that the specifications we have chosen are not distorting. We use the default teststatistic as we do not know neither the conditional expectation nor covariance of our circumstances. In such a case the default setting of `ctree_control(teststat = "quad")` is recommended [@Hoh]. In the Austria 2019 we have mostly *cleaned* the data of missing values, however we still have many `NA` entries furhter on in the document. For reasons of uniformity, we chose to use the testtype `ctree_control(testtype = "Bonferroni")`. This approach uses simple Bonferroni adjusted P-Values. However, we also use the caret package for cross validation in addition to the default control function, since it is the one we had discussed in class and we used it for comparability of the results.
 ```{r}
 # For the Inference Tree to work, we must have all variables as numeric data
 
-Ctree <- ctree(formula, data = train, control = ctree_control(testtype = "Bonferroni")) #I think that this already include the Control for inference trees, there is a possibility to do it with CV and caret, but it did not work out yet
+Ctree <- ctree(formula, data = train, control = ctree_control(testtype = "Bonferroni")) 
 Ctree
 
 plot(Ctree, type = "simple",gp = gpar(fontsize = 6),
@@ -336,8 +346,8 @@ plot(Ctree, type = "simple",gp = gpar(fontsize = 6),
   ip_args=list(id = FALSE), main = "Conditional Inference Tree for Austria 2019") #Überschrift größe ändern
 
 ```
+We obtain a deep tree with 11 inner nodes and 12 terminal nodes. Sex is the most siginificant determinant for income. The further determinants are quite different for men (0) and women (1).
 
-Instead of the default tuning function we use the caret package for cross validation.
 ```{r}
 ### data = in data 2019 geändert von train!
 caret_ctree <- train(formula, data = data19, method = "ctree", trControl = fitControl, na.action = na.pass)
@@ -360,7 +370,7 @@ plot(caret_ctree,gp = gpar(fontsize = 6),
 
 plot(caret_ctree$finalModel, type = "simple")
 ```
-
+We plot the conditional inference tree using both the `caret` and the `party` package to compare the results. In the first we used the suggested `mincriterion = 0.99` obtained through cross validation. We now have a tree with 9 terminal nodes and 8 inner nodes. Sex remains the most significant determinant. Furthermore, we see for example that country of birth is significant if its in the EU or outside of it. The Boxplots at the terminal nodes show the distribution of the outcome variable at the node. All, splits are chosen at a significance level of p < 0.001.
 # **Graphic representation of the tuning parameters**
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 plot(caret_ctree) # RMSE vs p-value our resampling parameter
