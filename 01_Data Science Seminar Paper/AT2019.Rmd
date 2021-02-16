@@ -24,7 +24,7 @@ COMMENTS (not included)
 #* Adapt Graphs and Summary Statistics
 #* Compare Cross-Country Results - Variable Importance synthetic countries comparison, Gini comparison across countries, (Comparison of trees)
 * RMSE für Forest berechnen
-*# RMSE für Boosted berechnen
+#* RMSE für Boosted berechnen
 * Texte schreiben
 * Einleitung schreiben
 * Conclusion schreiben
@@ -76,21 +76,10 @@ library(readr)
 # library(tuneRanger)
 # library(xgboost)
 ```
-The original data is not provided as the EU protects the privacy of the original respondents. The idea of the public microdata, is that it allows us to train and write the code using the actual variable names, but not obtaining true results. The EU-SILC public microdata files are fully synthetic and they were simulated using statistical modeling and show the statistical distributions of the original data. The main caveats of this data are, that it cannot be used for statistical inference to the wider population. The results and conclusion obtained from this public microdata are to be taken with a big grain of salt. Luckily, the individual country datasets are grouped in a coherent manner.
-We use the EU-SILC data from 2011 as it was the survey when additionally there were questions on inter-generational transmission. These were questions about the parents of the respondents. We want to see, whether it is possible using only circumstantial information given about the parents and respondents to predict the income of the respondents.
-
-The unique identifier used in all  four data sets is the household ID identifier: RX030 in the Personal Register, PX030 in the Personal Data, DB030 in the Household Register, and HB030 in the Household Data file. We only need to combine two of the datasets, namely the Household Register and the Personal Data. Latter contains the Ad-hoc module with the questions on intergenerational characteristics.
-
-
-
-We first use more variables than ultimately used in the analysis. We use the year of birth to calculate the age, and then exclude everyone older than 60 or younger than 27, as was done in the paper we are referring to. We first included both monthly and annual gross income. But in this cross-country analysis we use annual gross income as our outcome variable. 
-
-At first we ran the analysis with the citizenship variable included, but we ultimately decided that it is not really a circumstantial variable as Respondents country of birth would have been. Since it is utltimately possible to obtain a new citizenship. 
-
-
-
-
 ## *Data import*
+
+In the first part of our data analysis we rely upon the data of Statistics Austria. This data contains the survey data of the income and living conditions for Austria in the year 2019. In addition to that the data set includes an ad hoc moduel with many of the intergenerational transmission variables needed to properly assses inequality of opportunity of the respondents.
+
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 # setting the data path
 data_path ="./AT2019"
@@ -113,7 +102,7 @@ The first step of our data wrangling part is to select the variables of interest
 
 Since annual income was not properly provided in the Statistic Austria dataset for 2019, we use gross monthly income as our dependent variable and approximate the yearly income by multiplying the monthly income by 12. Moreover, we only contain values larger than zero in our income variable, since values below zero indicate people which where not able to provide information or refused to answer the survey questions concerning the income topic. Furthermore, since the income is commonly assumed to be right skwed because of individual disproportionately high income earners which we take the log of the income variable. 
 
-After selecting the variables described from the original dataset, we rename all the variables and save them to our main dataset "data19". Building on this dataset we further limit our data by the age. We only include respondents aged between 27 and 59 since this captures the working population. In the next step we drop all answers where the respondents refused or were not able to provide information concerning the intergenerational circumstances like e.g. father or mother citizenship. Next we need to recode some of the variables from characters into factors or numeric variables in order to later calaculate the conditional inference trees. 
+After selecting the variables described from the original dataset, we rename all the variables and save them to our main dataset "data19". Building on this dataset we further limit our data by the age. We only include respondents aged between 27 and 59 since this captures the working population. In the next step we drop all answers where the respondents refused or were not able to provide information concerning the intergenerational circumstances like e.g. father or mother citizenship. Next we need to recode some of the variables from characters into factors or numeric variables in order to later calculate the conditional inference trees. 
 
 ```{r echo=T, eval=F, message=F, include=F, error=F, warning=F}
 COMMENTS (not included)
@@ -187,6 +176,9 @@ data19 <- data19 %>%
 ```
 
 ## *Data Exploration and Visualization*
+
+#umschreiben Age anpassen auf 27 hier oder oben sonst
+
 To get a good grasp of our data we will first look at some simple descriptives and a correlaton plot
 The ad-hoc module on intergenerational transmission of disadvantages only includes "selected respondents aged over 24 years and less than 60 years". This is why we exclude them: coding '-6' means that year of birth is outside of 1969 and 1994 range or the interview was a proxy interview. Additionally, we exclude all respondents that where not part of this ad-hoc modul even if of the desired age.
 
@@ -194,7 +186,7 @@ The ad-hoc module on intergenerational transmission of disadvantages only includ
 ```{r}
 print(dfSummary(data19), method="render", style="grid", plain.ascii = F)
 ```
-The data set includes 25 variables and 3600 observation. There are almost no missing values.<!-- D: haben wir die gedropt? --> There are slight more females (52%) than males (48%). The income distribution is skewed to the right meaning the median income is lower than the mean income. 83% of respondents where born in Austria and 88& are Austrian citizens. In about 85% of respondents household at age 14 both parents where present and in 96% the mother was present....
+The data set includes 25 variables and 3600 observation. There are almost no missing values after cleaning the data<!-- D: haben wir die gedropt? --> There are slight more females (52%) than males (48%). The income distribution is skewed to the right meaning the median income is lower than the mean income (we take the log to correct for this). 83% of respondents where born in Austria and 88& are Austrian citizens. In about 85% of respondents household at age 14 both parents where present and in 96% the mother was present....
 <!-- TEXT missing -->
 
 ## *Gini Index and Lorenz curve*
