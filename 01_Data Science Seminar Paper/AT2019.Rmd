@@ -41,7 +41,13 @@ COMMENTS (not included)
 ```
 #**Introduction**
 
-Building upon the contribution of 
+Building upon the contribution of [@brunori20] the goal of our project is to estimate inequality of opportunity based on Machine Learning Techniques. 
+
+
+Advantages ML: 
+- minimize the risk of arbitrary and ad-hoc model selection
+- provide a standardized way of trading off upward and downward biases in inequality of opportunity estimations
+
 
 ## *Libraries*
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
@@ -180,7 +186,6 @@ data19 <- data19 %>%
 print(dfSummary(data19), method="render", style="grid", plain.ascii = F)
 ```
 After cleaning our data we end up with a data set that includes 25 variables and 3600 observation. There are almost no missing values anymore, since we corrected for refused survey answers or dropped the values where participants where not able to answer the survey questions. There are slight more females (52%) than males (48%) in the data. The income distribution is skewed to the right meaning the median income is lower than the mean income (we take the logarith to correct for this). 83% of the respondents where born in Austria and 88% are Austrian citizens. In about 85% of respondents household at age 14 both parents where present and in 96% the mother was present....
-
 
 ## *Data Exploration and Visualization*
 
