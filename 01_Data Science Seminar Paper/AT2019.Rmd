@@ -42,8 +42,12 @@ COMMENTS (not included)
 ```
 # **Introduction**
 
-Building upon the contribution of [@brunori20] the goal of our project is to estimate inequality of opportunity based on Machine Learning Techniques. 
+Building upon the contribution of [@brunori20] the goal of our project is to estimate inequality of opportunity (IOP) based on Machine Learning Techniques. The measurement of unequal opportunities goes back to Roemer (1998), who states that factors that control individual outcomes (e.g income) consist of two categories: effort and circumstances. Effort summarizes all aspects over which individuals have control, while circumstances include all factors individuals cannot control. Individuals identified by the same exogenous circumstances and therefore characterized by similar background conditions belong to a circumstance type (Roemer, 1998). In what follows we want to analyze between-type disparities. 
 
+"Today, well established empirical methods include summary indexes that quantify the extent of unequal opportunities,as well as statistical tests that detect the mere existence thereof"
+
+"In either case, empirical results are sensitive to critical choices of model selection which are under complete discretion of the researcher.
+First, researchers have to make a decision on which circumstance variables to consider for es- timation.2 Observablecircumstancesbeyondindividualcontrolaretypicallyasubsetofthereal number of exogenous variables a↵ecting individual outcomes. This issue has been largely dis- cussed by the literature, and the prevailing view is that partial observability implies downward- biased inequality of opportunity estimates"
 
 Advantages ML: 
 - minimize the risk of arbitrary and ad-hoc model selection
@@ -84,6 +88,7 @@ library(readr)
 # library(tuneRanger)
 # library(xgboost)
 ```
+
 ## *Data import*
 
 In the first part of our data analysis we rely upon the data of Statistics Austria. This data contains the survey data of the income and living conditions for Austria in the year 2019. In addition to that the data set includes an ad hoc moduel with many of the intergenerational transmission variables needed to properly assses inequality of opportunity of the respondents.
