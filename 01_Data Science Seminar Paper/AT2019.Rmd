@@ -23,13 +23,12 @@ COMMENTS (not included)
 **TO DOs**
 #* Adapt Graphs and Summary Statistics
 #* Compare Cross-Country Results - Variable Importance synthetic countries comparison, Gini comparison across countries, (Comparison of trees)
-* RMSE für Forest berechnen
+* RMSE für Forest berechnen ???
 #* RMSE für Boosted berechnen
 * Texte schreiben
 * Einleitung schreiben
 * Conclusion schreiben
-
-Data aufbau > 0 filtern
+* Data summary & regression trees für Länder bis auf Austria raus ! nur Inference trees und Comparison graphics
 
 **Aufbau**
 1. Austria 2019 mit der ausführlichen Erklärung der Vorgehensweise und der einzelnen Schritte. Daten sollten genau erklärt werden.
@@ -41,7 +40,7 @@ Data aufbau > 0 filtern
   2. Same shit für Country of birth oder so
   
 ```
-#**Introduction**
+# **Introduction**
 
 Building upon the contribution of [@brunori20] the goal of our project is to estimate inequality of opportunity based on Machine Learning Techniques. 
 
@@ -49,6 +48,7 @@ Building upon the contribution of [@brunori20] the goal of our project is to est
 Advantages ML: 
 - minimize the risk of arbitrary and ad-hoc model selection
 - provide a standardized way of trading off upward and downward biases in inequality of opportunity estimations
+- regression trees can be graphically represented; their structure is immediate to read and easy to understand. 
 
 
 ## *Libraries*
@@ -110,7 +110,7 @@ The first step of our data wrangling part is to select the variables of interest
 
 Since annual income was not properly provided in the Statistic Austria dataset for 2019, we use gross monthly income as our dependent variable and approximate the yearly income by multiplying the monthly income by 12. Moreover, we only contain values larger than zero in our income variable, since values below zero indicate people which where not able to provide information or refused to answer the survey questions concerning the income topic. Furthermore, since the income is commonly assumed to be right skwed because of individual disproportionately high income earners which we take the log of the income variable. 
 
-After selecting the variables described from the original dataset, we rename all the variables and save them to our main dataset "data19". Building on this dataset we further limit our data by the age. We only include respondents aged between 27 and 59 since this captures the working population. In the next step we drop all answers where the respondents refused or were not able to provide information concerning the intergenerational circumstances like e.g. father or mother citizenship. Next we need to recode some of the variables from characters into factors or numeric variables in order to later calculate the conditional inference trees. 
+After selecting the variables described from the original dataset, we rename all the variables and save them to our main dataset "data19". Building on this dataset we further limit our data by the age. We only include respondents aged between 27 and 59 since this captures the working population. In the next step we drop all answers where the respondents refused or were not able to provide information concerning the intergenerational circumstances like e.g. father or mother citizenship. We do not do this for all variables since it would leave us with too little observations (e.g. dropping adults). Next we need to recode some of the variables from characters into factors or numeric variables in order to later calculate the conditional inference trees. 
 
 ```{r echo=T, eval=F, message=F, include=F, error=F, warning=F}
 COMMENTS (not included)
@@ -134,11 +134,11 @@ COMMENTS (not included)
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 data19 <- data19 %>%
   
-  select(sex, P038004, P110000nu, P111010nu, alter, M009010, M010000, M014000, M016000, M017000, M020010, M021000, M025000, M027000, M028000, M004000, M001300, M001510, M003100, M001100, M001200, M001500) %>% 
+  select(sex, P038004, P110000nu, P111010nu, alter, M009010, M010000, M014000, M016000, M017000, M020010, M021000, M025000, M027000, M028000, M004000, M001300, M001510, M003100, M001100, M001200, M002000, M001500) %>% 
   
   rename("inc_net"           = P038004,     # gross monthly income
          "country_birth"     = P110000nu,   # country of birth of respondent
-         #"citizenship"       = P111010nu,   # citizenship of respondent
+         "citizenship"       = P111010nu,   # citizenship of respondent
          "age"               = alter,       # age of respondent
          "father_cit"        = M009010,     # citizenship of father at age 14
          "father_edu"        = M010000,     # education of father at age 14 (höchster abschluss)
@@ -159,7 +159,7 @@ data19 <- data19 %>%
          "adults_present"    = M001500,     # adults present in respondent’s household at age 14
          ) %>%    
   
-  filter(age %in% (27:59), inc_net > 0, mother_present > 0, father_present > 0, father_cit > 0, mother_cit > 0, father_occup_stat > 0, father_manag > 0, mother_occup_stat > 0, children > 0, tenancy > 0)  %>%
+  filter(age %in% (27:59), inc_net > 0, mother_present > 0, father_present > 0, father_cit > 0, mother_cit > 0)  %>%
   # We drop all answers where the respondents refused or were not able to provide information 
   # D: dropped man dann nicht die ganzen observations?? nope nur im synthetic da machen wirs dann nicht
   # D und wwenn wir nach age filtern (und nicht die observations mit -6 entfernen) müssen wir erklären warum 27-59 und nicht 25-59 und den text unten ändern, weil ich hab ja einfach die mit -6 (age outside of range) entfernt.
@@ -187,7 +187,7 @@ data19 <- data19 %>%
 ```{r}
 print(dfSummary(data19), method="render", style="grid", plain.ascii = F)
 ```
-After cleaning our data we end up with a data set that includes 25 variables and 3600 observation. There are almost no missing values anymore, since we corrected for refused survey answers or dropped the values where participants where not able to answer the survey questions. There are slight more females (52%) than males (48%) in the data. The income distribution is skewed to the right meaning the median income is lower than the mean income (we take the logarith to correct for this). 83% of the respondents where born in Austria and 88% are Austrian citizens. In about 85% of respondents household at age 14 both parents where present and in 96% the mother was present....
+After cleaning our data we end up with a data set that includes 24 variables and 3295 observation. There are almost no missing values anymore since we corrected for refused survey answers or dropped the values where participants where not able to answer the survey questions. There are slightly more females (52%) than males (48%) in the data. The income distribution is skewed to the right meaning the median income is lower than the mean income (we take the logarithm to correct for this). 84% of the respondents where born in Austria and 88% are Austrian citizens. 84% of the respondent's fathers and also 84% of the respondent's mothers held the Austrian citizenship.82% of the fathers, but only 54% of the mothers, were employed when the respondents where at age 14. 38% of the employed fathers and 9% of the employed mothers held a managerial position. About 72% of the respondents lived in not owned houses at age 14 and 83% lived together with other children. In 91% and 98% of the time either the father or the mother was present, in 90% of the time both were present. 20% of the respondents lived with adults other than their parents. Looking at the education of the father or the mother we see that the mean is 3.1 for fathers and 2.7 for the mothers. 3 corresponds to high level education: first stage of tertiary education and second stage of tertiary education. 2 is equivalent to a medium level of schooling and corresponds to upper secondary education and post-secondary non-tertiary education. The mean (= 5,3) occupation of the respondent's father corresponds to "Sales and Service worker". The occupations are coded according to the ISCO-08 (COM) classification (International Standard Classification of Occupations, which are published by the International Labour Office. The mean (= 2,6) occupation of the mothers corresponds to "Professionals". 
 
 ## *Data Exploration and Visualization*
 
@@ -281,8 +281,6 @@ $\implies$ The the Split sample based on $C^*_s$, by choosing the split point s 
 4. **Repeat :)**
 
 In the context of estimating inequality of opportunity conditional inference trees offer a particular structure. Namely each hypothesis is a test for whether equal opportunity exists within a group. If the tree results in no splits we cannot reject the null hypothesis of equality of opportunity. While the deeper the tree is grown, the more types are required to account for inequality of opportunity in the country under consideration. Each split (parent node) thus indicates that the opportunities of the two groups are significantly different, while we cannot say the same for the groups included in the leaf. nodes.
-
-To showcase the difference between the _regression and classification trees_ we discussed in class and the _conditional inference trees_ we also plot the former as comparison. In the following chunk of code we use `set.seed` to generate randomness for reproducability. We define our `formula` which consists of all the circumstances we use for estimation. Furthermore, we split the data into a training and test sample. Finally we define a `fitControl` which is our tuning function for cross validation using the `caret` package.
 
 # **Regression Tree**
 ```{r}
