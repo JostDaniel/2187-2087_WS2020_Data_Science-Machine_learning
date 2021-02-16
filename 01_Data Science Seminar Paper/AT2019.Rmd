@@ -22,7 +22,7 @@ COMMENTS (not included)
  
 **TO DOs**
 #* Adapt Graphs and Summary Statistics
-* Compare Cross-Country Results - Variable Importance synthetic countries comparison, Gini comparison across countries, (Comparison of trees)
+#* Compare Cross-Country Results - Variable Importance synthetic countries comparison, Gini comparison across countries, (Comparison of trees)
 * RMSE für Forest berechnen
 *# RMSE für Boosted berechnen
 * Texte schreiben
@@ -35,6 +35,8 @@ COMMENTS (not included)
 3. Ländervergleich Cforest Var importance. Tree complexity und Gini? (p.51 paper)
 ```
 #**Introduction**
+
+Building upon the contribution of 
 
 ## *Libraries*
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
@@ -69,13 +71,24 @@ library(readr)
 # library(tuneRanger)
 # library(xgboost)
 ```
+The original data is not provided as the EU protects the privacy of the original respondents. The idea of the public microdata, is that it allows us to train and write the code using the actual variable names, but not obtaining true results. The EU-SILC public microdata files are fully synthetic and they were simulated using statistical modeling and show the statistical distributions of the original data. The main caveats of this data are, that it cannot be used for statistical inference to the wider population. The results and conclusion obtained from this public microdata are to be taken with a big grain of salt. Luckily, the individual country datasets are grouped in a coherent manner.
+We use the EU-SILC data from 2011 as it was the survey when additionally there were questions on inter-generational transmission. These were questions about the parents of the respondents. We want to see, whether it is possible using only circumstantial information given about the parents and respondents to predict the income of the respondents.
+
+The unique identifier used in all  four data sets is the household ID identifier: RX030 in the Personal Register, PX030 in the Personal Data, DB030 in the Household Register, and HB030 in the Household Data file. We only need to combine two of the datasets, namely the Household Register and the Personal Data. Latter contains the Ad-hoc module with the questions on intergenerational characteristics.
+
+
+
+We first use more variables than ultimately used in the analysis. We use the year of birth to calculate the age, and then exclude everyone older than 60 or younger than 27, as was done in the paper we are referring to. We first included both monthly and annual gross income. But in this cross-country analysis we use annual gross income as our outcome variable. 
+
+At first we ran the analysis with the citizenship variable included, but we ultimately decided that it is not really a circumstantial variable as Respondents country of birth would have been. Since it is utltimately possible to obtain a new citizenship. 
+
+
+
 
 ## *Data import*
-TEXT
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 # setting the data path
 data_path ="./AT2019"
-
 # accessing the data
 data19 <- read.csv(file.path(data_path, "p_silc2019_ext.csv"), sep = ";")           # personal data
 ```
@@ -91,7 +104,11 @@ data19 <- read.csv(file.path(data_path, "p_silc2019_ext.csv"), sep = ";")       
 ```
 
 # **Data Wrangling**
-First, we will select and rename the variables of interest. The we will log net income and recode some of the variables.
+The first step of our data wrangling part is to select the variables of interest. These are based upon the list of circumstances chosen in [@brunori20]. The circumstances include both characteristics describing the respondent and circumstances related to the intergenerational transmission of the respondent. Personal characteristics are: sex and country of birth. Intergenerational circumstances include: the presence of parents at home, the number of adults present at home (aged 18 and over), the number of working adults present and the number of children (under 18) present at home, all when the respondent was at age 14. Further intergenerational circumstances are the level of education of the respondents parents, their occupational status, main occupation and if they held a managerial position, their citizenship and the tenancy status. 
+
+Since annual income was not properly provided in the Statistic Austria dataset for 2019, we use gross monthly income as our dependent variable and approximate the yearly income by multiplying the monthly income by 12. Moreover, we only contain values larger than zero in our income variable, since values below zero indicate people which where not able to provide information or refused to answer the survey questions concerning the income topic. Furthermore, since the income is commonly assumed to be right skwed because of individual disproportionately high income earners which we take the log of the income variable. 
+
+After selecting the variables described from the original dataset, we rename all the variables and save them to our main dataset "data19". Building on this dataset we further limit our data by the age. We only include respondents aged between 27 and 59 since this captures the working population. In the next step we drop all answers where the respondents refused or were not able to provide information concerning the intergenerational circumstances like e.g. father or mother citizenship. Next we need to recode some of the variables from characters into factors or numeric variables in order to later calaculate the conditional inference trees. 
 
 ```{r echo=T, eval=F, message=F, include=F, error=F, warning=F}
 COMMENTS (not included)
@@ -119,7 +136,7 @@ data19 <- data19 %>%
   
   rename("inc_net"           = P038004,     # gross monthly income
          "country_birth"     = P110000nu,   # country of birth of respondent
-         "citizenship"       = P111010nu,   # citizenship of respondent
+         #"citizenship"       = P111010nu,   # citizenship of respondent
          "age"               = alter,       # age of respondent
          "father_cit"        = M009010,     # citizenship of father at age 14
          "father_edu"        = M010000,     # education of father at age 14 (höchster abschluss)
@@ -145,7 +162,7 @@ data19 <- data19 %>%
   # D: dropped man dann nicht die ganzen observations??
   # D und wwenn wir nach age filtern (und nicht die observations mit -6 entfernen) müssen wir erklären warum 27-59 und nicht 25-59 und den text unten ändern, weil ich hab ja einfach die mit -6 (age outside of range) entfernt.
   
-  mutate("inc_net_log" = log(inc_net),   
+  mutate("inc_net_log" = log(inc_net*12),   
          # logged net income per month of respondent
          
          "both_parents_present" = father_present + mother_present,            
