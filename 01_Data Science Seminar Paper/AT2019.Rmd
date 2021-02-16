@@ -29,6 +29,8 @@ COMMENTS (not included)
 * Einleitung schreiben
 * Conclusion schreiben
 
+Data aufbau > 0 filtern
+
 **Aufbau**
 1. Austria 2019 mit der ausführlichen Erklärung der Vorgehensweise und der einzelnen Schritte. Daten sollten genau erklärt werden.
 2. Warum synthetisches Datenset abweicht, detaillierter auf Austria 2011. Die restlichen Länder eher im Appendix. 
@@ -132,7 +134,7 @@ COMMENTS (not included)
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 data19 <- data19 %>%
   
-  select(sex, P038004, P110000nu, P111010nu, alter, M009010, M010000, M014000, M016000, M017000, M020010, M021000, M025000, M027000, M028000, M004000, M001300, M001510, M003100, M001100, M001200, M002000, M001500) %>% 
+  select(sex, P038004, P110000nu, P111010nu, alter, M009010, M010000, M014000, M016000, M017000, M020010, M021000, M025000, M027000, M028000, M004000, M001300, M001510, M003100, M001100, M001200, M001500) %>% 
   
   rename("inc_net"           = P038004,     # gross monthly income
          "country_birth"     = P110000nu,   # country of birth of respondent
@@ -157,7 +159,7 @@ data19 <- data19 %>%
          "adults_present"    = M001500,     # adults present in respondent’s household at age 14
          ) %>%    
   
-  filter(age %in% (27:59), inc_net > 0, mother_present > 0, father_present > 0, father_cit > 0, mother_cit > 0)  %>%
+  filter(age %in% (27:59), inc_net > 0, mother_present > 0, father_present > 0, father_cit > 0, mother_cit > 0, father_occup_stat > 0, father_manag > 0, mother_occup_stat > 0, children > 0, tenancy > 0)  %>%
   # We drop all answers where the respondents refused or were not able to provide information 
   # D: dropped man dann nicht die ganzen observations?? nope nur im synthetic da machen wirs dann nicht
   # D und wwenn wir nach age filtern (und nicht die observations mit -6 entfernen) müssen wir erklären warum 27-59 und nicht 25-59 und den text unten ändern, weil ich hab ja einfach die mit -6 (age outside of range) entfernt.
@@ -279,6 +281,8 @@ $\implies$ The the Split sample based on $C^*_s$, by choosing the split point s 
 4. **Repeat :)**
 
 In the context of estimating inequality of opportunity conditional inference trees offer a particular structure. Namely each hypothesis is a test for whether equal opportunity exists within a group. If the tree results in no splits we cannot reject the null hypothesis of equality of opportunity. While the deeper the tree is grown, the more types are required to account for inequality of opportunity in the country under consideration. Each split (parent node) thus indicates that the opportunities of the two groups are significantly different, while we cannot say the same for the groups included in the leaf. nodes.
+
+To showcase the difference between the _regression and classification trees_ we discussed in class and the _conditional inference trees_ we also plot the former as comparison. In the following chunk of code we use `set.seed` to generate randomness for reproducability. We define our `formula` which consists of all the circumstances we use for estimation. Furthermore, we split the data into a training and test sample. Finally we define a `fitControl` which is our tuning function for cross validation using the `caret` package.
 
 # **Regression Tree**
 ```{r}
