@@ -9,7 +9,7 @@ output:
     number_sections: false
 subtitle: Data Science and Machine Learning 2187 & 2087
 editor_options: 
-  chunk_output_type: inline
+  chunk_output_type: inline  
 ---
 
 ```{r setup, include=FALSE}
@@ -282,14 +282,13 @@ $\implies$ The the Split sample based on $C^*_s$, by choosing the split point s 
 
 In the context of estimating inequality of opportunity conditional inference trees offer a particular structure. Namely each hypothesis is a test for whether equal opportunity exists within a group. If the tree results in no splits we cannot reject the null hypothesis of equality of opportunity. While the deeper the tree is grown, the more types are required to account for inequality of opportunity in the country under consideration. Each split (parent node) thus indicates that the opportunities of the two groups are significantly different, while we cannot say the same for the groups included in the leaf. nodes.
 
-<<<<<<< Updated upstream
+
 # **Regression Tree**
-=======
 To showcase the difference between the _regression and classification trees_ we discussed in class and the _conditional inference trees_ we also plot the former as comparison. In the following chunk of code we use `set.seed` to generate randomness for reproducability. We define our `formula` which consists of all the circumstances we use for estimation. Furthermore, we split the data into a training and test sample. Finally we define a `fitControl` which is our tuning function for cross validation using the `caret` package.
 
 #**Empirical Analysis**
 ## **Regression Tree**
->>>>>>> Stashed changes
+
 ```{r}
 set.seed(123)
 
