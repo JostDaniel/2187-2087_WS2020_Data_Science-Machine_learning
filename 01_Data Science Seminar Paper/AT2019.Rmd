@@ -1,7 +1,8 @@
 ---
 title: "AT2019 Data Wrangling"
-author: "Daniel Jost, Leo Fidlin, Anne Valder"
+author: "Daniel Jost, Leonard Fidlin (h01352705), Anne Valder"
 date: "1/31/2021"
+bibliography: bibliography.bib
 output: 
   html_document:
     toc: true
@@ -253,11 +254,11 @@ As can be seen from the correlation plot, all variables are significantly relate
 To estimate equality of opportunity we let an automatex algortihm decide the partition of the population into mutually exclusive types, in order to obtain a measure of inequality of opportunity. We follow the procedure described by [@brunori20]. We show our results using both classification and regression trees and conditional inference trees. We put more emphasis on the latter. _Conditional inference trees_ and _conditional inference forests_ are a technique developed and described by [@Hothorn]. We break down the main characteristics for our purposes:
 
 The essential R function we use are:
-* `ctree` from party package in R
-* recursive partitioning just like `rpart`
-* `rpart`: maximizing an information measure
-* `ctree`: significance test procedure
-* `caret`: for additional cross validation to `ctree_control`
+- `ctree` from party package in R
+- recursive partitioning just like `rpart`
+- `rpart`: maximizing an information measure
+- `ctree`: significance test procedure
+- `caret`: for additional cross validation to `ctree_control`
 
 **Advantages of Trees:** Next to being rather straightforward to interpret using such an algorithm minimizes the degree of randomness and arbitrariness in model selection. Trees show outcome variability without initially assuming which circumstances play a significant role in shaping the individual opportunities or how the interact [@brunori20]. 
 
@@ -266,7 +267,8 @@ The essential R function we use are:
 **Advantages of Conditional Inference Trees over Regression and Classification Trees (CART):** the algorithm automatically provides a test for the null hypothesis of equality of opportunity and prevents overfitting while CART "cannot distinguish between a significant and an insignificant improvement in the information measure" (Mingers 1987, as cited in @hot, 2) and consider the distributional properties of the measures. Since the algorithm avoids upwards and downwards biases, the estimates obtained are better suited for comparisons across time (i.e. Austria 2011 to Austria 2019) and across countries (EU-SILC) even when samples sizes are different [@brunori20]. 
 
 
-### Procedure 
+## **Procedure**
+
 Empirical approach as described in [@brunori20, 4]:
 We consider a population size for each country of size $N$ which is indexed by $i \in \{1, ..., N \}$ and a vector of incomes $Y=\{y_1,...,y_i,...,y_N \}$. Our assumption is that each individual _i's_ income is the result of two *sets* of factors. A set of _circumstances_, which are beyond her control and for which we have observations of size $P: \Omega_i =\{ C^1_i, ..., C^p_i, ..., C^P_i\}$. Then, there is a set of _efforts_, which we do not observe, of size $Q: \Theta_i = \{E^1_i, ..., E^q_i, ..., E^Q_i \}$. This results in a very general outcome generating function $g: \Omega \times \Theta \rightarrow \mathbb{R}_+$ or $$y_i = g(\Omega_i, \Theta_i) $$.
 Each circumstance $C^p \in \Omega$ has a total of $X^p$ realizations and each one is denoted as $x^p$. The conditional inference trees partition  the population into a set of non-overlapping types, whereby a type is a subgroup of the original population in therms of circumstances. We have type $T=\{t_1, ..., t_m,...,t_M \}$ and invidiuals _i_ and _j_ belong to the same type as in: $t_m \in T$ if $x^p_i = x^p_j \forall C^p \in \Omega$. Likewise, they belong to different types $t_m \in T$ if $\exists C^p \in \Omega : x^p_i \ne x^p_j$. Types define a particular way of partitioning the population into subgroups, and group membership indicates uniformity in circumstances (types).
@@ -288,12 +290,11 @@ $\implies$ The the Split sample based on $C^*_s$, by choosing the split point s 
 
 In the context of estimating inequality of opportunity conditional inference trees offer a particular structure. Namely each hypothesis is a test for whether equal opportunity exists within a group. If the tree results in no splits we cannot reject the null hypothesis of equality of opportunity. While the deeper the tree is grown, the more types are required to account for inequality of opportunity in the country under consideration. Each split (parent node) thus indicates that the opportunities of the two groups are significantly different, while we cannot say the same for the groups included in the leaf. nodes.
 
+# **Empirical Analysis**
 
-# **Regression Tree**
-To showcase the difference between the _regression and classification trees_ we discussed in class and the _conditional inference trees_ we also plot the former as comparison. In the following chunk of code we use `set.seed` to generate randomness for reproducability. We define our `formula` which consists of all the circumstances we use for estimation. Furthermore, we split the data into a training and test sample. Finally we define a `fitControl` which is our tuning function for cross validation using the `caret` package.
-
-#**Empirical Analysis**
 ## **Regression Tree**
+
+To showcase the difference between the _regression and classification trees_ we discussed in class and the _conditional inference trees_ we also plot the former as comparison. In the following chunk of code we use `set.seed` to generate randomness for reproducability. We define our `formula` which consists of all the circumstances we use for estimation. Furthermore, we split the data into a training and test sample. Finally we define a `fitControl` which is our tuning function for cross validation using the `caret` package.
 
 ```{r}
 set.seed(123)
@@ -339,6 +340,7 @@ The `caret_tree` for Austria shows a tree with five partitions and seven termina
 However, we only showcase this tree as a comparison to the *conditional inference trees*.
 
 ## **Conditional inference tree**
+
 The *conditional inference tree* algorithm as it is included in `party` and the `partykit` packages contains various points for adjustment of variable selection and stopping criteria. We use the default `ctree_control` function but see it necessary to explain what it does exactly and why we think that the specifications we have chosen are not distorting. We use the default teststatistic as we do not know neither the conditional expectation nor covariance of our circumstances. In such a case the default setting of `ctree_control(teststat = "quad")` is recommended [@Hoh]. In the Austria 2019 we have mostly *cleaned* the data of missing values, however we still have many `NA` entries furhter on in the document. For reasons of uniformity, we chose to use the testtype `ctree_control(testtype = "Bonferroni")`. This approach uses simple Bonferroni adjusted P-Values. However, we also use the caret package for cross validation in addition to the default control function, since it is the one we had discussed in class and we used it for comparability of the results.
 ```{r}
 # For the Inference Tree to work, we must have all variables as numeric data
@@ -375,7 +377,9 @@ plot(caret_ctree,gp = gpar(fontsize = 6),
 plot(caret_ctree$finalModel, type = "simple")
 ```
 We plot the conditional inference tree using both the `caret` and the `party` package to compare the results. In the first we used the suggested `mincriterion = 0.99` obtained through cross validation. We now have a tree with 9 terminal nodes and 8 inner nodes. Sex remains the most significant determinant. Furthermore, we see for example that country of birth is significant if its in the EU or outside of it. The Boxplots at the terminal nodes show the distribution of the outcome variable at the node. All, splits are chosen at a significance level of p < 0.001 which is also in line with the discplinary convention for hypothesis test [@brunori20, p. 9]. 
+
 ## **Graphic representation of the tuning parameters**
+
 The graph below shows how the P-Value Threshold is adjusted using the RMSE as an anchor. As the lowest RMSE is achieved using the *strictest* P-Value, that is the one we chose.
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 plot(caret_ctree) # RMSE vs p-value our resampling parameter
@@ -383,7 +387,8 @@ plot(caret_rpart)
 # plotcp(tree_1)
 ```
 
-##**Predictions**
+## **Predictions**
+
 To test the predictive power of the models, we calculate the Root Mean Squared errors. Arguably, the cross validated _conditional inference tree_ performs best in terms of small RMSE.
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 test$P_AtCt <- predict(Ctree, newdata = as.data.frame(test))
@@ -405,6 +410,7 @@ head(test$RMSE_caret)
 
 ```
 ## **Conditional Inference Forest**
+
 The procedure and application of _Conditional Inference Forests_ follows the application in [@brunori20, p. 10]
 As discussed the _conditional inference trees_ construct as outcome the counterfactual distribution of the income variable. However, _conditional inference trees_ only use limited information of the set of observed circumstances, since not all circumstances $C^p \in \hat{\Omega}$ are utilized. Furthermore, the predictions (the values of the opportunity sets) have high variance. _Conditional Inference Forests_ are able to deal with the shortcomings of _conditional inference trees_.
 The main difference between the forest and the tree approach is that in the forest each tree is estimated on a random subsample $b$ of the original data. Thus, in total $B$ trees are estimated. Furthermore, a random subset of circumstances is used at each splitting point. This guarantees that at some point all circumstances with any kind of informational value will be used as a splitting variable. Furthermore, averaging the result over $B$ predictions reduces the variance. The individual predictions are a function of $\alpha$ which stands for the significance level in charge of splits, $\bar{P}$ i.e. the number of circumstances to be considered, and $\bar{B}$ the number of subsamples. 
@@ -1267,3 +1273,4 @@ ggplot(importance_cf_LV, aes(x = var_name, y = importance)) +
 # **Conclusion**
 
 # **References**
+>>>>>>> 8860f3d4dd72f45073c60dda2f3226dd505e53a1
