@@ -33,6 +33,11 @@ COMMENTS (not included)
 1. Austria 2019 mit der ausführlichen Erklärung der Vorgehensweise und der einzelnen Schritte. Daten sollten genau erklärt werden.
 2. Warum synthetisches Datenset abweicht, detaillierter auf Austria 2011. Die restlichen Länder eher im Appendix. 
 3. Ländervergleich Cforest Var importance. Tree complexity und Gini? (p.51 paper)
+
+**Ideen für Plots**
+  1. Einen plot mit Einkommen und parental education zb auf 3 levels zusammen geplottet.
+  2. Same shit für Country of birth oder so
+  
 ```
 #**Introduction**
 
@@ -240,7 +245,39 @@ corrplot(data19cor, method = "ellipse", type = "upper", order = "FPC", diag = FA
 ```
 As can be seen from the correlation plot, all variables are significantly related to at least one other variable of the data set (at the 1% significance level). For better visibility insignificant correlations are blanked out. As the correlation matrix is ordered using the first principal component there is some clustering of significant correlations.
 
-# **Method**
+# **Method**: Conditional Inference Trees
+To estimate equality of opportunity we let an automatex algortihm decide the partition of the population into mutually exclusive types, in order to obtain a measure of inequality of opportunity. We follow the procedure described by [@brunori20]. We show our results using both classification and regression trees and conditional inference trees. We put more emphasis on the latter. _Conditional inference trees_ and _conditional inference forests_ are a technique developed and described by [@Hothorn]. We break down the main characteristics for our purposes:
+
+The essential R function we use are:
+* `ctree` from party package in R
+* recursive partitioning just like `rpart`
+* `rpart`: maximizing an information measure
+* `ctree`: significance test procedure
+* `caret`: for additional cross validation to `ctree_control`
+
+**Advantages of Trees:** Next to being rather straightforward to interpret using such an algorithm minimizes the degree of randomness and arbitrariness in model selection. Trees show outcome variability without initially assuming which circumstances play a significant role in shaping the individual opportunities or how the interact [@brunori20]. 
+
+**Advantages of Trees over linear regression models:** very large set of observations can be used & model speciﬁcation is no longer exogenously given
+
+**Advantages of Conditional Inference Trees over Regression and Classification Trees (CART):** the algorithm automatically provides a test for the null hypothesis of equality of opportunity and prevents overfitting while CART "cannot distinguish between a significant and an insignificant improvement in the information measure" (Mingers 1987, as cited in @hot, 2) and consider the distributional properties of the measures. Since the algorithm avoids upwards and downwards biases, the estimates obtained are better suited for comparisons across time (i.e. Austria 2011 to Austria 2019) and across countries (EU-SILC) even when samples sizes are different [@brunori20]. 
+
+
+### Procedure 
+Empirical approach as described in [@brunori20, 4]:
+We consider a population size for each country of size $N$ which is indexed by $i \in \{1, ..., N \}$ and a vector of incomes $Y=\{y_1,...,y_i,...,y_N \}$. Our assumption is that each individual _i's_ income is the result of two *sets* of factors. A set of _circumstances_, which are beyond her control and for which we have observations of size $P: \Omega_i =\{ C^1_i, ..., C^p_i, ..., C^P_i\}$. Then, there is a set of _efforts_, which we do not observe, of size $Q: \Theta_i = \{E^1_i, ..., E^q_i, ..., E^Q_i \}$. This results in a very general outcome generating function $g: \Omega \times \Theta \rightarrow \mathbb{R}_+$ or $$y_i = g(\Omega_i, \Theta_i) $$.
+Each circumstance $C^p \in \Omega$ has a total of $X^p$ realizations and each one is denoted as $x^p$. The conditional inference trees partition  the population into a set of non-overlapping types, whereby a type is a subgroup of the original population in therms of circumstances. We have type $T=\{t_1, ..., t_m,...,t_M \}$ and invidiuals _i_ and _j_ belong to the same type as in: $t_m \in T$ if $x^p_i = x^p_j \forall C^p \in \Omega$. Likewise, they belong to different types $t_m \in T$ if $\exists C^p \in \Omega : x^p_i \ne x^p_j$. Types define a particual way of partitioning the population into subgroups, and group membership indicates uniformity in circumstances (types). 
+The algorithm follows a stepwise procedure [@brunori20, 7-8]:
+
+1. **Choose confidence level** Test the null hypothesis of independence, $H_0^{C^p} : D(Y|C^P) = D(Y)$, for each input variable $C^P  \in \hat{\Omega}$, and obtain a p-value associated with each test, $p^{C^p}$.
+$\implies$ We adjust the p-values for multiple hypothesis testing, such that $p_{adj.}^{C^p} = 1-(1-p^{Cp})^P$, which essentially means that we use the so called *Bonferroni Correction*.
+2. **Choose feature:** test all the null hypotheses of independence between the individual outcome and each of all the observable circumstances (variables). The model selects a variable, $C^*$, with the lowest adjusted p-value. Essentially we choose such that $C^* = \{C^P : \text{argmin} ~ p_{adj.}^{C^p} \}$.
+    i) no hypothesis can be rejected: stop $\implies$ If $p_{adj.}^{C^p} > \alpha$: Exit the algorithm. 
+    ii) one or more circumstance is siginificant: select the circumstance with the smallest p-value and proceed $\rightarrow$ If $p_{adj.}^{C^p} \leq \alpha$: Continue, and select $C^*$ as the splitting variable.
+  3. **Choose split:** for every possible way the selected circumstance can divide the sample into two subgroups, test the hypothesis of same mean outcome in the two resulting subgroups. Choose the splitting point with the smallest p-value. Technically, we test the discrepancy between the subsamples for each possible binary partition, _s_, based on $C^*$, meaning that $Y_s = \{Y_i : C^*_i < x^p \}$ and $Y_{-s} = \{Y_i : C^*_i \geq x^p \}$, and obtain a p-value associated with each test, $p^{C^*_s}$.
+
+$\implies$ The the Split sample based on $C^*_s$, by choosing the split point s that yields the lowest p-value, which is $C^*_s = \{C^*_s : \text{argmin} ~ p^{C^*_s} \}$.
+4. **Repeat :)**
+
 # **Regression Tree**
 ```{r}
 set.seed(123)
