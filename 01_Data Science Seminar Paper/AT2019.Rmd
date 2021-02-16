@@ -155,7 +155,7 @@ data19 <- data19 %>%
   
   filter(age %in% (27:59), inc_net > 0, mother_present > 0, father_present > 0, father_cit > 0, mother_cit > 0, father_occup_stat > 0, father_manag > 0, mother_occup_stat > 0, children > 0, tenancy > 0)  %>%
   # We drop all answers where the respondents refused or were not able to provide information 
-  # D: dropped man dann nicht die ganzen observations??
+  # D: dropped man dann nicht die ganzen observations?? nope nur im synthetic da machen wirs dann nicht
   # D und wwenn wir nach age filtern (und nicht die observations mit -6 entfernen) müssen wir erklären warum 27-59 und nicht 25-59 und den text unten ändern, weil ich hab ja einfach die mit -6 (age outside of range) entfernt.
   
   mutate("inc_net_log" = log(inc_net*12),   
@@ -168,30 +168,29 @@ data19 <- data19 %>%
          # 0 = male, 1 = female
          
          country_birth = factor(country_birth, labels = c(1, 2, 2, 2, 3, 3)), 
-         # Austria, EU, Non-EU
+         # Austria = 1, EU = 2, Non-EU = 3
          
          father_cit = ifelse(father_cit == 1, 1, 2),                          
-         # Austria and Other
+         # Austria = 1 and Other = 2
          
          mother_cit = ifelse(mother_cit == 1, 1, 2))   
-         # Austria and Other
+         # Austria = 1 and Other = 2
 ```
-
-## *Data Exploration and Visualization*
-
-#umschreiben Age anpassen auf 27 hier oder oben sonst
-
-To get a good grasp of our data we will first look at some simple descriptives and a correlaton plot
-The ad-hoc module on intergenerational transmission of disadvantages only includes "selected respondents aged over 24 years and less than 60 years". This is why we exclude them: coding '-6' means that year of birth is outside of 1969 and 1994 range or the interview was a proxy interview. Additionally, we exclude all respondents that where not part of this ad-hoc modul even if of the desired age.
 
 ## *Data Summary*
 ```{r}
 print(dfSummary(data19), method="render", style="grid", plain.ascii = F)
 ```
-The data set includes 25 variables and 3600 observation. There are almost no missing values after cleaning the data<!-- D: haben wir die gedropt? --> There are slight more females (52%) than males (48%). The income distribution is skewed to the right meaning the median income is lower than the mean income (we take the log to correct for this). 83% of respondents where born in Austria and 88& are Austrian citizens. In about 85% of respondents household at age 14 both parents where present and in 96% the mother was present....
-<!-- TEXT missing -->
+After cleaning our data we end up with a data set that includes 25 variables and 3600 observation. There are almost no missing values anymore, since we corrected for refused survey answers or dropped the values where participants where not able to answer the survey questions. There are slight more females (52%) than males (48%) in the data. The income distribution is skewed to the right meaning the median income is lower than the mean income (we take the logarith to correct for this). 83% of the respondents where born in Austria and 88% are Austrian citizens. In about 85% of respondents household at age 14 both parents where present and in 96% the mother was present....
+
+
+## *Data Exploration and Visualization*
+
+To get a good grasp of our data we will first look at some simple descriptives and a correlaton plot
 
 ## *Gini Index and Lorenz curve*
+In order to get a first glimpse on how high or low inequality in general is in Austria we calculate and visualize the Gini coefficient. 
+
 ```{r}
 ineq(data19$inc_net, type = "Gini")
 ```
