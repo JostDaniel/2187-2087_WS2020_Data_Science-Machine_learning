@@ -683,7 +683,7 @@ IT_personal_data <- read.csv(file.path(data_path, "IT_2011p_EUSILC.csv"))
 
 IT_equality_data <- IT_personal_data %>% select(
   PB140, PY200G, PB150, PB220A, PT010, PT020, PT030, PT060, PT070, PT090, PT100, PT110, PT120, PT130, PT160, PT150, PT180, PT140, PT170, PT210, PY200G) %>% mutate(
-    age = (2011 - PB140), log_income = log(PY200G * 12 + 1), annual_income = (PY200G * 12)
+    age = (2011 - PB140), log_income = log(PY200G * 12), annual_income = (PY200G * 12)
   ) %>% filter(
     age %in% (27:59)
   ) %>% mutate(
@@ -984,7 +984,7 @@ plot(AT_cct,gp = gpar(fontsize = 8),
   ip_args=list(abbreviate = FALSE,id = FALSE), main = "Opportunity Conditional Inference Tree for Austria 2011 - Cross Validated with Caret")
 
 
-AT_ctree2 <- ctree(formula, data = AT_equality_data, control = ctree_control(testtype = "Bonferroni", mincriterion = 0.99)) 
+AT_ctree2 <- ctree(formula, data = AT_train, control = ctree_control(testtype = "Bonferroni", mincriterion = 0.99)) 
 AT_ctree2
 
 plot(AT_ctree2, type = "simple",gp = gpar(fontsize = 6),
