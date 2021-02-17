@@ -30,7 +30,6 @@ Zeile 430 vielleich nochmal bearbeiten...
 * Einleitung schreiben
 * Conclusion schreiben
 * Data summary & regression trees für Länder bis auf Austria raus ! nur Inference trees und Comparison graphics
-* Zitieren??
 
 **Aufbau**
 1. Austria 2019 mit der ausführlichen Erklärung der Vorgehensweise und der einzelnen Schritte. Daten sollten genau erklärt werden.
@@ -43,11 +42,11 @@ Zeile 430 vielleich nochmal bearbeiten...
   
 ```
 # **Introduction**
-Building upon the contribution of [@brunori18] the goal of our project is to estimate inequality of opportunity (IOP) based on Machine Learning (ML) techniques. The measurement of unequal opportunities goes back to Roemer (1998), who states that factors controlling individual outcomes (e.g income) consist of two categories: effort and circumstances. Effort summarizes all aspects over which individuals have control, while circumstances include all factors individuals cannot control. Individuals identified by the same exogenous circumstances and therefore characterized by similar background conditions belong to a circumstance type (Roemer, 1998). In what follows we want to analyze between-type disparities. 
+Building upon the contribution of [@brunori20] the goal of our project is to estimate inequality of opportunity (IOP) based on Machine Learning (ML) Techniques. The measurement of unequal opportunities goes back to Roemer (1998), who states that factors controlling individual outcomes (e.g income) consist of two categories: effort and circumstances. Effort summarizes all aspects over which individuals have control, while circumstances include all factors individuals cannot control. Individuals identified by the same exogenous circumstances and therefore characterized by similar background conditions belong to a circumstance type (Roemer, 1998). In what follows we want to analyze between-type disparities. 
 
-In the previous literature, several methods have been applied to measure IOP. These include for example parametric, non-parametric and, latent variable approaches (e.g. Roemer and Trannoy, 2015). The reason we rely upon ML methods is that, as outlined by [@brunori20], the empirical results are sensitive to model selection determined by the researcher. As largely discussed in the literature model selection and thus partial observability of the real number of exogenous variables causes a downward bias in estimating opportunity estimates (Ferreira and Gignoux, 2011). With ML methods it is possible to circumvent problems like sample size limitations or non-fixed and non-additive effects of circumstances and thus balance the bias (Bourguignon et al., 2007; Ferreira and Gignoux, 2011). To be more precise in our empirical analysis we make use of conditional inference trees and conditional inference forests, which belong to the classification and regression tree (CART) methods popularized by (Breiman et al., 1984). CART methods lower the risk of arbitrary model selection by using an automated algorithm that splits the predictor space into non-overlapping areas to establish the best model for predicting the outcome variable. In the case of equality of opportunity the algorithm partitions the sample of respondents into different types. Moreover, the conditional inference algorithm employs sequences of hypothesis tests which restrain model overfitting and thus trades off upward and downward biases [@Hothorn]. Another advantage of CART methods is their intuitive graphical representation making them easily accessible to a large audience.
+In the previous literature several methods have been applied to measure IOP. These include parametric, non-parametric and latent variable approaches (QUELlE). The reasons we rely upon ML methods is that, as outlined by [@brunori20], the empirical results are sensitive to model selection determined by the researcher. As largely discussed in the literature model selection and thus partial observability of the real number of exogenous variables causes a downward bias in estimating opportunity estimates (Ferreira and Gignoux, 2011). With ML methods it is possible to circumvent problems like sample size limitations or non-fixed and non-additive effects of circumstances and thus balance the bias (Bourguignon et al., 2007; Ferreira and Gignoux, 2011). To be more precise in our empirical analysis we make use of conditional inference trees and conditional inference forests, which belong to the classification and regression tree (CART) methods popularized by (Breiman et al., 1984). CART methods lower the risk of arbitrary model selection by using an automated algorithm that splits the predictor space into non-overlapping areas to establish the best model for predicting the outcome variable. In the case of equality of opportunity the algorithm partitions the sample of respondents into different types. Moreover, the conditional inference algorithm employs sequences of hypothesis tests which restrains model overfitting and thus trades off upward and downward biases (Hothorn et al., 2006). Another advantage of CART methods is their intuitive graphical representation, which makes them easily accessible to a large audience.
 
-The project is organized as follows: First, after properly assessing our data, we make use of the income and living conditions data of Austria in 2019 to estimate the Conditional Inference Trees and a Conditional Inference Forest for Austria. Second, we apply the same data wrangling and data analysis procedure to the synthetic EU Silc 2011 data set. Here we estimate the Conditional inference Trees and Conditional inference Forest for 6??? different countries. In the last part, we compare the results across countries and conclude.
+The project is organized as follows: First, after properly assessing our data, we make use of the income and living conditions data of Austria in 2019 to estimate the Conditional Inference Trees and a Conditional Inference Forest for Austria. Second, we apply the same data wrangling and data analysis procedure to the synthetic EU Silc 2011 data set. Here we estimate the trees and forest for 6??? countries. In the last part, we compare the results across countries and conclude.
 
 ## *Libraries*
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
@@ -85,7 +84,7 @@ library(readr)
 
 ## *Data import*
 
-In the first part of our data analysis we rely upon the data of Statistics Austria. This data contains the survey data of the income and living conditions for Austria in the year 2019, which are collected by Austria as part of the EU Silc survey. In addition, the data set includes an ad hoc modul containing many intergenerational transmission variables needed to properly asses inequality of opportunity of the respondents.
+In the first part of our data analysis we rely upon the data of Statistics Austria. This data contains the survey data of the income and living conditions for Austria in the year 2019. In addition to that the data set includes an ad hoc moduel with many of the intergenerational transmission variables needed to properly assses inequality of opportunity of the respondents.
 
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 # setting the data path
@@ -105,11 +104,11 @@ data19 <- read.csv(file.path(data_path, "p_silc2019_ext.csv"), sep = ";")       
 ```
 
 # **Data Wrangling**
-The first step of our data wrangling part is to select the variables of interest. These are based upon the list of circumstances chosen in [@brunori18]. The circumstances include both characteristics describing the respondent and circumstances related to the intergenerational transmission of the respondent. Personal characteristics are: sex and country of birth. Intergenerational circumstances include: the presence of parents at home, the number of adults present at home (aged 18 and over), the number of working adults present and the number of children (under 18) present at home, all when the respondent was at age 14. Further intergenerational circumstances are: the level of education of the respondents parents, their occupational status, main occupation and if they held a managerial position, their citizenship and the tenancy status. 
+The first step of our data wrangling part is to select the variables of interest. These are based upon the list of circumstances chosen in [@brunori18]. The circumstances include both characteristics describing the respondent and circumstances related to the intergenerational transmission of the respondent. Personal characteristics are: sex and country of birth. Intergenerational circumstances include: the presence of parents at home, the number of adults present at home (aged 18 and over), the number of working adults present and the number of children (under 18) present at home, all when the respondent was at age 14. Further intergenerational circumstances are the level of education of the respondents parents, their occupational status, main occupation and if they held a managerial position, their citizenship and the tenancy status. 
 
-Since annual income was not properly provided in the Statistic Austria dataset for 2019, we use gross monthly income as our dependent variable and approximate the yearly income by multiplying the monthly income by 12. Moreover, we only contain values larger than zero in our income variable, since values below zero indicate people which where not able to provide information or refused to answer the survey questions concerning the income topic. Furthermore, since the dsitribution of income is commonly assumed to be right skwed because of individual disproportionately high income earners we take the log of the income variable. 
+Since annual income was not properly provided in the Statistic Austria dataset for 2019, we use gross monthly income as our dependent variable and approximate the yearly income by multiplying the monthly income by 12. Moreover, we only contain values larger than zero in our income variable, since values below zero indicate people which where not able to provide information or refused to answer the survey questions concerning the income topic. Furthermore, since the income is commonly assumed to be right skwed because of individual disproportionately high income earners which we take the log of the income variable. 
 
-After selecting the variables described from the original dataset, we rename all the variables and save them to our main dataset "data19". Building on this dataset we further limit our data by the age. We only include respondents aged between 27 and 59 since this captures the working population. In the next step we drop all answers where the respondents refused or were not able to provide information concerning the intergenerational circumstances like e.g. father or mother citizenship. We are not able do this for all variables since it would leave us with too little observations (e.g. dropping adults). Next we need to recode some of the variables from characters into factors or numeric variables in order to later calculate the conditional inference trees and forests. 
+After selecting the variables described from the original dataset, we rename all the variables and save them to our main dataset "data19". Building on this dataset we further limit our data by the age. We only include respondents aged between 27 and 59 since this captures the working population. In the next step we drop all answers where the respondents refused or were not able to provide information concerning the intergenerational circumstances like e.g. father or mother citizenship. We do not do this for all variables since it would leave us with too little observations (e.g. dropping adults). Next we need to recode some of the variables from characters into factors or numeric variables in order to later calculate the conditional inference trees. 
 
 ```{r echo=T, eval=F, message=F, include=F, error=F, warning=F}
 COMMENTS (not included)
@@ -186,7 +185,7 @@ data19 <- data19 %>%
 ```{r}
 print(dfSummary(data19), method="render", style="grid", plain.ascii = F)
 ```
-After cleaning our data we end up with a data set that includes 24 variables and 3295 observation. There are almost no missing values anymore since we corrected for refused survey answers or dropped the values where participants where not able to answer the survey questions. There are slightly more females (52%) than males (48%) in the data. The income distribution is skewed to the right meaning the median income is lower than the mean income (we take the logarithm to correct for this). 84% of the respondents where born in Austria and 88% are Austrian citizens. 84% of the respondent's fathers and also 84% of the respondent's mothers held the Austrian citizenship. 82% of the fathers, but only 54% of the mothers, were employed when the respondents where at age 14. 38% of the employed fathers and 9% of the employed mothers held a managerial position. About 72% of the respondents lived in not owned houses at age 14 and 83% lived together with other children. In 91% and 98% of the time either the father or the mother was present, in 90% of the time both were present. 20% of the respondents lived with adults other than their parents. Looking at the education of the father or the mother we see that the mean is 3.1 for fathers and 2.7 for the mothers. 3 corresponds to high level education: first stage of tertiary education and second stage of tertiary education. 2 is equivalent to a medium level of schooling and corresponds to upper secondary education and post-secondary non-tertiary education. The mean (= 5,3) occupation of the respondent's father corresponds to "Sales and Service worker". The occupations are coded according to the ISCO-08 (COM) classification (International Standard Classification of Occupations, which are published by the International Labour Office. The mean (= 2,6) occupation of the mothers corresponds to "Professionals". 
+After cleaning our data we end up with a data set that includes 24 variables and 3295 observation. There are almost no missing values anymore since we corrected for refused survey answers or dropped the values where participants where not able to answer the survey questions. There are slightly more females (52%) than males (48%) in the data. The income distribution is skewed to the right meaning the median income is lower than the mean income (we take the logarithm to correct for this). 84% of the respondents where born in Austria and 88% are Austrian citizens. 84% of the respondent's fathers and also 84% of the respondent's mothers held the Austrian citizenship.82% of the fathers, but only 54% of the mothers, were employed when the respondents where at age 14. 38% of the employed fathers and 9% of the employed mothers held a managerial position. About 72% of the respondents lived in not owned houses at age 14 and 83% lived together with other children. In 91% and 98% of the time either the father or the mother was present, in 90% of the time both were present. 20% of the respondents lived with adults other than their parents. Looking at the education of the father or the mother we see that the mean is 3.1 for fathers and 2.7 for the mothers. 3 corresponds to high level education: first stage of tertiary education and second stage of tertiary education. 2 is equivalent to a medium level of schooling and corresponds to upper secondary education and post-secondary non-tertiary education. The mean (= 5,3) occupation of the respondent's father corresponds to "Sales and Service worker". The occupations are coded according to the ISCO-08 (COM) classification (International Standard Classification of Occupations, which are published by the International Labour Office. The mean (= 2,6) occupation of the mothers corresponds to "Professionals". 
 
 ## *Data Exploration and Visualization*
 
@@ -243,7 +242,7 @@ corrplot(data19cor, method = "ellipse", type = "upper", order = "FPC", diag = FA
 As can be seen from the correlation plot, all variables are significantly related to at least one other variable of the data set (at the 1% significance level). For better visibility insignificant correlations are blanked out. As the correlation matrix is ordered using the first principal component there is some clustering of significant correlations.
 
 # **Method**: Conditional Inference Trees
-To obtain estimates for equality of opportunity we let an automated algortihm decide the partition of our respondents sample into mutually exclusive types, in order to obtain a measure of inequality of opportunity. We follow the procedure described by [@brunori18]. We show our results using both classification and regression trees and conditional inference trees. We put more emphasis on the latter. _Conditional inference trees_ and _conditional inference forests_ are a technique developed and described by [@Hothorn]. We break down the main characteristics for our purposes:
+To estimate equality of opportunity we let an automatex algortihm decide the partition of the population into mutually exclusive types, in order to obtain a measure of inequality of opportunity. We follow the procedure described by [@brunori18]. We show our results using both classification and regression trees and conditional inference trees. We put more emphasis on the latter. _Conditional inference trees_ and _conditional inference forests_ are a technique developed and described by [@Hothorn]. We break down the main characteristics for our purposes:
 
 The essential R function we use are:
 - `ctree` from party package in R
@@ -254,17 +253,17 @@ The essential R function we use are:
 
 **Advantages of Trees:** Next to being rather straightforward to interpret using such an algorithm minimizes the degree of randomness and arbitrariness in model selection. Trees show outcome variability without initially assuming which circumstances play a significant role in shaping the individual opportunities or how the interact [@brunori18]. 
 
-**Advantages of Trees over linear regression models:** very large set of observations can be used & model specification is no longer given in a exogenous way.
+**Advantages of Trees over linear regression models:** very large set of observations can be used & model speciﬁcation is no longer exogenously given
 
-**Advantages of Conditional Inference Trees over Regression and Classification Trees (CART):** the algorithm automatically provides a test for the null hypothesis of equality of opportunity and prevents overfitting while CART "cannot distinguish between a significant and an insignificant improvements in the information measure" (Mingers 1987, as cited in @hot, 2). Moreover it considers the distributional properties of the measures. Since the algorithm avoids upwards and downwards biases, the estimates obtained are better suited for comparisons across time (i.e. Austria 2011 to Austria 2019) and across countries (EU-SILC) even when samples sizes are different [@brunori18]. 
+**Advantages of Conditional Inference Trees over Regression and Classification Trees (CART):** the algorithm automatically provides a test for the null hypothesis of equality of opportunity and prevents overfitting while CART "cannot distinguish between a significant and an insignificant improvement in the information measure" (Mingers 1987, as cited in @hot, 2) and consider the distributional properties of the measures. Since the algorithm avoids upwards and downwards biases, the estimates obtained are better suited for comparisons across time (i.e. Austria 2011 to Austria 2019) and across countries (EU-SILC) even when samples sizes are different [@brunori18]. 
 
 
 ## **Procedure**
 
 Empirical approach as described in [@brunori18, 4]:
-We consider a population size for each country of size $N$ which is indexed by $i \in \{1, ..., N \}$ and a vector of incomes $Y=\{y_1,...,y_i,...,y_N \}$. Our assumption is that each individual _i's_ income is the result of two *sets* of factors. A set of _circumstances_, which are beyond their control and for which we have observations of size $P: \Omega_i =\{ C^1_i, ..., C^p_i, ..., C^P_i\}$. Then, there is a set of _efforts_, which is not observable, of size $Q: \Theta_i = \{E^1_i, ..., E^q_i, ..., E^Q_i \}$. This results in a very general outcome generating function $g: \Omega \times \Theta \rightarrow \mathbb{R}_+$ or $$y_i = g(\Omega_i, \Theta_i) $$.
-Each circumstance $C^p \in \Omega$ has a total of $X^p$ realizations and each one is denoted as $x^p$. The conditional inference trees partition the population into a set of non-overlapping types, whereby a type is a subgroup of the original population in terms of circumstances. We have type $T=\{t_1, ..., t_m,...,t_M \}$ and invidiuals _i_ and _j_ belonging to the same type as in: $t_m \in T$ if $x^p_i = x^p_j \forall C^p \in \Omega$. Likewise, they belong to different types $t_m \in T$ if $\exists C^p \in \Omega : x^p_i \ne x^p_j$. Types define a particular way of partitioning the population into subgroups, and group membership indicates uniformity in circumstances (types).
-In essence, this means that the approach we utilize here is an ex-ante view that focuses on between-type differences in the value of opportunity sets without paying attention to the effort realizations of individuals. 
+We consider a population size for each country of size $N$ which is indexed by $i \in \{1, ..., N \}$ and a vector of incomes $Y=\{y_1,...,y_i,...,y_N \}$. Our assumption is that each individual _i's_ income is the result of two *sets* of factors. A set of _circumstances_, which are beyond her control and for which we have observations of size $P: \Omega_i =\{ C^1_i, ..., C^p_i, ..., C^P_i\}$. Then, there is a set of _efforts_, which we do not observe, of size $Q: \Theta_i = \{E^1_i, ..., E^q_i, ..., E^Q_i \}$. This results in a very general outcome generating function $g: \Omega \times \Theta \rightarrow \mathbb{R}_+$ or $$y_i = g(\Omega_i, \Theta_i) $$.
+Each circumstance $C^p \in \Omega$ has a total of $X^p$ realizations and each one is denoted as $x^p$. The conditional inference trees partition  the population into a set of non-overlapping types, whereby a type is a subgroup of the original population in therms of circumstances. We have type $T=\{t_1, ..., t_m,...,t_M \}$ and invidiuals _i_ and _j_ belong to the same type as in: $t_m \in T$ if $x^p_i = x^p_j \forall C^p \in \Omega$. Likewise, they belong to different types $t_m \in T$ if $\exists C^p \in \Omega : x^p_i \ne x^p_j$. Types define a particular way of partitioning the population into subgroups, and group membership indicates uniformity in circumstances (types).
+In essence this means that the approach we utilize here is an ex-ante view that focuses on between-type differences in the value of opportunity sets without paying attention to the effort realizations of individuals. 
 The tree-based method obtains the predictions for our outcome _y_ as a function of the input variables _I_, our observed circumstances. The method uses the set of variables to partition the population into a set of non-overlapping groups, $G= \{g_1,...,g_m,...,g_M \}$ and each group is homogeneous in expressing each input variable. Graphically these groups are identified as _terminal nodes_ or _leafs_. The tree also gives us the predicted outcome value per observation. This means that in addition to the observed income vector $Y=\{y_1,...,y_i,...,y_N \}$ we also obtain a vector of predicted values $\hat{Y}=\{\hat{y}_1,...,\hat{y}_i,...,\hat{y}_N \}$ where $$\hat{y}_i = \mu_m = \frac {1}{N_M} \sum_{i \in g_m} y_i, \forall i \in g_m, \forall g_m \in G$$.
 The interpretation of the regression trees is then that conditional on the input variables being circumstances only ($I \subseteq \hat{\Omega} \subseteq \Omega$) each resulting group $g_m \in G$ can be interpreted as a circumstance type $t_m \in T$. Importantly the predicted value $\hat{Y}$ is analogous to the smoothed distribution of $Y$ and is our prediction of equal incomes within a group.
 
@@ -280,7 +279,7 @@ $\implies$ We adjust the p-values for multiple hypothesis testing, such that $p_
 $\implies$ The the Split sample based on $C^*_s$, by choosing the split point s that yields the lowest p-value, which is $C^*_s = \{C^*_s : \text{argmin} ~ p^{C^*_s} \}$.
 4. **Repeat :)**
 
-In the context of estimating inequality of opportunity conditional inference trees offer a particular structure. Namely each hypothesis is a test for whether equal opportunity exists within a group. If the tree results in no splits we are unable to reject the null hypothesis of equality of opportunity. While the deeper the tree is grown, the more types are required to account for inequality of opportunity in the country under consideration. Each split thus indicates that the opportunities of the two groups are significantly different, while we cannot say the same for the groups included in the leaf nodes.
+In the context of estimating inequality of opportunity conditional inference trees offer a particular structure. Namely each hypothesis is a test for whether equal opportunity exists within a group. If the tree results in no splits we cannot reject the null hypothesis of equality of opportunity. While the deeper the tree is grown, the more types are required to account for inequality of opportunity in the country under consideration. Each split (parent node) thus indicates that the opportunities of the two groups are significantly different, while we cannot say the same for the groups included in the leaf. nodes.
 
 # **Empirical Analysis**
 
@@ -543,7 +542,7 @@ print(dfSummary(AT_equality_data), method="render")
 
 ```
 
-```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
+```{r echo=F, message=FALSE, error=FALSE, warning=FALSE}
 # Here we repeat the Data Wrangling steps for other EU Member States
 # France
 FR_personal_data <- read.csv(file.path(data_path, "FR_2011p_EUSILC.csv"))
@@ -793,7 +792,7 @@ LV_equality_data <- LV_equality_data %>% select(
 
 ```
 
-```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
+```{r echo=T, message=FALSE, error=FALSE, warning=FALSE, include=FALSE}
 
 print(dfSummary(FR_equality_data), method="render")
 
@@ -854,30 +853,6 @@ ggplot(data = Summary_Stat_all) +
 * recursive partitioning just like `rpart`
 * `rpart`: maximizing an information measure
 * `ctree`: significance test procedure
-
-### Advantages
-
-**Advantages of Trees:** straightforward to interpret
-
-**Advantages of Trees over linear regression models:** very large set of observations can be used & model speciﬁcation is no longer exogenously given
-
-**Advantages of Conditional Inference Trees over Regression and Classification Trees (CART):** the algorithm automatically provides a test for the null hypothesis of equality of opportunity & prevents overfitting while CART "cannot distinguish between a significant and an insignificant improvement in the information measure" (Mingers 1987, as cited in @hot, 2) & consider the distributional properties of the measures.
-
-
-### Procedure 
-
-The algorithm follows a stepwise procedure [@brunori18, 7-8]:
-
-1. **Choose confidence level** Test the null hypothesis of independence, $H_0^{C^p} : D(Y|C^P) = D(Y)$, for each input variable $C^P  \in \hat{\Omega}$, and obtain a p-value associated with each test, $p^{C^p}$.
-$\implies$ We adjust the p-values for multiple hypothesis testing, such that $p_{adj.}^{C^p} = 1-(1-p^{Cp})^P$, which essentially means that we use the so called *Bonferroni Correction*.
-2. **Choose feature:** test all the null hypotheses of independence between the individual outcome and each of all the observable circumstances (variables). The model selects a variable, $C^*$, with the lowest adjusted p-value. Essentially we choose such that $C^* = \{C^P : \text{argmin} ~ p_{adj.}^{C^p} \}$.
-    i) no hypothesis can be rejected: stop $\implies$ If $p_{adj.}^{C^p} > \alpha$: Exit the algorithm. 
-    ii) one or more circumstance is siginificant: select the circumstance with the smallest p-value and proceed $\rightarrow$ If $p_{adj.}^{C^p} \leq \alpha$: Continue, and select $C^*$ as the splitting variable.
-  3. **Choose split:** for every possible way the selected circumstance can divide the sample into two subgroups, test the hypothesis of same mean outcome in the two resulting subgroups. Choose the splitting point with the smallest p-value. Technically, we test the discrepancy between the subsamples for each possible binary partition, _s_, based on $C^*$, meaning that $Y_s = \{Y_i : C^*_i < x^p \}$ and $Y_{-s} = \{Y_i : C^*_i \geq x^p \}$, and obtain a p-value associated with each test, $p^{C^*_s}$.
-
-$\implies$ The the Split sample based on $C^*_s$, by choosing the split point s that yields the lowest p-value, which is $C^*_s = \{C^*_s : \text{argmin} ~ p^{C^*_s} \}$.
-4. **Repeat :)**
-
 
 # **Regression Trees**
 Following [@brunori18] we split the data into training and testing data by $2/3:1/3$.
