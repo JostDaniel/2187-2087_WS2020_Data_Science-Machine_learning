@@ -1,6 +1,6 @@
 ---
 title: "AT2019 Data Wrangling"
-author: "Daniel Jost, Leonard Fidlin (h01352705), Anne Valder"
+author: "Leonard Fidlin (h01352705), Daniel Jost (h01451889), Anne Valder (h11928415)"
 date: "1/31/2021"
 bibliography: bibliography.bib
 output: 
@@ -42,20 +42,11 @@ Zeile 430 vielleich nochmal bearbeiten...
   
 ```
 # **Introduction**
+Building upon the contribution of [@brunori20] the goal of our project is to estimate inequality of opportunity (IOP) based on Machine Learning (ML) Techniques. The measurement of unequal opportunities goes back to Roemer (1998), who states that factors controlling individual outcomes (e.g income) consist of two categories: effort and circumstances. Effort summarizes all aspects over which individuals have control, while circumstances include all factors individuals cannot control. Individuals identified by the same exogenous circumstances and therefore characterized by similar background conditions belong to a circumstance type (Roemer, 1998). In what follows we want to analyze between-type disparities. 
 
-Building upon the contribution of [@brunori18] the goal of our project is to estimate inequality of opportunity (IOP) based on Machine Learning (ML) Techniques. The measurement of unequal opportunities goes back to Roemer (1998), who states that factors that control individual outcomes (e.g income) consist of two categories: effort and circumstances. Effort summarizes all aspects over which individuals have control, while circumstances include all factors individuals cannot control. Individuals identified by the same exogenous circumstances and therefore characterized by similar background conditions belong to a circumstance type (Roemer, 1998). In what follows we want to analyze between-type disparities. 
+In the previous literature several methods have been applied to measure IOP. These include parametric, non-parametric and latent variable approaches (QUELlE). The reasons we rely upon ML methods is that, as outlined by [@brunori20], the empirical results are sensitive to model selection determined by the researcher. As largely discussed in the literature model selection and thus partial observability of the real number of exogenous variables causes a downward bias in estimating opportunity estimates (Ferreira and Gignoux, 2011). With ML methods it is possible to circumvent problems like sample size limitations or non-fixed and non-additive effects of circumstances and thus balance the bias (Bourguignon et al., 2007; Ferreira and Gignoux, 2011). To be more precise in our empirical analysis we make use of conditional inference trees and conditional inference forests, which belong to the classification and regression tree (CART) methods popularized by (Breiman et al., 1984). CART methods lower the risk of arbitrary model selection by using an automated algorithm that splits the predictor space into non-overlapping areas to establish the best model for predicting the outcome variable. In the case of equality of opportunity the algorithm partitions the sample of respondents into different types. Moreover, the conditional inference algorithm employs sequences of hypothesis tests which restrains model overfitting and thus trades off upward and downward biases (Hothorn et al., 2006). Another advantage of CART methods is their intuitive graphical representation, which makes them easily accessible to a large audience.
 
-In the previous literature several methods have been applied to measure IOP. These include parametric, nonparametric and latent variable approaches. The reasons we rely upon ML methods is that the empirical results are sensitive to model selection, which is determined by the researcher. As largely discussed in the literature this model selection leads to a downward bias of the results, using ML we are able to circumvent this bias...?
-
-"Today, well established empirical methods include summary indexes that quantify the extent of unequal opportunities,as well as statistical tests that detect the mere existence thereof"
-
-
-
-Advantages ML: 
-- minimize the risk of arbitrary and ad-hoc model selection
-- provide a standardized way of trading off upward and downward biases in inequality of opportunity estimations
-- regression trees can be graphically represented; their structure is immediate to read and easy to understand. 
-
+The project is organized as follows: First, after properly assessing our data, we make use of the income and living conditions data of Austria in 2019 to estimate the Conditional Inference Trees and a Conditional Inference Forest for Austria. Second, we apply the same data wrangling and data analysis procedure to the synthetic EU Silc 2011 data set. Here we estimate the trees and forest for 6??? countries. In the last part, we compare the results across countries and conclude.
 
 ## *Libraries*
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
