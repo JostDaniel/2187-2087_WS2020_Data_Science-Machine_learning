@@ -43,7 +43,7 @@ Zeile 430 vielleich nochmal bearbeiten...
 ```
 # **Introduction**
 
-Building upon the contribution of [@brunori20] the goal of our project is to estimate inequality of opportunity (IOP) based on Machine Learning (ML) Techniques. The measurement of unequal opportunities goes back to Roemer (1998), who states that factors that control individual outcomes (e.g income) consist of two categories: effort and circumstances. Effort summarizes all aspects over which individuals have control, while circumstances include all factors individuals cannot control. Individuals identified by the same exogenous circumstances and therefore characterized by similar background conditions belong to a circumstance type (Roemer, 1998). In what follows we want to analyze between-type disparities. 
+Building upon the contribution of [@brunori18] the goal of our project is to estimate inequality of opportunity (IOP) based on Machine Learning (ML) Techniques. The measurement of unequal opportunities goes back to Roemer (1998), who states that factors that control individual outcomes (e.g income) consist of two categories: effort and circumstances. Effort summarizes all aspects over which individuals have control, while circumstances include all factors individuals cannot control. Individuals identified by the same exogenous circumstances and therefore characterized by similar background conditions belong to a circumstance type (Roemer, 1998). In what follows we want to analyze between-type disparities. 
 
 In the previous literature several methods have been applied to measure IOP. These include parametric, nonparametric and latent variable approaches. The reasons we rely upon ML methods is that the empirical results are sensitive to model selection, which is determined by the researcher. As largely discussed in the literature this model selection leads to a downward bias of the results, using ML we are able to circumvent this bias...?
 
@@ -113,7 +113,7 @@ data19 <- read.csv(file.path(data_path, "p_silc2019_ext.csv"), sep = ";")       
 ```
 
 # **Data Wrangling**
-The first step of our data wrangling part is to select the variables of interest. These are based upon the list of circumstances chosen in [@brunori20]. The circumstances include both characteristics describing the respondent and circumstances related to the intergenerational transmission of the respondent. Personal characteristics are: sex and country of birth. Intergenerational circumstances include: the presence of parents at home, the number of adults present at home (aged 18 and over), the number of working adults present and the number of children (under 18) present at home, all when the respondent was at age 14. Further intergenerational circumstances are the level of education of the respondents parents, their occupational status, main occupation and if they held a managerial position, their citizenship and the tenancy status. 
+The first step of our data wrangling part is to select the variables of interest. These are based upon the list of circumstances chosen in [@brunori18]. The circumstances include both characteristics describing the respondent and circumstances related to the intergenerational transmission of the respondent. Personal characteristics are: sex and country of birth. Intergenerational circumstances include: the presence of parents at home, the number of adults present at home (aged 18 and over), the number of working adults present and the number of children (under 18) present at home, all when the respondent was at age 14. Further intergenerational circumstances are the level of education of the respondents parents, their occupational status, main occupation and if they held a managerial position, their citizenship and the tenancy status. 
 
 Since annual income was not properly provided in the Statistic Austria dataset for 2019, we use gross monthly income as our dependent variable and approximate the yearly income by multiplying the monthly income by 12. Moreover, we only contain values larger than zero in our income variable, since values below zero indicate people which where not able to provide information or refused to answer the survey questions concerning the income topic. Furthermore, since the income is commonly assumed to be right skwed because of individual disproportionately high income earners which we take the log of the income variable. 
 
@@ -251,7 +251,7 @@ corrplot(data19cor, method = "ellipse", type = "upper", order = "FPC", diag = FA
 As can be seen from the correlation plot, all variables are significantly related to at least one other variable of the data set (at the 1% significance level). For better visibility insignificant correlations are blanked out. As the correlation matrix is ordered using the first principal component there is some clustering of significant correlations.
 
 # **Method**: Conditional Inference Trees
-To estimate equality of opportunity we let an automatex algortihm decide the partition of the population into mutually exclusive types, in order to obtain a measure of inequality of opportunity. We follow the procedure described by [@brunori20]. We show our results using both classification and regression trees and conditional inference trees. We put more emphasis on the latter. _Conditional inference trees_ and _conditional inference forests_ are a technique developed and described by [@Hothorn]. We break down the main characteristics for our purposes:
+To estimate equality of opportunity we let an automatex algortihm decide the partition of the population into mutually exclusive types, in order to obtain a measure of inequality of opportunity. We follow the procedure described by [@brunori18]. We show our results using both classification and regression trees and conditional inference trees. We put more emphasis on the latter. _Conditional inference trees_ and _conditional inference forests_ are a technique developed and described by [@Hothorn]. We break down the main characteristics for our purposes:
 
 The essential R function we use are:
 - `ctree` from party package in R
@@ -260,23 +260,23 @@ The essential R function we use are:
 - `ctree`: significance test procedure
 - `caret`: for additional cross validation to `ctree_control`
 
-**Advantages of Trees:** Next to being rather straightforward to interpret using such an algorithm minimizes the degree of randomness and arbitrariness in model selection. Trees show outcome variability without initially assuming which circumstances play a significant role in shaping the individual opportunities or how the interact [@brunori20]. 
+**Advantages of Trees:** Next to being rather straightforward to interpret using such an algorithm minimizes the degree of randomness and arbitrariness in model selection. Trees show outcome variability without initially assuming which circumstances play a significant role in shaping the individual opportunities or how the interact [@brunori18]. 
 
 **Advantages of Trees over linear regression models:** very large set of observations can be used & model speciﬁcation is no longer exogenously given
 
-**Advantages of Conditional Inference Trees over Regression and Classification Trees (CART):** the algorithm automatically provides a test for the null hypothesis of equality of opportunity and prevents overfitting while CART "cannot distinguish between a significant and an insignificant improvement in the information measure" (Mingers 1987, as cited in @hot, 2) and consider the distributional properties of the measures. Since the algorithm avoids upwards and downwards biases, the estimates obtained are better suited for comparisons across time (i.e. Austria 2011 to Austria 2019) and across countries (EU-SILC) even when samples sizes are different [@brunori20]. 
+**Advantages of Conditional Inference Trees over Regression and Classification Trees (CART):** the algorithm automatically provides a test for the null hypothesis of equality of opportunity and prevents overfitting while CART "cannot distinguish between a significant and an insignificant improvement in the information measure" (Mingers 1987, as cited in @hot, 2) and consider the distributional properties of the measures. Since the algorithm avoids upwards and downwards biases, the estimates obtained are better suited for comparisons across time (i.e. Austria 2011 to Austria 2019) and across countries (EU-SILC) even when samples sizes are different [@brunori18]. 
 
 
 ## **Procedure**
 
-Empirical approach as described in [@brunori20, 4]:
+Empirical approach as described in [@brunori18, 4]:
 We consider a population size for each country of size $N$ which is indexed by $i \in \{1, ..., N \}$ and a vector of incomes $Y=\{y_1,...,y_i,...,y_N \}$. Our assumption is that each individual _i's_ income is the result of two *sets* of factors. A set of _circumstances_, which are beyond her control and for which we have observations of size $P: \Omega_i =\{ C^1_i, ..., C^p_i, ..., C^P_i\}$. Then, there is a set of _efforts_, which we do not observe, of size $Q: \Theta_i = \{E^1_i, ..., E^q_i, ..., E^Q_i \}$. This results in a very general outcome generating function $g: \Omega \times \Theta \rightarrow \mathbb{R}_+$ or $$y_i = g(\Omega_i, \Theta_i) $$.
 Each circumstance $C^p \in \Omega$ has a total of $X^p$ realizations and each one is denoted as $x^p$. The conditional inference trees partition  the population into a set of non-overlapping types, whereby a type is a subgroup of the original population in therms of circumstances. We have type $T=\{t_1, ..., t_m,...,t_M \}$ and invidiuals _i_ and _j_ belong to the same type as in: $t_m \in T$ if $x^p_i = x^p_j \forall C^p \in \Omega$. Likewise, they belong to different types $t_m \in T$ if $\exists C^p \in \Omega : x^p_i \ne x^p_j$. Types define a particular way of partitioning the population into subgroups, and group membership indicates uniformity in circumstances (types).
 In essence this means that the approach we utilize here is an ex-ante view that focuses on between-type differences in the value of opportunity sets without paying attention to the effort realizations of individuals. 
 The tree-based method obtains the predictions for our outcome _y_ as a function of the input variables _I_, our observed circumstances. The method uses the set of variables to partition the population into a set of non-overlapping groups, $G= \{g_1,...,g_m,...,g_M \}$ and each group is homogeneous in expressing each input variable. Graphically these groups are identified as _terminal nodes_ or _leafs_. The tree also gives us the predicted outcome value per observation. This means that in addition to the observed income vector $Y=\{y_1,...,y_i,...,y_N \}$ we also obtain a vector of predicted values $\hat{Y}=\{\hat{y}_1,...,\hat{y}_i,...,\hat{y}_N \}$ where $$\hat{y}_i = \mu_m = \frac {1}{N_M} \sum_{i \in g_m} y_i, \forall i \in g_m, \forall g_m \in G$$.
 The interpretation of the regression trees is then that conditional on the input variables being circumstances only ($I \subseteq \hat{\Omega} \subseteq \Omega$) each resulting group $g_m \in G$ can be interpreted as a circumstance type $t_m \in T$. Importantly the predicted value $\hat{Y}$ is analogous to the smoothed distribution of $Y$ and is our prediction of equal incomes within a group.
 
-The algorithm of _conditional inference trees_ follows a step-wise procedure  of permutation tests as described by [@brunori20, 7-8]:
+The algorithm of _conditional inference trees_ follows a step-wise procedure  of permutation tests as described by [@brunori18, 7-8]:
 
 1. **Choose confidence level** Test the null hypothesis of independence, $H_0^{C^p} : D(Y|C^P) = D(Y)$, for each input variable $C^P  \in \hat{\Omega}$, and obtain a p-value associated with each test, $p^{C^p}$.
 $\implies$ We adjust the p-values for multiple hypothesis testing, such that $p_{adj.}^{C^p} = 1-(1-p^{Cp})^P$, which essentially means that we use the so called *Bonferroni Correction*.
@@ -292,7 +292,7 @@ In the context of estimating inequality of opportunity conditional inference tre
 
 # **Empirical Analysis**
 
-## **Regression Tree**
+## *Regression Tree*
 
 To showcase the difference between the _regression and classification trees_ we discussed in class and the _conditional inference trees_ we also plot the former as comparison. In the following chunk of code we use `set.seed` to generate randomness for reproducability. We define our `formula` which consists of all the circumstances we use for estimation. Furthermore, we split the data into a training and test sample. Finally we define a `fitControl` which is our tuning function for cross validation using the `caret` package.
 
@@ -339,7 +339,7 @@ rpart.plot(tree_caret_final, box.palette="RdBu", nn=FALSE, type=2)
 The `caret_tree` for Austria shows a tree with five partitions and seven terminal nodes. The splitting variables indicate already which circumstances are most significant in determining the income of the respondents. In Austria, sex is the most important determinant for income.
 However, we only showcase this tree as a comparison to the *conditional inference trees*.
 
-## **Conditional inference tree**
+## *Conditional inference tree*
 
 The *conditional inference tree* algorithm as it is included in `party` and the `partykit` packages contains various points for adjustment of variable selection and stopping criteria. We use the default `ctree_control` function but see it necessary to explain what it does exactly and why we think that the specifications we have chosen are not distorting. We use the default teststatistic as we do not know neither the conditional expectation nor covariance of our circumstances. In such a case the default setting of `ctree_control(teststat = "quad")` is recommended [@Hoh]. In the Austria 2019 we have mostly *cleaned* the data of missing values, however we still have many `NA` entries furhter on in the document. For reasons of uniformity, we chose to use the testtype `ctree_control(testtype = "Bonferroni")`. This approach uses simple Bonferroni adjusted P-Values. However, we also use the caret package for cross validation in addition to the default control function, since it is the one we had discussed in class and we used it for comparability of the results.
 ```{r}
@@ -376,9 +376,9 @@ plot(caret_ctree,gp = gpar(fontsize = 6),
 
 plot(caret_ctree$finalModel, type = "simple")
 ```
-We plot the conditional inference tree using both the `caret` and the `party` package to compare the results. In the first we used the suggested `mincriterion = 0.99` obtained through cross validation. We now have a tree with 9 terminal nodes and 8 inner nodes. Sex remains the most significant determinant. Furthermore, we see for example that country of birth is significant if its in the EU or outside of it. The Boxplots at the terminal nodes show the distribution of the outcome variable at the node. All, splits are chosen at a significance level of p < 0.001 which is also in line with the discplinary convention for hypothesis test [@brunori20, p. 9]. 
+We plot the conditional inference tree using both the `caret` and the `party` package to compare the results. In the first we used the suggested `mincriterion = 0.99` obtained through cross validation. We now have a tree with 9 terminal nodes and 8 inner nodes. Sex remains the most significant determinant. Furthermore, we see for example that country of birth is significant if its in the EU or outside of it. The Boxplots at the terminal nodes show the distribution of the outcome variable at the node. All, splits are chosen at a significance level of p < 0.001 which is also in line with the discplinary convention for hypothesis test [@brunori18, p. 9]. 
 
-## **Graphic representation of the tuning parameters**
+## *Graphic representation of the tuning parameters*
 
 The graph below shows how the P-Value Threshold is adjusted using the RMSE as an anchor. As the lowest RMSE is achieved using the *strictest* P-Value, that is the one we chose.
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
@@ -387,7 +387,7 @@ plot(caret_rpart)
 # plotcp(tree_1)
 ```
 
-## **Predictions**
+## *Predictions*
 
 To test the predictive power of the models, we calculate the Root Mean Squared errors. Arguably, the cross validated _conditional inference tree_ performs best in terms of small RMSE.
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
@@ -409,9 +409,9 @@ head(test$RMSE_caret)
 
 
 ```
-## **Conditional Inference Forest**
+## *Conditional Inference Forest*
 
-The procedure and application of _Conditional Inference Forests_ follows the application in [@brunori20, p. 10]
+The procedure and application of _Conditional Inference Forests_ follows the application in [@brunori18, p. 10]
 As discussed the _conditional inference trees_ construct as outcome the counterfactual distribution of the income variable. However, _conditional inference trees_ only use limited information of the set of observed circumstances, since not all circumstances $C^p \in \hat{\Omega}$ are utilized. Furthermore, the predictions (the values of the opportunity sets) have high variance. _Conditional Inference Forests_ are able to deal with the shortcomings of _conditional inference trees_.
 The main difference between the forest and the tree approach is that in the forest each tree is estimated on a random subsample $b$ of the original data. Thus, in total $B$ trees are estimated. Furthermore, a random subset of circumstances is used at each splitting point. This guarantees that at some point all circumstances with any kind of informational value will be used as a splitting variable. Furthermore, averaging the result over $B$ predictions reduces the variance. The individual predictions are a function of $\alpha$ which stands for the significance level in charge of splits, $\bar{P}$ i.e. the number of circumstances to be considered, and $\bar{B}$ the number of subsamples. 
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
@@ -439,9 +439,7 @@ varimpo <- ggplot(importance_cf, aes(x = var_name, y = importance)) +
 
 ggplotly(varimpo)
 ```
-We find that the variable sex, is the single most important variable in determining ones income in Austria. However, sex is not a generationally transmittable circumstance and, while it is a circumstance it is not exactly what we were trying to answer with our exercise. Therefore, we exclude it in the next step and create a new conditional inference forest.
-
-<!-- Brunori hat sex aber schon drinnen gehabt, aber komischerweise kommt es nur im tree von tschechien vor scheint also nciht mal annähernd so wichtig zu sein :O -->
+Both the _conditional inference tree_ and the _conditional inference forest_ analysis indicate that sex, is the most important determinant of an individuals income in Austria. We are surprised by this outcome, since [@brunori18] find that for Austria, the country of birth of the father is the variable determining the initial split of the tree. However, the variable is significantly more important than any other variable under consideration, and while it is arguably not a generationally transmittable characteristic, it is genetic, circumstantial, and completely out of the respondents control to influence. 
 
 # **Boosted Inference Tree**
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
@@ -474,16 +472,16 @@ importance_cf_boosted <- importance_cf_boosted  %>% arrange( desc(importance))
 ```
 # **Cross Country Comparison**
 
-# *Introduction**
-In this part of the seminar paper, we attempt to reproduce the findings of [@brunori20], but unfortunately we do not have access to the actual EU-SILC data from 2011. Instead we reproduce the findings using the synthetic data provided by the European office of statistics (Eurostat) (https://ec.europa.eu/eurostat/web/microdata/statistics-on-income-and-living-conditions). 
+## *Introduction*
+In this part of the seminar paper, we attempt to reproduce the findings of [@brunori18], but unfortunately we do not have access to the actual EU-SILC data from 2011. Instead we reproduce the findings using the synthetic data provided by the European office of statistics (Eurostat) (https://ec.europa.eu/eurostat/web/microdata/statistics-on-income-and-living-conditions). 
 
-# *Data Wrangling*
-The original data is not provided as the EU protects the privacy of the original respondents. The idea of the public microdata, is that it allows us to train and write the code using the actual variable names, but not obtaining true results. The EU-SILC public microdata files are fully synthetic and they were simulated using statistical modeling and show the statistical distributions of the original data. The main caveats of this data are, that it cannot be used for statistical inference to the wider population. The results and conclusion obtained from this public microdata are to be taken with a big grain of salt. Luckily, the individual country datasets are grouped in a coherent manner.
-We use the EU-SILC data from 2011 as it was the survey when additionally there were questions on inter-generational transmission. These were questions about the parents of the respondents. We want to see, whether it is possible using only circumstantial information given about the parents and respondents to predict the income of the respondents.
+## *Data Wrangling*
+The original data is not provided as the EU protects the privacy of the original respondents. The idea of the public microdata, is that it allows us to train and write the code using the actual variable names, but not obtaining true results. The EU-SILC public microdata files are fully synthetic and they were simulated using statistical modeling and show the statistical distributions of the original data. The main caveats of this data are, that it cannot be used for statistical inference to the wider population. The results and conclusions obtained from this public microdata are thus to be taken with a grain of salt. Luckily, the individual country datasets are grouped in a coherent manner.
+We use the EU-SILC data from 2011, as it was the survey when additionally to the usual questions, there were questions on inter-generational transmission. These were questions about the parents of the respondents.
 
 The unique identifier used in all  four data sets is the household ID identifier: RX030 in the Personal Register, PX030 in the Personal Data, DB030 in the Household Register, and HB030 in the Household Data file. We only need to combine two of the datasets, namely the Household Register and the Personal Data. Latter contains the Ad-hoc module with the questions on intergenerational characteristics.
 
-Following [@brunori20] we use the following variables for circumstances: Respondent's sex (PB150), Respondent's country of birth (Citizenship as proxy - PB220A), Presence of parents at home (PT010), Number of adults (18 or older) in respondents household (PT020), Number of working adults (18 or older) in respondents household (PT030), Father/Mother country of birth and citizenship (PT060, PT070, PT090, PT100), Father/mother education (PT110, PT120), Father/mother occupational status (PT130, PT160), Father/mother main occupation (PT150,PT180), Managerial position of father/mother(PT140,PT170), Tenancy status of the house in which respondent was living as a child (PT210).
+Following [@brunori18] we use the following variables for circumstances: Respondent's sex (PB150), Respondent's country of birth (Citizenship as proxy - PB220A), Presence of parents at home (PT010), Number of adults (18 or older) in respondents household (PT020), Number of working adults (18 or older) in respondents household (PT030), Father/Mother country of birth and citizenship (PT060, PT070, PT090, PT100), Father/mother education (PT110, PT120), Father/mother occupational status (PT130, PT160), Father/mother main occupation (PT150,PT180), Managerial position of father/mother(PT140,PT170), Tenancy status of the house in which respondent was living as a child (PT210).
 
 Outcome Variables i.e. Income: Total Household gross income (HY010), Total Disposable Income (HY020), Dwelling Type (HH010), Housing (HH030). 
 
@@ -868,7 +866,7 @@ ggplot(data = Summary_Stat_all) +
 
 ### Procedure 
 
-The algorithm follows a stepwise procedure [@brunori20, 7-8]:
+The algorithm follows a stepwise procedure [@brunori18, 7-8]:
 
 1. **Choose confidence level** Test the null hypothesis of independence, $H_0^{C^p} : D(Y|C^P) = D(Y)$, for each input variable $C^P  \in \hat{\Omega}$, and obtain a p-value associated with each test, $p^{C^p}$.
 $\implies$ We adjust the p-values for multiple hypothesis testing, such that $p_{adj.}^{C^p} = 1-(1-p^{Cp})^P$, which essentially means that we use the so called *Bonferroni Correction*.
@@ -882,7 +880,7 @@ $\implies$ The the Split sample based on $C^*_s$, by choosing the split point s 
 
 
 # **Regression Trees**
-Following [@brunori20] we split the data into training and testing data by $2/3:1/3$.
+Following [@brunori18] we split the data into training and testing data by $2/3:1/3$.
 Furthermore, we chose to show the results obtained using regression trees obtained from the 'rpart' package. The training and test data sets will be continually used also for further analysis when we proceed with 'cTree'.
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 set.seed(123)
