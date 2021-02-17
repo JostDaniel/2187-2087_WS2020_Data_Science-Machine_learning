@@ -6,8 +6,8 @@ bibliography: bibliography.bib
 output: 
   html_document:
     toc: true
-    toc_depth: 2
-    number_sections: false
+    toc_depth: 3
+    number_sections: true
 subtitle: Data Science and Machine Learning 2187 & 2087
 editor_options: 
   chunk_output_type: inline  
@@ -15,10 +15,10 @@ editor_options:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(error = TRUE)
-knitr::opts_chunk$set(fig.align = 'center')
+knitr::opts_chunk$set(fig.align = 'left')
 ```
 
-```{r echo=T, eval=F, message=F, include=F, error=F, warning=F}
+```{r echo=F, eval=F, message=F, include=F, error=F, warning=F}
 COMMENTS (not included)
  
 **TO DOs**
@@ -26,16 +26,19 @@ COMMENTS (not included)
 #* Compare Cross-Country Results - Variable Importance synthetic countries comparison, Gini comparison across countries, (Comparison of trees)
 Zeile 430 vielleich nochmal bearbeiten...
 #* RMSE für Boosted berechnen
-* Texte schreiben
-* Einleitung schreiben
 * Conclusion schreiben
-* Data summary & regression trees für Länder bis auf Austria raus ! nur Inference trees und Comparison graphics
+* Endlektorat
 
 **Aufbau**
 1. Austria 2019 mit der ausführlichen Erklärung der Vorgehensweise und der einzelnen Schritte. Daten sollten genau erklärt werden.
 2. Warum synthetisches Datenset abweicht, detaillierter auf Austria 2011. Die restlichen Länder eher im Appendix. 
 3. Ländervergleich Cforest Var importance. Tree complexity und Gini? (p.51 paper)
 
+DANIEL:
+  1.  DAN: ich schon noch dass die observations nicht komplett gedropt werden wenn bei einer variable NA
+  2.  DAN: Income schau ich mir auch noch an, ob wir da nit annual income verwenden können
+  3.  Plots (siehe unten)
+  4.  M002000 droppen?
 **Ideen für Plots**
   1. Einen plot mit Einkommen und parental education zb auf 3 levels zusammen geplottet.
   2. Same shit für Country of birth oder so
@@ -44,13 +47,17 @@ Zeile 430 vielleich nochmal bearbeiten...
 # **Introduction**
 Building upon the contribution of [@brunori20] the goal of our project is to estimate inequality of opportunity (IOP) based on Machine Learning (ML) Techniques. The measurement of unequal opportunities goes back to Roemer (1998), who states that factors controlling individual outcomes (e.g income) consist of two categories: effort and circumstances. Effort summarizes all aspects over which individuals have control, while circumstances include all factors individuals cannot control. Individuals identified by the same exogenous circumstances and therefore characterized by similar background conditions belong to a circumstance type (Roemer, 1998). In what follows we want to analyze between-type disparities. 
 
-In the previous literature several methods have been applied to measure IOP. These include parametric, non-parametric and latent variable approaches (QUELlE). The reasons we rely upon ML methods is that, as outlined by [@brunori20], the empirical results are sensitive to model selection determined by the researcher. As largely discussed in the literature model selection and thus partial observability of the real number of exogenous variables causes a downward bias in estimating opportunity estimates (Ferreira and Gignoux, 2011). With ML methods it is possible to circumvent problems like sample size limitations or non-fixed and non-additive effects of circumstances and thus balance the bias (Bourguignon et al., 2007; Ferreira and Gignoux, 2011). To be more precise in our empirical analysis we make use of conditional inference trees and conditional inference forests, which belong to the classification and regression tree (CART) methods popularized by (Breiman et al., 1984). CART methods lower the risk of arbitrary model selection by using an automated algorithm that splits the predictor space into non-overlapping areas to establish the best model for predicting the outcome variable. In the case of equality of opportunity the algorithm partitions the sample of respondents into different types. Moreover, the conditional inference algorithm employs sequences of hypothesis tests which restrains model overfitting and thus trades off upward and downward biases (Hothorn et al., 2006). Another advantage of CART methods is their intuitive graphical representation, which makes them easily accessible to a large audience.
+In the previous literature several methods have been applied to measure IOP. These include parametric, non-parametric and latent variable approaches (QUELlE). The reasons we rely upon ML methods is that, as outlined by [@brunori20], the empirical results are sensitive to model selection determined by the researcher. As largely discussed in the literature, model selection and thus partial observability of the real number of exogenous variables causes a downward bias in estimating opportunity estimates (Ferreira and Gignoux, 2011). With ML methods it is possible to circumvent problems like sample size limitations or non-fixed and non-additive effects of circumstances and thus balance the bias (Bourguignon et al., 2007; Ferreira and Gignoux, 2011). To be more precise in our empirical analysis we make use of conditional inference trees and conditional inference forests, which belong to the classification and regression tree (CART) methods popularized by (Breiman et al., 1984). CART methods lower the risk of arbitrary model selection by using an automated algorithm that splits the predictor space into non-overlapping areas to establish the best model for predicting the outcome variable. In the case of equality of opportunity the algorithm partitions the sample of respondents into different types. Moreover, the conditional inference algorithm employs sequences of hypothesis tests which restrains model overfitting and thus trades off upward and downward biases (Hothorn et al., 2006). Another advantage of CART methods is their intuitive graphical representation, which makes them easily accessible to a large audience.
 
-The project is organized as follows: First, after properly assessing our data, we make use of the income and living conditions data of Austria in 2019 to estimate the Conditional Inference Trees and a Conditional Inference Forest for Austria. Second, we apply the same data wrangling and data analysis procedure to the synthetic EU Silc 2011 data set. Here we estimate the trees and forest for 6??? countries. In the last part, we compare the results across countries and conclude.
+The project is organized as follows: First, after properly assessing our data, we make use of the income and living conditions data of Austria in 2019 to estimate the Conditional Inference Trees and a Conditional Inference Forest for Austria. Second, we apply the same data wrangling and data analysis procedure to the synthetic EU-SILC 2011 data set. Here we estimate the trees and forest for 6??? countries. In the last part, we compare the results across countries and conclude.
 
-## *Libraries*
-```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
-library(tidyverse)
+Libraries
+```{r message=FALSE, error=FALSE, warning=FALSE}
+library(bibtex)         # citations
+library(knitcitations); cleanbib()
+cite_options(citation_format = "pandoc", check.entries=FALSE)
+
+library(tidyverse)      
 library(readr)          # import
 library(rpart)          # regression trees
 library(rpart.plot)     # regression tree plots
@@ -63,13 +70,10 @@ library(ineq)           # Gini
 library(precrec)        # ROC curves
 library(corrplot)       # Correlation plots
 library(plotly)         # interactive ggplot2 plots :D
-library(knitcitations); cleanbib()
-cite_options(citation_format = "pandoc", check.entries=FALSE)
-library(bibtex)
-library(readr)
+
 ```
 
-```{r echo=T, eval=F, message=F, include=F, error=F, warning=F}
+```{r echo=F, eval=F, message=F, include=F, error=F, warning=F}
 # library(mboost)
 # library(vcd)
 # library(RColorBrewer)
@@ -82,28 +86,30 @@ library(readr)
 # library(xgboost)
 ```
 
-## *Data import*
+# **Austria: EU-SILC 2019**
 
-In the first part of our data analysis we rely upon the data of Statistics Austria. This data contains the survey data of the income and living conditions for Austria in the year 2019. In addition to that the data set includes an ad hoc moduel with many of the intergenerational transmission variables needed to properly assses inequality of opportunity of the respondents.
+## Data import, wrangling, exploration and visualization
+### Data import
+
+In the first part of our data analysis we rely upon the data of Statistics Austria. This data contains the survey data of the income and living conditions for Austria in the year 2019. In addition to that the data set includes an ad hoc module with many of the intergenerational transmission variables needed to properly asses inequality of opportunity of the respondents.
 
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 # setting the data path
 data_path ="./AT2019"
 # accessing the data
-data19 <- read.csv(file.path(data_path, "p_silc2019_ext.csv"), sep = ";")           # personal data
+data19 <- read.csv(file.path(data_path, "p_silc2019_ext.csv"), sep = ";")
 ```
 
-```{r echo=T, eval=F, message=F, include=F, error=F, warning=F}
+```{r echo=F, eval=F, message=F, include=F, error=F, warning=F}
 (not included)
 # data19_pID <- read.csv(file.path(data_path, "id_schluessel_r_ext.csv"), sep = ";")   # personal ID
 # data19_h <- read.csv(file.path(data_path, "h_silc2019_ext.csv"), sep = ";")         # household data
 # data19_hID <- read.csv(file.path(data_path, "id_schluessel_d_ext.csv"), sep = ";")  # household ID
 # data19_h <- data19_h %>% select(hy020, Hid) 
 # data19_p <- data19_p %>%  left_join(data19_h, by = "Hid")
-
 ```
 
-# **Data Wrangling**
+### Data Wrangling
 The first step of our data wrangling part is to select the variables of interest. These are based upon the list of circumstances chosen in [@brunori18]. The circumstances include both characteristics describing the respondent and circumstances related to the intergenerational transmission of the respondent. Personal characteristics are: sex and country of birth. Intergenerational circumstances include: the presence of parents at home, the number of adults present at home (aged 18 and over), the number of working adults present and the number of children (under 18) present at home, all when the respondent was at age 14. Further intergenerational circumstances are the level of education of the respondents parents, their occupational status, main occupation and if they held a managerial position, their citizenship and the tenancy status. 
 
 Since annual income was not properly provided in the Statistic Austria dataset for 2019, we use gross monthly income as our dependent variable and approximate the yearly income by multiplying the monthly income by 12. Moreover, we only contain values larger than zero in our income variable, since values below zero indicate people which where not able to provide information or refused to answer the survey questions concerning the income topic. Furthermore, since the income is commonly assumed to be right skwed because of individual disproportionately high income earners which we take the log of the income variable. 
@@ -113,7 +119,7 @@ After selecting the variables described from the original dataset, we rename all
 ```{r echo=T, eval=F, message=F, include=F, error=F, warning=F}
 COMMENTS (not included)
 
-# A big problem is that the actualy annual income variable (hy010) is coded as a character variable and not as a numeric variable as it should be in the EU-Silc dataset and as we have it in our synthetic set.
+# A big problem is that the actually annual income variable (hy010) is coded as a character variable and not as a numeric variable as it should be in the EU-SILC dataset and as we have it in our synthetic set.
 
 # Problem the Austrian dataset does not contain information on the mother or the fathers country of birth, but merely their citizenship
 
@@ -125,8 +131,6 @@ COMMENTS (not included)
 - Only father
 - Without parents
 - Lived in a private household without any parent
-
-
 ```
 
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
@@ -158,9 +162,9 @@ data19 <- data19 %>%
          ) %>%    
   
   filter(age %in% (27:59), inc_net > 0, mother_present > 0, father_present > 0, father_cit > 0, mother_cit > 0)  %>%
-  # We drop all answers where the respondents refused or were not able to provide information 
-  # D: dropped man dann nicht die ganzen observations?? nope nur im synthetic da machen wirs dann nicht
-  # D und wwenn wir nach age filtern (und nicht die observations mit -6 entfernen) müssen wir erklären warum 27-59 und nicht 25-59 und den text unten ändern, weil ich hab ja einfach die mit -6 (age outside of range) entfernt.
+  # DAN: Hier schau ich noch dass die observations nicht komplett gedropt werden wenn bei einer variable NA
+  # DAN: Income schau ich mir auch noch an, ob wir da nit annual income verwenden können
+  # M002000
   
   mutate( "inc_net_log" = log(inc_net*12),   
          # logged net income per month of respondent
@@ -181,17 +185,16 @@ data19 <- data19 %>%
          # Austria = 1 and Other = 2
 ```
 
-## *Data Summary*
+
+### Data Summary
 ```{r}
 print(dfSummary(data19), method="render", style="grid", plain.ascii = F)
 ```
-After cleaning our data we end up with a data set that includes 24 variables and 3295 observation. There are almost no missing values anymore since we corrected for refused survey answers or dropped the values where participants where not able to answer the survey questions. There are slightly more females (52%) than males (48%) in the data. The income distribution is skewed to the right meaning the median income is lower than the mean income (we take the logarithm to correct for this). 84% of the respondents where born in Austria and 88% are Austrian citizens. 84% of the respondent's fathers and also 84% of the respondent's mothers held the Austrian citizenship.82% of the fathers, but only 54% of the mothers, were employed when the respondents where at age 14. 38% of the employed fathers and 9% of the employed mothers held a managerial position. About 72% of the respondents lived in not owned houses at age 14 and 83% lived together with other children. In 91% and 98% of the time either the father or the mother was present, in 90% of the time both were present. 20% of the respondents lived with adults other than their parents. Looking at the education of the father or the mother we see that the mean is 3.1 for fathers and 2.7 for the mothers. 3 corresponds to high level education: first stage of tertiary education and second stage of tertiary education. 2 is equivalent to a medium level of schooling and corresponds to upper secondary education and post-secondary non-tertiary education. The mean (= 5,3) occupation of the respondent's father corresponds to "Sales and Service worker". The occupations are coded according to the ISCO-08 (COM) classification (International Standard Classification of Occupations, which are published by the International Labour Office. The mean (= 2,6) occupation of the mothers corresponds to "Professionals". 
+After cleaning our data we end up with a data set that includes 24 variables and 3295 observation. There are almost no missing values anymore since we corrected for refused survey answers or dropped the values where participants where not able to answer the survey questions. There are slightly more females (52%) than males (48%) in the data. The income distribution is skewed to the right meaning the median income is lower than the mean income (we take the logarithm to correct for this). 84% of the respondents where born in Austria and 88% are Austrian citizens. 84% of the respondent's fathers and also 84% of the respondent's mothers held the Austrian citizenship. 82% of the fathers, but only 54% of the mothers, were employed when the respondents where at age 14. 38% of the employed fathers and 9% of the employed mothers held a managerial position. About 72% of the respondents lived in not owned houses at age 14 and 83% lived together with other children. In 91% and 98% of the time either the father or the mother was present, in 90% of the time both were present. 20% of the respondents lived with adults other than their parents. 
+<!-- Looking at the education of the father or the mother we see that the mean is 3.1 for fathers and 2.7 for the mothers. 3 corresponds to high level education: first stage of tertiary education and second stage of tertiary education. 2 is equivalent to a medium level of schooling and corresponds to upper secondary education and post-secondary non-tertiary education. The mean (= 5,3) occupation of the respondent's father corresponds to "Sales and Service worker". The occupations are coded according to the ISCO-08 (COM) classification (International Standard Classification of Occupations, which are published by the International Labour Office. The mean (= 2,6) occupation of the mothers corresponds to "Professionals".-->
+<!-- Man kann von kategoriale Variablen (auch wenn ordinalskaliert) nicht einfach den mean berechnen, also können schon ist aber eher nix -->
 
-## *Data Exploration and Visualization*
-
-To get a good grasp of our data we will first look at some simple descriptives and a correlaton plot
-
-## *Gini Index and Lorenz curve*
+### Gini Index and Lorenz curve
 In order to get a first glimpse on how high or low inequality in general is in Austria we calculate and visualize the Gini coefficient. 
 
 ```{r}
@@ -204,7 +207,7 @@ plot(Lc(data19$inc_net), col = "darkred", lwd = 3)
 ```
 The Gini index corresponds to the are below the the black equal distribution line and above the red line of the actual distribution.
 
-## *Age pyramid*
+### Age pyramid
 ```{r}
 agepyra <- ggplot(data19, aes(x = age, fill=sex))  + 
   geom_bar(data = subset(data19, sex==1)) +
@@ -224,7 +227,7 @@ median(data19$age)
 ```
 
 
-## *Correlation plot*
+### Correlation plot
 ```{r}
 data19cor <- data19
 data19cor$sex <- as.numeric(data19cor$sex)
@@ -241,7 +244,7 @@ corrplot(data19cor, method = "ellipse", type = "upper", order = "FPC", diag = FA
 ```
 As can be seen from the correlation plot, all variables are significantly related to at least one other variable of the data set (at the 1% significance level). For better visibility insignificant correlations are blanked out. As the correlation matrix is ordered using the first principal component there is some clustering of significant correlations.
 
-# **Method**: Conditional Inference Trees
+## Method: Conditional Inference Trees and Forests
 To estimate equality of opportunity we let an automatex algortihm decide the partition of the population into mutually exclusive types, in order to obtain a measure of inequality of opportunity. We follow the procedure described by [@brunori18]. We show our results using both classification and regression trees and conditional inference trees. We put more emphasis on the latter. _Conditional inference trees_ and _conditional inference forests_ are a technique developed and described by [@Hothorn]. We break down the main characteristics for our purposes:
 
 The essential R function we use are:
@@ -258,32 +261,32 @@ The essential R function we use are:
 **Advantages of Conditional Inference Trees over Regression and Classification Trees (CART):** the algorithm automatically provides a test for the null hypothesis of equality of opportunity and prevents overfitting while CART "cannot distinguish between a significant and an insignificant improvement in the information measure" (Mingers 1987, as cited in @hot, 2) and consider the distributional properties of the measures. Since the algorithm avoids upwards and downwards biases, the estimates obtained are better suited for comparisons across time (i.e. Austria 2011 to Austria 2019) and across countries (EU-SILC) even when samples sizes are different [@brunori18]. 
 
 
-## **Procedure**
+**Procedure**
 
 Empirical approach as described in [@brunori18, 4]:
-We consider a population size for each country of size $N$ which is indexed by $i \in \{1, ..., N \}$ and a vector of incomes $Y=\{y_1,...,y_i,...,y_N \}$. Our assumption is that each individual _i's_ income is the result of two *sets* of factors. A set of _circumstances_, which are beyond her control and for which we have observations of size $P: \Omega_i =\{ C^1_i, ..., C^p_i, ..., C^P_i\}$. Then, there is a set of _efforts_, which we do not observe, of size $Q: \Theta_i = \{E^1_i, ..., E^q_i, ..., E^Q_i \}$. This results in a very general outcome generating function $g: \Omega \times \Theta \rightarrow \mathbb{R}_+$ or $$y_i = g(\Omega_i, \Theta_i) $$.
+> We consider a population size for each country of size $N$ which is indexed by $i \in \{1, ..., N \}$ and a vector of incomes $Y=\{y_1,...,y_i,...,y_N \}$. Our assumption is that each individual _i's_ income is the result of two *sets* of factors. A set of _circumstances_, which are beyond her control and for which we have observations of size $P: \Omega_i =\{ C^1_i, ..., C^p_i, ..., C^P_i\}$. Then, there is a set of _efforts_, which we do not observe, of size $Q: \Theta_i = \{E^1_i, ..., E^q_i, ..., E^Q_i \}$. This results in a very general outcome generating function $g: \Omega \times \Theta \rightarrow \mathbb{R}_+$ or $$y_i = g(\Omega_i, \Theta_i) $$.
 Each circumstance $C^p \in \Omega$ has a total of $X^p$ realizations and each one is denoted as $x^p$. The conditional inference trees partition  the population into a set of non-overlapping types, whereby a type is a subgroup of the original population in therms of circumstances. We have type $T=\{t_1, ..., t_m,...,t_M \}$ and invidiuals _i_ and _j_ belong to the same type as in: $t_m \in T$ if $x^p_i = x^p_j \forall C^p \in \Omega$. Likewise, they belong to different types $t_m \in T$ if $\exists C^p \in \Omega : x^p_i \ne x^p_j$. Types define a particular way of partitioning the population into subgroups, and group membership indicates uniformity in circumstances (types).
 In essence this means that the approach we utilize here is an ex-ante view that focuses on between-type differences in the value of opportunity sets without paying attention to the effort realizations of individuals. 
 The tree-based method obtains the predictions for our outcome _y_ as a function of the input variables _I_, our observed circumstances. The method uses the set of variables to partition the population into a set of non-overlapping groups, $G= \{g_1,...,g_m,...,g_M \}$ and each group is homogeneous in expressing each input variable. Graphically these groups are identified as _terminal nodes_ or _leafs_. The tree also gives us the predicted outcome value per observation. This means that in addition to the observed income vector $Y=\{y_1,...,y_i,...,y_N \}$ we also obtain a vector of predicted values $\hat{Y}=\{\hat{y}_1,...,\hat{y}_i,...,\hat{y}_N \}$ where $$\hat{y}_i = \mu_m = \frac {1}{N_M} \sum_{i \in g_m} y_i, \forall i \in g_m, \forall g_m \in G$$.
 The interpretation of the regression trees is then that conditional on the input variables being circumstances only ($I \subseteq \hat{\Omega} \subseteq \Omega$) each resulting group $g_m \in G$ can be interpreted as a circumstance type $t_m \in T$. Importantly the predicted value $\hat{Y}$ is analogous to the smoothed distribution of $Y$ and is our prediction of equal incomes within a group.
 
-The algorithm of _conditional inference trees_ follows a step-wise procedure  of permutation tests as described by [@brunori18, 7-8]:
+> The algorithm of _conditional inference trees_ follows a step-wise procedure  of permutation tests as described by [@brunori18, 7-8]:
 
-1. **Choose confidence level** Test the null hypothesis of independence, $H_0^{C^p} : D(Y|C^P) = D(Y)$, for each input variable $C^P  \in \hat{\Omega}$, and obtain a p-value associated with each test, $p^{C^p}$.
+> 1. **Choose confidence level** Test the null hypothesis of independence, $H_0^{C^p} : D(Y|C^P) = D(Y)$, for each input variable $C^P  \in \hat{\Omega}$, and obtain a p-value associated with each test, $p^{C^p}$.
 $\implies$ We adjust the p-values for multiple hypothesis testing, such that $p_{adj.}^{C^p} = 1-(1-p^{Cp})^P$, which essentially means that we use the so called *Bonferroni Correction*.
 2. **Choose feature:** test all the null hypotheses of independence between the individual outcome and each of all the observable circumstances (variables). The model selects a variable, $C^*$, with the lowest adjusted p-value. Essentially we choose such that $C^* = \{C^P : \text{argmin} ~ p_{adj.}^{C^p} \}$.
     i) no hypothesis can be rejected: stop $\implies$ If $p_{adj.}^{C^p} > \alpha$: Exit the algorithm. 
     ii) one or more circumstance is siginificant: select the circumstance with the smallest p-value and proceed $\rightarrow$ If $p_{adj.}^{C^p} \leq \alpha$: Continue, and select $C^*$ as the splitting variable.
   3. **Choose split:** for every possible way the selected circumstance can divide the sample into two subgroups, test the hypothesis of same mean outcome in the two resulting subgroups. Choose the splitting point with the smallest p-value. Technically, we test the discrepancy between the subsamples for each possible binary partition, _s_, based on $C^*$, meaning that $Y_s = \{Y_i : C^*_i < x^p \}$ and $Y_{-s} = \{Y_i : C^*_i \geq x^p \}$, and obtain a p-value associated with each test, $p^{C^*_s}$.
 
-$\implies$ The the Split sample based on $C^*_s$, by choosing the split point s that yields the lowest p-value, which is $C^*_s = \{C^*_s : \text{argmin} ~ p^{C^*_s} \}$.
+> $\implies$ The the Split sample based on $C^*_s$, by choosing the split point s that yields the lowest p-value, which is $C^*_s = \{C^*_s : \text{argmin} ~ p^{C^*_s} \}$.
 4. **Repeat :)**
 
 In the context of estimating inequality of opportunity conditional inference trees offer a particular structure. Namely each hypothesis is a test for whether equal opportunity exists within a group. If the tree results in no splits we cannot reject the null hypothesis of equality of opportunity. While the deeper the tree is grown, the more types are required to account for inequality of opportunity in the country under consideration. Each split (parent node) thus indicates that the opportunities of the two groups are significantly different, while we cannot say the same for the groups included in the leaf. nodes.
 
-# **Empirical Analysis**
+## Empirical Analysis
 
-## *Regression Tree*
+### Regression Tree
 
 To showcase the difference between the _regression and classification trees_ we discussed in class and the _conditional inference trees_ we also plot the former as comparison. In the following chunk of code we use `set.seed` to generate randomness for reproducability. We define our `formula` which consists of all the circumstances we use for estimation. Furthermore, we split the data into a training and test sample. Finally we define a `fitControl` which is our tuning function for cross validation using the `caret` package.
 
@@ -330,7 +333,7 @@ rpart.plot(tree_caret_final, box.palette="RdBu", nn=FALSE, type=2)
 The `caret_tree` for Austria shows a tree with five partitions and seven terminal nodes. The splitting variables indicate already which circumstances are most significant in determining the income of the respondents. In Austria, sex is the most important determinant for income.
 However, we only showcase this tree as a comparison to the *conditional inference trees*.
 
-## *Conditional inference tree*
+### Conditional inference tree
 
 The *conditional inference tree* algorithm as it is included in `party` and the `partykit` packages contains various points for adjustment of variable selection and stopping criteria. We use the default `ctree_control` function but see it necessary to explain what it does exactly and why we think that the specifications we have chosen are not distorting. We use the default teststatistic as we do not know neither the conditional expectation nor covariance of our circumstances. In such a case the default setting of `ctree_control(teststat = "quad")` is recommended [@Hoh]. In the Austria 2019 we have mostly *cleaned* the data of missing values, however we still have many `NA` entries furhter on in the document. For reasons of uniformity, we chose to use the testtype `ctree_control(testtype = "Bonferroni")`. This approach uses simple Bonferroni adjusted P-Values. However, we also use the caret package for cross validation in addition to the default control function, since it is the one we had discussed in class and we used it for comparability of the results.
 ```{r}
@@ -369,7 +372,7 @@ plot(caret_ctree$finalModel, type = "simple")
 ```
 We plot the conditional inference tree using both the `caret` and the `party` package to compare the results. In the first we used the suggested `mincriterion = 0.99` obtained through cross validation. We now have a tree with 9 terminal nodes and 8 inner nodes. Sex remains the most significant determinant. Furthermore, we see for example that country of birth is significant if its in the EU or outside of it. The Boxplots at the terminal nodes show the distribution of the outcome variable at the node. All, splits are chosen at a significance level of p < 0.001 which is also in line with the discplinary convention for hypothesis test [@brunori18, p. 9]. 
 
-## *Graphic representation of the tuning parameters*
+### Graphic representation of the tuning parameters
 
 The graph below shows how the P-Value Threshold is adjusted using the RMSE as an anchor. As the lowest RMSE is achieved using the *strictest* P-Value, that is the one we chose.
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
@@ -378,7 +381,7 @@ plot(caret_rpart)
 # plotcp(tree_1)
 ```
 
-## *Predictions*
+### Predictions
 
 To test the predictive power of the models, we calculate the Root Mean Squared errors. Arguably, the cross validated _conditional inference tree_ performs best in terms of small RMSE.
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
@@ -400,7 +403,7 @@ head(test$RMSE_caret)
 
 
 ```
-## *Conditional Inference Forest*
+### Conditional Inference Forest
 
 The procedure and application of _Conditional Inference Forests_ follows the application in [@brunori18, p. 10]
 As discussed the _conditional inference trees_ construct as outcome the counterfactual distribution of the income variable. However, _conditional inference trees_ only use limited information of the set of observed circumstances, since not all circumstances $C^p \in \hat{\Omega}$ are utilized. Furthermore, the predictions (the values of the opportunity sets) have high variance. _Conditional Inference Forests_ are able to deal with the shortcomings of _conditional inference trees_.
@@ -420,7 +423,7 @@ importance_cf <- importance_cf  %>% arrange( desc(importance))
 ```
 We obtain a RMSE for the conditional inference forest of 0.48. Furthermore, we obtain a table of variable importance as identified through the forest, which we arrange in descending order and plot below:
 ```{r}
-varimpo <- ggplot(importance_cf, aes(x = var_name, y = importance)) +
+varimpo <- importance_cf %>% ggplot(aes(x = var_name, y = importance)) +
     geom_pointrange(shape = 21, colour = "black", fill = "white", size = 3, stroke = 1, aes(ymin = 0, ymax = importance)) +
     scale_x_discrete(limits = importance_cf$var_name[order(importance_cf$importance)]) +
     labs(title = "Conditional Forest variable importance - Austria 2019", x = "", y = "Mean decrease in sum of squared residuals") +
@@ -432,7 +435,7 @@ ggplotly(varimpo)
 ```
 Both the _conditional inference tree_ and the _conditional inference forest_ analysis indicate that sex, is the most important determinant of an individuals income in Austria. We are surprised by this outcome, since [@brunori18] find that for Austria, the country of birth of the father is the variable determining the initial split of the tree. However, the variable is significantly more important than any other variable under consideration, and while it is arguably not a generationally transmittable characteristic, it is genetic, circumstantial, and completely out of the respondents control to influence. 
 
-# **Boosted Inference Tree**
+### Boosted Inference Tree
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 #cf_boosted <- blackboost(formula, data = data19, na.action = na.pass, control = boost_control(), tree_controls = partykit::ctree_control())
 # cf_boosted
@@ -449,7 +452,7 @@ head(test$RMSE)
 plot(test$At_BT_CF_pred, test$inc_net_log) #ADD GGPLOT und machs schön!
 
 ```
-## Variable Importance
+### Variable Importance
 ```{r}
 ###?????### geht nicht bei boosted tree mit caret package... 
 
@@ -461,12 +464,11 @@ importance_cf_boosted$var_name = rownames(importance_cf_boosted)
 importance_cf_boosted <- importance_cf_boosted  %>% arrange( desc(importance))
 
 ```
-# **Cross Country Comparison**
+# **Cross Country Comparison: EU-SILC 2011**
 
-## *Introduction*
 In this part of the seminar paper, we attempt to reproduce the findings of [@brunori18], but unfortunately we do not have access to the actual EU-SILC data from 2011. Instead we reproduce the findings using the synthetic data provided by the European office of statistics (Eurostat) (https://ec.europa.eu/eurostat/web/microdata/statistics-on-income-and-living-conditions). 
 
-## *Data Wrangling*
+## Data Wrangling
 The original data is not provided as the EU protects the privacy of the original respondents. The idea of the public microdata, is that it allows us to train and write the code using the actual variable names, but not obtaining true results. The EU-SILC public microdata files are fully synthetic and they were simulated using statistical modeling and show the statistical distributions of the original data. The main caveats of this data are, that it cannot be used for statistical inference to the wider population. The results and conclusions obtained from this public microdata are thus to be taken with a grain of salt. Luckily, the individual country datasets are grouped in a coherent manner.
 We use the EU-SILC data from 2011, as it was the survey when additionally to the usual questions, there were questions on inter-generational transmission. These were questions about the parents of the respondents. Unfortunately however, the data contains various implausible errors, which make it difficult to apply `ctree` to it. While the synthetic data is similarly distributed to the actual data its missing values are not in any way systematic but random. This makes, cleaning the data basically impossible, since otherwise we lose almost all of our observations. The data sets for Finland, Denmark, and Spain contain more missing values for most of the Ad-hoc questions than answers. And the Italian household data set, as it is provided on the Eurostat website only contains 138 observations, which makes merging it with the 20.000 observation long personal data set useless.
 
@@ -483,7 +485,6 @@ At first we ran the analysis with the citizenship variable included, but we ulti
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 # setting the data path
 data_path ="./SILC_2011"
-getwd()
 
 # accessing the data
 AT_personal_data <- read.csv(file.path(data_path, "AT_2011p_EUSILC.csv"))
@@ -829,22 +830,23 @@ Summary_Stat_all <- full_join(x = Summary_Stat_all, y= LV)
 
 knitr::kable(Summary_Stat_all, caption = "Country Statistics")
 
-ggplot(data = Summary_Stat_all) +
-  geom_point(mapping = aes(x = Country, y = Gini))  +
+Summary_Stat_all$Country <- factor(Summary_Stat_all$Country,                                    
+                  levels = Summary_Stat_all$Country[order(Summary_Stat_all$Gini)])
+
+Summary_Stat_all %>% 
+  ggplot() +
+  geom_col(mapping = aes(x = Country, y = Gini, fill=Country))  +
   theme_classic() +
-  labs(title = "Comparision of the Gini Index across countries")
+  labs(title = "Comparision of the Gini Index across countries") +
+  scale_fill_manual(values = c("gray40", "gray40", "gray40", "red", "gray40", "gray40")) +
+  theme(legend.position="none") +
+  geom_text(aes(x = Country, y = Gini, label=round(Gini, 3)), size = 6, color="white", vjust = 2)
 
 ```
 
+## Empirical Analysis
 
-# **Method**: Conditional Inference Trees
-
-* `ctree` from party package in R
-* recursive partitioning just like `rpart`
-* `rpart`: maximizing an information measure
-* `ctree`: significance test procedure
-
-# **Regression Trees**
+### Regression Trees
 Following [@brunori18] we split the data into training and testing data by $2/3:1/3$.
 Furthermore, we chose to show the results obtained using regression trees obtained from the 'rpart' package. The training and test data sets will be continually used also for further analysis when we proceed with 'cTree'.
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
@@ -957,7 +959,7 @@ LV_test <- LV_equality_data %>% filter(train_index=="test")
 #rpart.plot(LV_tree, box.palette="RdBu", nn=FALSE, type=2, main = "Regression Tree for Latvia 2011")
 ```
 
-# **Conditional Inference Trees**
+### Conditional Inference Trees
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 AT_Ctree <- ctree(formula, data = AT_train, alpha = 0.05, maxdepth = 5)
 AT_Ctree
@@ -968,7 +970,7 @@ plot(AT_Ctree, type = "simple", gp = gpar(fontsize = 6),
 
 ```
 
-*Cross Validation using the Caret package*
+### Cross Validation using the Caret package
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 fitControl <- trainControl(method = "repeatedcv", number = 10, repeats = 10, savePredictions = T)
 ```
@@ -1141,7 +1143,8 @@ LV_test$RMSE <- sqrt(sum((LV_test$P_Ct - LV_test$log_income)^2/nrow(LV_test), na
 
 #RMSE of 1.4 which is not so good, and does not speak of good predictive capabilities of the model
 ```
-# **Conditional Forest**
+
+### Conditional Inference Forest
 ```{r}
 AT_cf <- cforest(formula, AT_equality_data, na.action = na.pass, control = ctree_control(teststat = "quadratic", testtype = "Bonferroni", mincriterion = 0.99), ytrafo = NULL, scores = NULL, ntree = 500L, perturb = list(replace = FALSE, fraction = 0.8))
 
@@ -1159,12 +1162,15 @@ importance_cf <- importance_cf  %>%
 ```
 
 ```{r}
-ggplot(importance_cf, aes(x = var_name, y = importance)) +
-    geom_point() +
+varimpo2 <- ggplot(importance_cf, aes(x = var_name, y = importance)) +
+  geom_pointrange(shape = 21, colour = "black", fill = "white", size = 3, stroke = 1, aes(ymin = 0, ymax = importance)) +
     scale_x_discrete(limits = importance_cf$var_name[order(importance_cf$importance)]) +
     labs(title = "Conditional Forest variable importance - Austria 2011", x = "", y = "Mean decrease in sum of squared residuals") +
     coord_flip() +
-    theme(axis.text.y = element_text(hjust = 0))
+    theme_light() +
+    theme(axis.line = element_blank(), panel.border = element_blank(), panel.grid.major.y=element_blank())
+
+ggplotly(varimpo2)
 ```
 
 ```{r}
@@ -1201,44 +1207,47 @@ df <- full_join(importance_cf, importance_cf_FR)
 #df <- full_join(df, importance_cf_IT)
 df <- full_join(df, importance_cf_LV) %>% group_by(Country)
 
-ggplot(df, aes(x = var_name , y = importance, shape = Country)) +
+dfvarimp <- ggplot(df, aes(x = var_name , y = importance, shape = Country, color=Country)) +
     geom_point() +
-    scale_x_discrete(limits = importance_cf_FR$var_name[order(importance_cf_FR$importance)]) +
+    scale_x_discrete(limits = importance_cf$var_name[order(importance_cf$importance)]) +
     labs(title = "Conditional Forest variable importance - Country Comparison", x = "", y = "Variable importance") +theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+ggplotly(dfvarimp)
 
 ```
 
 ```{r}
-ggplot(importance_cf_FR, aes(x = var_name, y = importance)) +
-    geom_point() +
+varimpo3 <- ggplot(importance_cf_FR, aes(x = var_name, y = importance)) +
+  geom_pointrange(shape = 21, colour = "black", fill = "white", size = 3, stroke = 1, aes(ymin = 0, ymax = importance)) +
     scale_x_discrete(limits = importance_cf_FR$var_name[order(importance_cf_FR$importance)]) +
     labs(title = "Conditional Forest variable importance - France 2011", x = "", y = "Mean decrease in sum of squared residuals") +
     coord_flip() +
-    theme(axis.text.y = element_text(hjust = 0))
+    theme_light() +
+    theme(axis.line = element_blank(), panel.border = element_blank(), panel.grid.major.y=element_blank())
+
+ggplotly(varimpo3)
 ```
 
-```{r}
-# ggplot(importance_cf_IT, aes(x = var_name, y = importance)) +
-#     geom_point() +
-#     scale_x_discrete(limits = importance_cf_IT$var_name[order(importance_cf_IT$importance)]) +
-#     labs(title = "Conditional Forest variable importance - Italy 2011", x = "", y = "Mean decrease in sum of squared residuals") +
-#     coord_flip() +
-#     theme(axis.text.y = element_text(hjust = 0))
-```
 
 ```{r}
-ggplot(importance_cf_LV, aes(x = var_name, y = importance)) +
-    geom_point() +
+varimpo4 <- ggplot(importance_cf_LV, aes(x = var_name, y = importance)) +
+  geom_pointrange(shape = 21, colour = "black", fill = "white", size = 3, stroke = 1, aes(ymin = 0, ymax = importance)) +
     scale_x_discrete(limits = importance_cf_LV$var_name[order(importance_cf_LV$importance)]) +
     labs(title = "Conditional Forest variable importance - Latvia 2011", x = "", y = "Mean decrease in sum of squared residuals") +
     coord_flip() +
-    theme(axis.text.y = element_text(hjust = 0))
+    theme_light() +
+    theme(axis.line = element_blank(), panel.border = element_blank(), panel.grid.major.y=element_blank())
+
+ggplotly(varimpo4)
 ```
 
-
-# **Conclusion**
-=======
 # **Conclusion**
 
 # **References**
->>>>>>> 8860f3d4dd72f45073c60dda2f3226dd505e53a1
+
+```{r echo=F, eval=F, message=F, include=F, error=F, warning=F}
+NOT SHOWN IN HTML
+
+library(beepr)
+beep(8)        # playing a sound so you know when it's done
+```
