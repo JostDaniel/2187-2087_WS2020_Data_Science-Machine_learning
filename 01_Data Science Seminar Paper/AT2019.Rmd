@@ -328,12 +328,14 @@ caret_rpart
 tree_caret_final <- caret_rpart$finalModel
 rpart.plot(tree_caret_final, box.palette="RdBu", nn=FALSE, type=2)
 ```
+
 The `caret_tree` for Austria shows a tree with five partitions and seven terminal nodes. The splitting variables indicate already which circumstances are most significant in determining the income of the respondents. In Austria, sex is the most important determinant for income.
 However, we only showcase this tree as a comparison to the *conditional inference trees*.
 
 ## *Conditional inference tree*
 
-The *conditional inference tree* algorithm as it is included in `party` and the `partykit` packages contains various points for adjustment of variable selection and stopping criteria. We use the default `ctree_control` function but see it necessary to explain what it does exactly and why we think that the specifications we have chosen are not distorting. We use the default teststatistic as we do not know neither the conditional expectation nor covariance of our circumstances. In such a case the default setting of `ctree_control(teststat = "quad")` is recommended [@Hoh]. In the Austria 2019 we have mostly *cleaned* the data of missing values, however we still have many `NA` entries furhter on in the document. For reasons of uniformity, we chose to use the testtype `ctree_control(testtype = "Bonferroni")`. This approach uses simple Bonferroni adjusted P-Values. However, we also use the caret package for cross validation in addition to the default control function, since it is the one we had discussed in class and we used it for comparability of the results.
+The *conditional inference tree* algorithm as it is included in `party` and the `partykit` packages contains various points for adjustment of variable selection and stopping criteria. We use the default `ctree_control` function but see it necessary to explain what it does exactly and why we think that the specifications we have chosen are not distorting. We use the default test statistic as we do not know neither the conditional expectation nor covariance of our circumstances. In such a case the default setting of `ctree_control(teststat = "quad")` is recommended [@Hoh]. In the Austria 2019 we have mostly *cleaned* the data of missing values, however we still have many `NA` entries furhter on in the document. For reasons of uniformity, we chose to use the testtype `ctree_control(testtype = "Bonferroni")`. This approach uses simple Bonferroni adjusted P-Values. However, we also use the caret package for cross validation in addition to the default control function, since it is the one we had discussed in class and we used it for comparability of the results.
+
 ```{r}
 # For the Inference Tree to work, we must have all variables as numeric data
 
@@ -345,7 +347,7 @@ plot(Ctree, type = "simple",gp = gpar(fontsize = 6),
   ip_args=list(id = FALSE), main = "Conditional Inference Tree for Austria 2019") #Überschrift größe ändern
 
 ```
-We obtain a deep tree with 11 inner nodes and 12 terminal nodes. Sex is the most siginificant determinant for income. The further determinants are quite different for men (0) and women (1).
+We obtain a deep tree with 11 inner nodes and 12 terminal nodes. Sex is the most significant determinant for income. The further determinants are quite different for men (0) and women (1).
 
 ```{r}
 ### data = in data 2019 geändert von train!
@@ -368,11 +370,15 @@ plot(caret_ctree,gp = gpar(fontsize = 6),
 
 plot(caret_ctree$finalModel, type = "simple")
 ```
-We plot the conditional inference tree using both the `caret` and the `party` package to compare the results. In the first we used the suggested `mincriterion = 0.99` obtained through cross validation. We now have a tree with 9 terminal nodes and 8 inner nodes. Sex remains the most significant determinant. Furthermore, we see for example that country of birth is significant if its in the EU or outside of it. The Boxplots at the terminal nodes show the distribution of the outcome variable at the node. All, splits are chosen at a significance level of p < 0.001 which is also in line with the discplinary convention for hypothesis test [@brunori18, p. 9]. 
+
+We plot the conditional inference tree using both the `caret` and the `party` package to compare the results. In the first we used the suggested `mincriterion = 0.99` obtained through cross validation. Which is in line with the commonly used 99% confidence interval level in the empirical literature. We now have a tree with 9 terminal nodes and 8 inner nodes. Sex remains the most significant determinant. Furthermore, we see for example that country of birth is significant if lays in the EU or outside of it. The Boxplots at the terminal nodes show the distribution of the outcome variable at the node. All, splits are chosen at a significance level of p < 0.001 which is also in line with the disciplinary convention for hypothesis test [@brunori18, p. 9]. 
+
+??  p < 0.001 oder p < 0.01 ????
 
 ## *Graphic representation of the tuning parameters*
 
-The graph below shows how the P-Value Threshold is adjusted using the RMSE as an anchor. As the lowest RMSE is achieved using the *strictest* P-Value, that is the one we chose.
+The graph below shows how the P-Value threshold is adjusted using the RMSE as an anchor. As the lowest RMSE is achieved using the *strictest* P-Value, that is the one we chose.
+
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 plot(caret_ctree) # RMSE vs p-value our resampling parameter
 plot(caret_rpart)
@@ -381,13 +387,14 @@ plot(caret_rpart)
 
 ## *Predictions*
 
-To test the predictive power of the models, we calculate the Root Mean Squared errors. Arguably, the cross validated _conditional inference tree_ performs best in terms of small RMSE.
+To test the predictive power of the models, we calculate the Root Mean Squared errors. Arguably, the cross validated
+_conditional inference tree_ performs best in terms of small RMSE.
+
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 test$P_AtCt <- predict(Ctree, newdata = as.data.frame(test))
 test$perror <- (test$P_AtCt - test$inc_net_log)^2
 test$RMSE <- sqrt(sum((test$P_AtCt - test$inc_net_log)^2/nrow(test), na.rm = T))
 head(test$RMSE)
-
 
 test$P_AtCt_caret <- predict(caret_rpart, newdata = as.data.frame(test))
 test$perror_caret <- (test$P_AtCt_caret - test$inc_net_log)^2
@@ -406,6 +413,7 @@ head(test$RMSE_caret)
 The procedure and application of _Conditional Inference Forests_ follows the application in [@brunori18, p. 10]
 As discussed the _conditional inference trees_ construct as outcome the counterfactual distribution of the income variable. However, _conditional inference trees_ only use limited information of the set of observed circumstances, since not all circumstances $C^p \in \hat{\Omega}$ are utilized. Furthermore, the predictions (the values of the opportunity sets) have high variance. _Conditional Inference Forests_ are able to deal with the shortcomings of _conditional inference trees_.
 The main difference between the forest and the tree approach is that in the forest each tree is estimated on a random subsample $b$ of the original data. Thus, in total $B$ trees are estimated. Furthermore, a random subset of circumstances is used at each splitting point. This guarantees that at some point all circumstances with any kind of informational value will be used as a splitting variable. Furthermore, averaging the result over $B$ predictions reduces the variance. The individual predictions are a function of $\alpha$ which stands for the significance level in charge of splits, $\bar{P}$ i.e. the number of circumstances to be considered, and $\bar{B}$ the number of subsamples. 
+
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 cf <- cforest(formula, data19, na.action = na.pass, control = ctree_control(teststat = "quadratic", testtype = "Bonferroni", mincriterion = 0.99), ytrafo = NULL, scores = NULL, ntree = 500L, perturb = list(replace = FALSE, fraction = 0.8))
 
@@ -431,7 +439,7 @@ varimpo <- ggplot(importance_cf, aes(x = var_name, y = importance)) +
 
 ggplotly(varimpo)
 ```
-Both the _conditional inference tree_ and the _conditional inference forest_ analysis indicate that sex, is the most important determinant of an individuals income in Austria. We are surprised by this outcome, since [@brunori18] find that for Austria, the country of birth of the father is the variable determining the initial split of the tree. However, the variable is significantly more important than any other variable under consideration, and while it is arguably not a generationally transmittable characteristic, it is genetic, circumstantial, and completely out of the respondents control to influence. 
+Both the _conditional inference tree_ and the _conditional inference forest_ analysis indicate that sex, is the most important determinant of an individuals income in Austria. We are surprised by this outcome, since [@brunori18] find that for Austria (using the 2011 data set though), the country of birth of the father is the variable determining the initial split of the tree. However, the variable is significantly more important than any other variable under consideration, and while it is arguably not a generationally transmittable characteristic, it is genetic, circumstantial, and completely out of the respondents control to influence. 
 
 # **Boosted Inference Tree**
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
