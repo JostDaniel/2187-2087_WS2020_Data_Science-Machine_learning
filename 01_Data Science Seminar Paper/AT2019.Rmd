@@ -101,12 +101,12 @@ data19 <- read.csv(file.path(data_path, "p_silc2019_ext.csv"), sep = ";")
 ```
 
 ```{r echo=F, eval=F, message=F, include=F, error=F, warning=F}
-(not included)
-# data19_pID <- read.csv(file.path(data_path, "id_schluessel_r_ext.csv"), sep = ";")   # personal ID
-# data19_h <- read.csv(file.path(data_path, "h_silc2019_ext.csv"), sep = ";")         # household data
-# data19_hID <- read.csv(file.path(data_path, "id_schluessel_d_ext.csv"), sep = ";")  # household ID
-# data19_h <- data19_h %>% select(hy020, Hid) 
-# data19_p <- data19_p %>%  left_join(data19_h, by = "Hid")
+#(not included)
+data19_pID <- read.csv(file.path(data_path, "id_schluessel_r_ext.csv"), sep = ";")   # personal ID
+data19_h <- read.csv(file.path(data_path, "h_silc2019_ext.csv"), sep = ";")         # household data
+data19_hID <- read.csv(file.path(data_path, "id_schluessel_d_ext.csv"), sep = ";")  # household ID
+data19_h <- data19_h %>% select(hy010, Hid) 
+data19 <- data19 %>%  left_join(data19_h, by = "Hid")
 ```
 
 ### Data Wrangling
@@ -136,9 +136,10 @@ COMMENTS (not included)
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 data19 <- data19 %>%
   
-  select(sex, P038004, P110000nu, P111010nu, alter, M009010, M010000, M014000, M016000, M017000, M020010, M021000, M025000, M027000, M028000, M004000, M001300, M001510, M003100, M001100, M001200, M002000, M001500) %>% 
+  select(sex, hy010 ,P038004, P110000nu, P111010nu, alter, M009010, M010000, M014000, M016000, M017000, M020010, M021000, M025000, M027000, M028000, M004000, M001300, M001510, M003100, M001100, M001200, M002000, M001500) %>% 
   
-  rename("inc_net"           = P038004,     # gross monthly income
+  rename("net_income"        = hy010,       # gross annual income
+         "inc_net"           = P038004,     # gross monthly income
          "country_birth"     = P110000nu,   # country of birth of respondent
          "citizenship"       = P111010nu,   # citizenship of respondent
          "age"               = alter,       # age of respondent
@@ -166,7 +167,7 @@ data19 <- data19 %>%
   # DAN: Income schau ich mir auch noch an, ob wir da nit annual income verwenden können
   # M002000
   
-  mutate( "inc_net_log" = log(inc_net*12),   
+  mutate( "inc_net_log" = log(net_income + 1),   
          # logged net income per month of respondent
          
          "both_parents_present" = father_present + mother_present,            
@@ -198,12 +199,12 @@ After cleaning our data we end up with a data set that includes 24 variables and
 In order to get a first glimpse on how high or low inequality in general is in Austria we calculate and visualize the Gini coefficient. 
 
 ```{r}
-ineq(data19$inc_net, type = "Gini")
+ineq(data19$net_income, type = "Gini")
 ```
-The Gini index is 0.25 which is a bit lower than the World Bank estimate for Austria of 0.3 (2017) available at  https://data.worldbank.org/indicator/SI.POV.GINI?locations=AT.
+The Gini index is 0.29 which is a bit lower than the World Bank estimate for Austria of 0.3 (2017) available at  https://data.worldbank.org/indicator/SI.POV.GINI?locations=AT.
 
 ```{r}
-plot(Lc(data19$inc_net), col = "darkred", lwd = 3)
+plot(Lc(data19$net_income), col = "darkred", lwd = 3)
 ```
 The Gini index corresponds to the are below the the black equal distribution line and above the red line of the actual distribution.
 
