@@ -469,8 +469,8 @@ importance_cf_boosted <- importance_cf_boosted  %>% arrange( desc(importance))
 In this part of the seminar paper, we attempt to reproduce the findings of [@brunori18], but unfortunately we do not have access to the actual EU-SILC data from 2011. Instead we reproduce the findings using the synthetic data provided by the European office of statistics (Eurostat) (https://ec.europa.eu/eurostat/web/microdata/statistics-on-income-and-living-conditions). 
 
 ## Data Wrangling
-The original data is not provided as the EU protects the privacy of the original respondents. The idea of the public microdata, is that it allows us to train and write the code using the actual variable names, but not obtaining true results. The EU-SILC public microdata files are fully synthetic and they were simulated using statistical modeling and show the statistical distributions of the original data. The main caveats of this data are, that it cannot be used for statistical inference to the wider population. The results and conclusions obtained from this public microdata are thus to be taken with a grain of salt. Luckily, the individual country datasets are grouped in a coherent manner.
-We use the EU-SILC data from 2011, as it was the survey when additionally to the usual questions, there were questions on inter-generational transmission. These were questions about the parents of the respondents. Unfortunately however, the data contains various implausible errors, which make it difficult to apply `ctree` to it. While the synthetic data is similarly distributed to the actual data its missing values are not in any way systematic but random. This makes, cleaning the data basically impossible, since otherwise we lose almost all of our observations. The data sets for Finland, Denmark, and Spain contain more missing values for most of the Ad-hoc questions than answers. And the Italian household data set, as it is provided on the Eurostat website only contains 138 observations, which makes merging it with the 20.000 observation long personal data set useless.
+The original data is not publicly provided as the EU protects the privacy of the original respondents. The idea of the public microdata, is that it allows us to train and write the code using the actual variable names, but not obtaining true results. The EU-SILC public microdata files are fully synthetic and they were simulated using statistical modeling and show the statistical distributions of the original data. The main caveats of this data are, that it cannot be used for statistical inference to the wider population. The results and conclusions obtained from this public microdata are thus to be taken with a grain of salt. Luckily, the individual country datasets are grouped in a coherent manner.
+We use the EU-SILC data from 2011, as it was the survey when additionally to the usual questions, there were questions on inter-generational transmission. These were questions about the parents of the respondents. Unfortunately however, the data contains various implausible errors, which make it difficult to apply the `ctree` method to it. While the synthetic data is similarly distributed to the actual data its missing values are not in any way systematic but random. This makes, cleaning the data basically impossible, since otherwise we lose almost all of our observations. The data sets for Finland, Denmark, and Spain contain more missing values for most of the Ad-hoc questions than answers. And the Italian household data set, as it is provided on the Eurostat website only contains 138 observations, which makes merging it with the 20.000 observation long personal data set useless.
 
 The unique identifier used in all  four data sets is the household ID identifier: RX030 in the Personal Register, PX030 in the Personal Data, DB030 in the Household Register, and HB030 in the Household Data file. We only need to combine two of the datasets, namely the Household Register and the Personal Data. Latter contains the Ad-hoc module with the questions on intergenerational characteristics.
 
@@ -478,9 +478,9 @@ Following [@brunori18] we use the following variables for circumstances: Respond
 
 Outcome Variables i.e. Income: Total Household gross income (HY010), Total Disposable Income (HY020), Dwelling Type (HH010), Housing (HH030). 
 
-We first use more variables than ultimately used in the analysis. We use the year of birth to calculate the age, and then exclude everyone older than 60 or younger than 27, as was done in the paper we are referring to. We first included both monthly and annual gross income. But in this cross-country analysis we use annual gross income as our outcome variable. 
+We first use more variables than ultimately used in the analysis. We use the year of birth to calculate the age, and then exclude everyone older than 60 or younger than 27, as was done in the paper we are referring to in order to focus on the working population only. First, we included both monthly and annual gross income. But in this cross-country analysis we use annual gross income as our outcome variable. 
 
-At first we ran the analysis with the citizenship variable included, but we ultimately decided that it is not really a circumstantial variable as Respondents country of birth would have been. Since it is utltimately possible to obtain a new citizenship. 
+In the beginning, we ran the analysis with the citizenship variable included, but we ultimately decided that it is not really a circumstantial variable as respondents country of birth would have been. Since it is ultimately possible to obtain a new citizenship. 
 
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 # setting the data path
@@ -534,6 +534,7 @@ We provide the summary statistics for Austria, which we obtained using the 'dfsu
 print(dfSummary(AT_equality_data), method="render", style="grid", plain.ascii = F)
 
 ```
+
 ```{r echo=F, message=FALSE, error=FALSE, warning=FALSE}
 # Here we repeat the Data Wrangling steps for other EU Member States
 # France
@@ -805,6 +806,9 @@ LV_equality_data <- LV_equality_data %>% select(
 ```
 
 Summary Statisitcs All Countries
+
+After having finished the data wrangling of the synthetic EU Silc data for the six countries we now want to compare these countries to see how they differ in e.g. levels of inequality. 
+
 ```{r echo=FALSE, results= 'asis'}
 
 AT <- summarise(AT_equality_data,Country = "AT", "Sample Size" = nrow(AT_equality_data), "Avg. Equ.Income" = mean(annual_income), "Std. dev." = sd(annual_income), "Gini" = ineq(annual_income, type = "Gini")) 
@@ -847,7 +851,7 @@ Summary_Stat_all %>%
 ## Empirical Analysis
 
 ### Regression Trees
-Following [@brunori18] we split the data into training and testing data by $2/3:1/3$.
+Following [@brunori18] and the standard procedure for CART we split the data into training and testing data by $2/3:1/3$.
 Furthermore, we chose to show the results obtained using regression trees obtained from the 'rpart' package. The training and test data sets will be continually used also for further analysis when we proceed with 'cTree'.
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 set.seed(123)
