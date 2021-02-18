@@ -134,9 +134,8 @@ COMMENTS (not included)
 ```
 
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
-data19 <- data19 %>%
-  
-  select(sex, hy010 ,P038004, P110000nu, P111010nu, alter, M009010, M010000, M014000, M016000, M017000, M020010, M021000, M025000, M027000, M028000, M004000, M001300, M001510, M003100, M001100, M001200, M002000, M001500) %>% 
+data19 <- data19 %>% select(
+  sex, hy010 ,P038004, P110000nu, P111010nu, alter, M009010, M010000, M014000, M016000, M017000, M020010, M021000, M025000, M027000, M028000, M004000, M001300, M001510, M003100, M001100, M001200, M002000, M001500) %>% 
   
   rename("net_income"        = hy010,       # gross annual income
          "inc_net"           = P038004,     # gross monthly income
@@ -162,7 +161,7 @@ data19 <- data19 %>%
          "adults_present"    = M001500,     # adults present in respondent’s household at age 14
          ) %>%    
   
-  filter(age %in% (27:59), inc_net > 0, mother_present > 0, father_present > 0, father_cit > 0, mother_cit > 0)  %>%
+  filter(age %in% (26:59), inc_net > 0, mother_present > 0, father_present > 0, father_cit > 0, mother_cit > 0)  %>%
   # DAN: Hier schau ich noch dass die observations nicht komplett gedropt werden wenn bei einer variable NA
   # DAN: Income schau ich mir auch noch an, ob wir da nit annual income verwenden können
   # M002000
