@@ -192,7 +192,7 @@ print(dfSummary(data19), method="render", style="grid", plain.ascii = F)
 ```
 After cleaning our data we end up with a data set that includes 24 variables and 3295 observation. There are almost no missing values anymore since we corrected for refused survey answers or dropped the values where participants where not able to answer the survey questions. There are slightly more females (52%) than males (48%) in the data. The income distribution is skewed to the right meaning the median income is lower than the mean income (we take the logarithm to correct for this). 84% of the respondents where born in Austria and 88% are Austrian citizens. 84% of the respondent's fathers and also 84% of the respondent's mothers held the Austrian citizenship. 82% of the fathers, but only 54% of the mothers, were employed when the respondents where at age 14. 38% of the employed fathers and 9% of the employed mothers held a managerial position. About 72% of the respondents lived in not owned houses at age 14 and 83% lived together with other children. In 91% and 98% of the time either the father or the mother was present, in 90% of the time both were present. 20% of the respondents lived with adults other than their parents. 
 <!-- Looking at the education of the father or the mother we see that the mean is 3.1 for fathers and 2.7 for the mothers. 3 corresponds to high level education: first stage of tertiary education and second stage of tertiary education. 2 is equivalent to a medium level of schooling and corresponds to upper secondary education and post-secondary non-tertiary education. The mean (= 5,3) occupation of the respondent's father corresponds to "Sales and Service worker". The occupations are coded according to the ISCO-08 (COM) classification (International Standard Classification of Occupations, which are published by the International Labour Office. The mean (= 2,6) occupation of the mothers corresponds to "Professionals".-->
-<!-- Man kann von kategoriale Variablen (auch wenn ordinalskaliert) nicht einfach den mean berechnen, also können schon ist aber eher nix -->
+<!-- Man kann von kategoriale Variablen (auch wenn ordinalskaliert) nicht einfach den mean berechnen, also können schon ist aber eher nix. jaaa macht sinn..! --> 
 
 ### Gini Index and Lorenz curve
 In order to get a first glimpse on how high or low inequality in general is in Austria we calculate and visualize the Gini coefficient. 
@@ -804,10 +804,9 @@ LV_equality_data <- LV_equality_data %>% select(
 # print(dfSummary(LV_equality_data), method="render")
 
 ```
+*Summary Statistics All Countries*
 
-Summary Statisitcs All Countries
-
-After having finished the data wrangling of the synthetic EU Silc data for the six countries we now want to compare these countries to see how they differ in e.g. levels of inequality. 
+Before we start with our empirical analysis using the synthetic EU Silc data for six different countries we first want to compare these countries to analyze how they differ. For each of the countries we create a data frame which contains information regarding the country's average equalized income, the standard deviation of the annual income, the sample size of the data and the Gini coefficients. After obtaining the individual country data frames we join them together in order to plot the differences in the Gini coefficients in the respective countries. 
 
 ```{r echo=FALSE, results= 'asis'}
 
