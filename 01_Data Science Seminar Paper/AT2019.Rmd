@@ -205,7 +205,7 @@ The Gini index is 0.29 which is a bit lower than the World Bank estimate for Aus
 ```{r}
 plot(Lc(data19$net_income), col = "darkred", lwd = 3)
 ```
-The Gini index corresponds to the are below the the black equal distribution line and above the red line of the actual distribution.
+The Gini index corresponds to the are below the the black equal distribution line and above the red line of the actual distribution. ????
 
 ### Age pyramid
 ```{r}
@@ -245,7 +245,7 @@ corrplot(data19cor, method = "ellipse", type = "upper", order = "FPC", diag = FA
 As can be seen from the correlation plot, all variables are significantly related to at least one other variable of the data set (at the 1% significance level). For better visibility insignificant correlations are blanked out. As the correlation matrix is ordered using the first principal component there is some clustering of significant correlations.
 
 ## Method: Conditional Inference Trees and Forests
-To estimate equality of opportunity we let an automated algorithm decide the partition of the population into mutually exclusive types, in order to obtain a measure of inequality of opportunity. We follow the procedure described by [@brunori18]. We show our results using both classification and regression trees and conditional inference trees. We put more emphasis on the latter. _Conditional inference trees_ and _conditional inference forests_ are a technique developed and described by [@Hothorn]. We break down the main characteristics for our purposes:
+To estimate IOP we let an automated algorithm decide the partition of the population into mutually exclusive types, in order to obtain a measure of inequality of opportunity. We follow the procedure described by [@brunori18]. We show our results using both classification and regression trees and conditional inference trees. We put more emphasis on the latter. _Conditional inference trees_ and _conditional inference forests_ are a technique developed and described by [@Hothorn]. We break down the main characteristics for our purposes:
 
 The essential R function we use are:
 - `ctree` from party package in R
@@ -254,9 +254,9 @@ The essential R function we use are:
 - `ctree`: significance test procedure
 - `caret`: for additional cross validation to `ctree_control`
 
-**Advantages of Trees:** Next to being rather straightforward to interpret using such an algorithm minimizes the degree of randomness and arbitrariness in model selection. Trees show outcome variability without initially assuming which circumstances play a significant role in shaping the individual opportunities or how the interact [@brunori18]. 
+**Advantages of Trees:** Next to being rather straightforward to interpret using such an algorithm minimizes the degree of randomness and arbitrariness in model selection. Trees show outcome variability without initially assuming which circumstances play a significant role in shaping the individual opportunities or how they interact [@brunori18]. 
 
-**Advantages of Trees over linear regression models:** very large set of observations can be used & model speciﬁcation is no longer exogenously given.
+**Advantages of Trees over linear regression models:** very large set of observations can be used & model specification is no longer driven by the arbitrary decision of the researcher.
 
 **Advantages of Conditional Inference Trees over Regression and Classification Trees (CART):** the algorithm automatically provides a test for the null hypothesis of equality of opportunity and prevents overfitting while CART "cannot distinguish between a significant and an insignificant improvement in the information measure" (Mingers 1987, as cited in @hot, 2) and consider the distributional properties of the measures. Since the algorithm avoids upwards and downwards biases, the estimates obtained are better suited for comparisons across time (i.e. Austria 2011 to Austria 2019) and across countries (EU-SILC) even when samples sizes are different [@brunori18]. 
 
@@ -268,7 +268,7 @@ Empirical approach as described in [@brunori18, 4]:
 Each circumstance $C^p \in \Omega$ has a total of $X^p$ realizations and each one is denoted as $x^p$. The conditional inference trees partition  the population into a set of non-overlapping types, whereby a type is a subgroup of the original population in therms of circumstances. We have type $T=\{t_1, ..., t_m,...,t_M \}$ and invidiuals _i_ and _j_ belong to the same type as in: $t_m \in T$ if $x^p_i = x^p_j \forall C^p \in \Omega$. Likewise, they belong to different types $t_m \in T$ if $\exists C^p \in \Omega : x^p_i \ne x^p_j$. Types define a particular way of partitioning the population into subgroups, and group membership indicates uniformity in circumstances (types).
 In essence this means that the approach we utilize here is an ex-ante view that focuses on between-type differences in the value of opportunity sets without paying attention to the effort realizations of individuals. 
 The tree-based method obtains the predictions for our outcome _y_ as a function of the input variables _I_, our observed circumstances. The method uses the set of variables to partition the population into a set of non-overlapping groups, $G= \{g_1,...,g_m,...,g_M \}$ and each group is homogeneous in expressing each input variable. Graphically these groups are identified as _terminal nodes_ or _leafs_. The tree also gives us the predicted outcome value per observation. This means that in addition to the observed income vector $Y=\{y_1,...,y_i,...,y_N \}$ we also obtain a vector of predicted values $\hat{Y}=\{\hat{y}_1,...,\hat{y}_i,...,\hat{y}_N \}$ where $$\hat{y}_i = \mu_m = \frac {1}{N_M} \sum_{i \in g_m} y_i, \forall i \in g_m, \forall g_m \in G$$.
-The interpretation of the regression trees is then that conditional on the input variables being circumstances only ($I \subseteq \hat{\Omega} \subseteq \Omega$) each resulting group $g_m \in G$ can be interpreted as a circumstance type $t_m \in T$. Importantly the predicted value $\hat{Y}$ is analogous to the smoothed distribution of $Y$ and is our prediction of equal incomes within a group.
+The interpretation of the regression trees is that conditional on the input variables being circumstances only ($I \subseteq \hat{\Omega} \subseteq \Omega$) each resulting group $g_m \in G$ can be interpreted as a circumstance type $t_m \in T$. Importantly the predicted value $\hat{Y}$ is analogous to the smoothed distribution of $Y$ and is our prediction of equal incomes within a group.
 
 > The algorithm of _conditional inference trees_ follows a step-wise procedure  of permutation tests as described by [@brunori18, 7-8]:
 
@@ -282,7 +282,7 @@ $\implies$ We adjust the p-values for multiple hypothesis testing, such that $p_
 > $\implies$ The the Split sample based on $C^*_s$, by choosing the split point s that yields the lowest p-value, which is $C^*_s = \{C^*_s : \text{argmin} ~ p^{C^*_s} \}$.
 4. **Repeat :)**
 
-In the context of estimating inequality of opportunity conditional inference trees offer a particular structure. Namely each hypothesis is a test for whether equal opportunity exists within a group. If the tree results in no splits we cannot reject the null hypothesis of equality of opportunity. While the deeper the tree is grown, the more types are required to account for inequality of opportunity in the country under consideration. Each split (parent node) thus indicates that the opportunities of the two groups are significantly different, while we cannot say the same for the groups included in the leaf. nodes.
+In the context of estimating IOP conditional inference trees offer a particular structure. Namely each hypothesis is a test for whether equal opportunity exists within a group. If the tree results in no splits we cannot reject the null hypothesis of equality of opportunity. While the deeper the tree is grown, the more types are required to account for inequality of opportunity in the country under consideration. Each split thus indicates that the opportunities of the two groups are significantly different, while we cannot say the same for the groups included in the leaf nodes.
 
 ## Empirical Analysis
 
@@ -335,7 +335,7 @@ However, we only showcase this tree as a comparison to the *conditional inferenc
 
 ### Conditional inference tree
 
-The *conditional inference tree* algorithm as it is included in `party` and the `partykit` packages contains various points for adjustment of variable selection and stopping criteria. We use the default `ctree_control` function but see it necessary to explain what it does exactly and why we think that the specifications we have chosen are not distorting. We use the default teststatistic as we do not know neither the conditional expectation nor covariance of our circumstances. In such a case the default setting of `ctree_control(teststat = "quad")` is recommended [@Hoh]. In the Austria 2019 we have mostly *cleaned* the data of missing values, however we still have many `NA` entries furhter on in the document. For reasons of uniformity, we chose to use the testtype `ctree_control(testtype = "Bonferroni")`. This approach uses simple Bonferroni adjusted P-Values. However, we also use the caret package for cross validation in addition to the default control function, since it is the one we had discussed in class and we used it for comparability of the results.
+The *conditional inference tree* algorithm as it is included in `party` and the `partykit` packages contains various points for adjustment of variable selection and stopping criteria. We use the default `ctree_control` function but see it necessary to explain what it does exactly and why we think that the specifications we have chosen are not distorting. We use the default teststatistic as we do not know neither the conditional expectation nor covariance of our circumstances. In such a case the default setting of `ctree_control(teststat = "quad")` is recommended [@Hoh]. In the Austria 2019 we have mostly *cleaned* the data of missing values, however we still have many `NA` entries furhter on in the document. For reasons of uniformity, we chose to use the test-type `ctree_control(testtype = "Bonferroni")`. This approach uses simple Bonferroni adjusted P-Values. However, we also use the caret package for cross validation in addition to the default control function, since it is the one we had discussed in class and we used it for comparability of the results.
 ```{r}
 # For the Inference Tree to work, we must have all variables as numeric data
 
@@ -371,6 +371,8 @@ plot(caret_ctree,gp = gpar(fontsize = 6),
 plot(caret_ctree$finalModel, type = "simple")
 ```
 We plot the conditional inference tree using both the `caret` and the `party` package to compare the results. In the first we used the suggested `mincriterion = 0.99` obtained through cross validation. We now have a tree with 9 terminal nodes and 8 inner nodes. Sex remains the most significant determinant. Furthermore, we see for example that country of birth is significant if its in the EU or outside of it. The Boxplots at the terminal nodes show the distribution of the outcome variable at the node. All, splits are chosen at a significance level of p < 0.001 which is also in line with the discplinary convention for hypothesis test [@brunori18, p. 9]. 
+
+p< 0.001 oder p<0.01 ????!
 
 ### Graphic representation of the tuning parameters
 
