@@ -43,16 +43,25 @@ DANIEL:
   1. Einen plot mit Einkommen und parental education zb auf 3 levels zusammen geplottet.
   2. Same shit für Country of birth oder so
   
+  # wir sollten eine parents_present variable machen wie im paper mit den Ausprägungen:
+- Both present
+- Only mother
+- Only father
+- Without parents
+- Lived in a private household without any parent
+  
 ```
 # **Introduction**
 Building upon the contribution of [@brunori18] the goal of our project is to estimate inequality of opportunity (IOP) based on Machine Learning (ML) techniques. The measurement of unequal opportunities goes back to Roemer (1998), who states that factors controlling individual outcomes (e.g income) consist of two categories: effort and circumstances. Effort summarizes all aspects over which individuals have control, while circumstances include all factors individuals cannot control. Individuals identified by the same exogenous circumstances and therefore characterized by similar background conditions belong to a circumstance type [@roemer98]. In what follows we want to analyze between-type disparities. 
 
-In the previous literature several methods have been applied to measure IOP. These include parametric, non-parametric and latent variable approaches e.g. [@roemer2015]. The reasons we rely upon ML methods is that, as outlined by [@brunori18], the empirical results are sensitive to model selection determined by the researcher. As largely discussed in the literature, model selection and thus partial observability of the real number of exogenous variables causes a downward bias in estimating opportunity estimates [@ferreira and gignoux11]. With ML methods it is possible to circumvent problems like sample size limitations or non-fixed and non-additive effects of circumstances and thus balance the bias [@Bourguignon07]; [@ferreira and gignoux11]. To be more precise in our empirical analysis we make use of conditional inference trees and conditional inference forests, which belong to the classification and regression tree (CART) methods popularized by [@breiman84]. CART methods lower the risk of arbitrary model selection by using an automated algorithm that splits the predictor space into non-overlapping areas to establish the best model for predicting the outcome variable. In the case of equality of opportunity the algorithm partitions the sample of respondents into different types. Moreover, the conditional inference algorithm employs sequences of hypothesis tests which restrains model overfitting and thus trades off upward and downward biases [@Hothorn]. Another advantage of CART methods is their intuitive graphical representation, which makes them easily accessible to a large audience.
+In the previous literature several methods have been applied to measure IOP. These include parametric, non-parametric and latent variable approaches e.g. [@roemer2015]. The reasons we rely upon ML methods is that, as outlined by [@brunori18], the empirical results are sensitive to model selection determined by the researcher. As largely discussed in the literature, model selection and thus partial observability of the real number of exogenous variables causes a downward bias in estimating opportunity estimates [@ferreira11]. With ML methods it is possible to circumvent problems like sample size limitations or non-fixed and non-additive effects of circumstances and thus balance the bias [@Bourguignon07]; [@ferreira11]. To be more precise in our empirical analysis we make use of conditional inference trees and conditional inference forests, which belong to the classification and regression tree (CART) methods popularized by [@breiman84]. CART methods lower the risk of arbitrary model selection by using an automated algorithm that splits the predictor space into non-overlapping areas to establish the best model for predicting the outcome variable. In the case of equality of opportunity the algorithm partitions the sample of respondents into different types. Moreover, the conditional inference algorithm employs sequences of hypothesis tests which restrains model overfitting and thus trades off upward and downward biases [@Hothorn]. Another advantage of CART methods is their intuitive graphical representation, which makes them easily accessible to a large audience.
 
 The project is organized as follows: First, after properly assessing our data, we make use of the income and living conditions data of Austria in 2019 to estimate the Conditional Inference Trees and a Conditional Inference Forest for Austria. Second, we apply the same data wrangling and data analysis procedure to the synthetic EU-SILC 2011 data set. Here we estimate the trees and forest for 6 countries. In the last part, we compare the results across countries and conclude.
 
 Libraries
 ```{r message=FALSE, error=FALSE, warning=FALSE}
+start <- Sys.time()     # measure time
+
 library(bibtex)         # citations
 library(knitcitations); cleanbib()
 cite_options(citation_format = "pandoc", check.entries=FALSE)
@@ -73,19 +82,6 @@ library(plotly)         # interactive ggplot2 plots :D
 library(DescTools)      # Winsorization
 ```
 
-```{r echo=F, eval=F, message=F, include=F, error=F, warning=F}
-# library(mboost)
-# library(vcd)
-# library(RColorBrewer)
-# library(knitr)
-# library(glmnet)  
-# library(haven)
-# library(fst)
-# library(ranger)
-# library(tuneRanger)
-# library(xgboost)
-```
-
 # **Austria: EU-SILC 2019**
 
 ## Data import, wrangling, exploration and visualization
@@ -93,15 +89,14 @@ library(DescTools)      # Winsorization
 
 In the first part of our data analysis we rely upon the data of Statistics Austria. This data contains the survey data of the income and living conditions for Austria in the year 2019. In addition to that the data set includes an ad hoc module with many of the intergenerational transmission variables needed to properly asses inequality of opportunity of the respondents.
 
-```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
+```{r message=FALSE, error=FALSE, warning=FALSE}
 # setting the data path
 data_path ="./AT2019"
 # accessing the data
 data19 <- read.csv(file.path(data_path, "p_silc2019_ext.csv"), sep = ";")
 ```
 
-```{r echo=F, eval=F, message=F, include=F, error=F, warning=F}
-#(not included)
+```{r message=FALSE, error=FALSE, warning=FALSE}
 data19_pID <- read.csv(file.path(data_path, "id_schluessel_r_ext.csv"), sep = ";")   # personal ID
 data19_h <- read.csv(file.path(data_path, "h_silc2019_ext.csv"), sep = ";")         # household data
 data19_hID <- read.csv(file.path(data_path, "id_schluessel_d_ext.csv"), sep = ";")  # household ID
@@ -116,26 +111,8 @@ Since annual income was not properly provided in the Statistic Austria dataset f
 
 After selecting the variables described from the original dataset, we rename all the variables and save them to our main dataset "data19". Building on this dataset we further limit our data by the age. We only include respondents aged between 27 and 59 since this captures the working population. In the next step we drop all answers where the respondents refused or were not able to provide information concerning the intergenerational circumstances like e.g. father or mother citizenship. We do not do this for all variables since it would leave us with too little observations (e.g. dropping adults). Next we need to recode some of the variables from characters into factors or numeric variables in order to later calculate the conditional inference trees. 
 
-```{r echo=T, eval=F, message=F, include=F, error=F, warning=F}
-COMMENTS (not included)
-
-# A big problem is that the actually annual income variable (hy010) is coded as a character variable and not as a numeric variable as it should be in the EU-SILC dataset and as we have it in our synthetic set.
-
-# Problem the Austrian dataset does not contain information on the mother or the fathers country of birth, but merely their citizenship
-
-# M002000 is nicht renamed und nicht in den models also droppen?
-
-# wir sollten eine parents_present variable machen wie im paper mit den Ausprägungen:
-- Both present
-- Only mother
-- Only father
-- Without parents
-- Lived in a private household without any parent
-```
-
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
-data19 <- data19 %>% select(
-  sex, hy020, P038004, P110000nu, P111010nu, alter, M009010, M010000, M014000, M016000, M017000, M020010, M021000, M025000, M027000, M028000, M004000, M001300, M001510, M003100, M001100, M001200, M002000, M001500) %>% 
+data19 <- data19 %>% select(sex, hy020, P038004, P110000nu, P111010nu, alter, M009010, M010000, M014000, M016000, M017000, M020010, M021000, M025000, M027000, M028000, M004000, M001300, M001510, M003100, M001100, M001200, M002000, M001500) %>% 
   
   rename("net_income"        = hy020,       # total disposable household income
          "inc_net"           = P038004,     # gross monthly income
@@ -161,29 +138,48 @@ data19 <- data19 %>% select(
          "adults_present"    = M001500,     # adults present in respondent’s household at age 14
          ) %>%    
   
-  filter(age %in% (30:59), mother_present >= 0, father_present >= 0, father_cit >= 0, mother_cit >= 0)  %>%
-  # DAN: Hier schau ich noch dass die observations nicht komplett gedropt werden wenn bei einer variable NA
-  # DAN: Income schau ich mir auch noch an, ob wir da nit annual income verwenden können
-  # M002000
-  
-  mutate(# "inc_log" = log(gross_income + 1),   
-         # logged net income per month of respondent
-         
-         "both_parents_present" = father_present + mother_present,            
+  filter(age %in% (30:59), mother_present >= 0, father_present >= 0, father_cit >= 0, mother_cit >= 0) %>% 
+  # DAN: Hier schau ich noch dass die observations nicht komplett gedropt werden wenn 
+  mutate("both_parents_present" = father_present + mother_present,
          # 4 = none present, 3 = one present, 2 = both present
-         
-         sex = factor(ifelse(as.numeric(sex)==2, 1, 0)), 
-         # 0 = male, 1 = female
-         
-         # country_birth = factor(country_birth, labels = c(1, 2, 2, 2, 3, 3)), 
-         # Austria = 1, EU = 2, Non-EU = 3
-         
-         father_cit = ifelse(father_cit == 1, 1, 2),                          
+         father_cit = ifelse(father_cit == 1, 1, 2),  
          # Austria = 1 and Other = 2
-         
-         mother_cit = ifelse(mother_cit == 1, 1, 2))   
-         # Austria = 1 and Other = 2
+         mother_cit = ifelse(mother_cit == 1, 1, 2),
+        # Austria = 1 and Other = 2
+        #father_manag = ifelse(father_manag == 1, 1, ifelse(2, 2, NA)),
+        
 
+        
+        #mother_manag = ifelse(mother_manag == 2, 2, ifelse(1, 1, NA))
+  )
+
+# factorize cataegorial variable
+factor <- c("sex",
+            "country_birth", 
+            "citizenship",           
+            "father_cit", 
+            "father_edu", 
+            "father_occup_stat",
+            "father_occup",
+            "father_manag",
+            "mother_cit",
+            "mother_edu",
+            "mother_occup_stat",
+            "mother_occup",
+            "mother_manag",
+            "tenancy",
+            "both_parents_present")
+
+data19[factor] <- lapply(data19[factor], as.factor)
+sapply(data19, class)
+
+
+# recode variables
+levels(data19$country_birth) <- c("Unknown", "Austria", "EU15", "EU12", "Jugo", "Turkey", "Other")
+levels(data19$citizenship) <- c("Austria", "EU15", "EU12", "Jugo", "Turkey", "Other")
+levels(data19$father_cit) <- c("Austria", "Other")
+levels(data19$mother_cit) <- c("Austria", "Other")
+# levels(data19$father_manag) <- c("Unknown", "Yes", "No")
 ```
 
 ### Data Summary
@@ -208,10 +204,11 @@ plot(Lc(data19$net_income), col = "darkred", lwd = 3)
 The Gini index corresponds to the are below the the black equal distribution line and above the red line of the actual distribution.
 
 ### Quantiles and Winsorization
+Inequality statistics tend to be heaviliy influenced by outliers, thus we first apply the winsorization function to our data [@brunori20, p12]. The winsorization sets all non-positive incomes equal to 1 and scales back all incomes exceeding the 95th percentile of the income distribution to that same threshold. Furthermore, we transform the income variable by taking the log. This means that ultimately our predicted output income, is the exponential of the predicted log income.
 ```{r}
-quantile(data19$net_income, weights = NULL, probs = seq(0, 1, 0.005), na.rm = FALSE, names = TRUE, type = 7)
+quantile(data19$net_income, weights = NULL, probs = seq(0, 1, 0.005), na.rm = FALSE, names = TRUE, type = 7) %>% tail(12)
 
-data19 <- data19 %>% mutate(income = Winsorize(data19$net_income, minval = 1, maxval = 107645.60, probs = c(0.05, 0.95),
+data19 <- data19 %>% mutate(income = Winsorize(data19$net_income, minval = 1, maxval = 107645.6, probs = c(0.05, 0.95),
           na.rm = FALSE, type = 7), inc_log = log(income))
 ```
 
@@ -232,12 +229,17 @@ In the Data Frame Summary above we already saw that there are slightly more fema
 
 ```{r}
 median(data19$age)
+median(data19$net_income)
+mean(data19$net_income)
 ```
 
 
 ### Correlation plot
 ```{r}
-data19cor <- data19
+
+data19cor <- data19 %>% as.numeric()
+
+
 data19cor$sex <- as.numeric(data19cor$sex)
 data19cor$country_birth <- as.numeric(data19cor$country_birth)
 
@@ -273,22 +275,22 @@ The essential R function we use are:
 
 Empirical approach as described in [@brunori18, 4]:
 > We consider a population size for each country of size $N$ which is indexed by $i \in \{1, ..., N \}$ and a vector of incomes $Y=\{y_1,...,y_i,...,y_N \}$. Our assumption is that each individual _i's_ income is the result of two *sets* of factors. A set of _circumstances_, which are beyond her control and for which we have observations of size $P: \Omega_i =\{ C^1_i, ..., C^p_i, ..., C^P_i\}$. Then, there is a set of _efforts_, which we do not observe, of size $Q: \Theta_i = \{E^1_i, ..., E^q_i, ..., E^Q_i \}$. This results in a very general outcome generating function $g: \Omega \times \Theta \rightarrow \mathbb{R}_+$ or $$y_i = g(\Omega_i, \Theta_i) $$.
-Each circumstance $C^p \in \Omega$ has a total of $X^p$ realizations and each one is denoted as $x^p$. The conditional inference trees partition  the population into a set of non-overlapping types, whereby a type is a subgroup of the original population in therms of circumstances. We have type $T=\{t_1, ..., t_m,...,t_M \}$ and invidiuals _i_ and _j_ belong to the same type as in: $t_m \in T$ if $x^p_i = x^p_j \forall C^p \in \Omega$. Likewise, they belong to different types $t_m \in T$ if $\exists C^p \in \Omega : x^p_i \ne x^p_j$. Types define a particular way of partitioning the population into subgroups, and group membership indicates uniformity in circumstances (types).
-In essence this means that the approach we utilize here is an ex-ante view that focuses on between-type differences in the value of opportunity sets without paying attention to the effort realizations of individuals. 
-The tree-based method obtains the predictions for our outcome _y_ as a function of the input variables _I_, our observed circumstances. The method uses the set of variables to partition the population into a set of non-overlapping groups, $G= \{g_1,...,g_m,...,g_M \}$ and each group is homogeneous in expressing each input variable. Graphically these groups are identified as _terminal nodes_ or _leafs_. The tree also gives us the predicted outcome value per observation. This means that in addition to the observed income vector $Y=\{y_1,...,y_i,...,y_N \}$ we also obtain a vector of predicted values $\hat{Y}=\{\hat{y}_1,...,\hat{y}_i,...,\hat{y}_N \}$ where $$\hat{y}_i = \mu_m = \frac {1}{N_M} \sum_{i \in g_m} y_i, \forall i \in g_m, \forall g_m \in G$$.
-The interpretation of the regression trees is then that conditional on the input variables being circumstances only ($I \subseteq \hat{\Omega} \subseteq \Omega$) each resulting group $g_m \in G$ can be interpreted as a circumstance type $t_m \in T$. Importantly the predicted value $\hat{Y}$ is analogous to the smoothed distribution of $Y$ and is our prediction of equal incomes within a group.
+> Each circumstance $C^p \in \Omega$ has a total of $X^p$ realizations and each one is denoted as $x^p$. The conditional inference trees partition  the population into a set of non-overlapping types, whereby a type is a subgroup of the original population in therms of circumstances. We have type $T=\{t_1, ..., t_m,...,t_M \}$ and invidiuals _i_ and _j_ belong to the same type as in: $t_m \in T$ if $x^p_i = x^p_j \forall C^p \in \Omega$. Likewise, they belong to different types $t_m \in T$ if $\exists C^p \in \Omega : x^p_i \ne x^p_j$. Types define a particular way of partitioning the population into subgroups, and group membership indicates uniformity in circumstances (types).
+> In essence this means that the approach we utilize here is an ex-ante view that focuses on between-type differences in the value of opportunity sets without paying attention to the effort realizations of individuals. 
+> The tree-based method obtains the predictions for our outcome _y_ as a function of the input variables _I_, our observed circumstances. The method uses the set of variables to partition the population into a set of non-overlapping groups, $G= \{g_1,...,g_m,...,g_M \}$ and each group is homogeneous in expressing each input variable. Graphically these groups are identified as _terminal nodes_ or _leafs_. The tree also gives us the predicted outcome value per observation. This means that in addition to the observed income vector $Y=\{y_1,...,y_i,...,y_N \}$ we also obtain a vector of predicted values $\hat{Y}=\{\hat{y}_1,...,\hat{y}_i,...,\hat{y}_N \}$ where $$\hat{y}_i = \mu_m = \frac {1}{N_M} \sum_{i \in g_m} y_i, \forall i \in g_m, \forall g_m \in G$$.
+> The interpretation of the regression trees is then that conditional on the input variables being circumstances only ($I \subseteq \hat{\Omega} \subseteq \Omega$) each resulting group $g_m \in G$ can be interpreted as a circumstance type $t_m \in T$. Importantly the predicted value $\hat{Y}$ is analogous to the smoothed distribution of $Y$ and is our prediction of equal incomes within a group.
 
 > The algorithm of _conditional inference trees_ follows a step-wise procedure  of permutation tests as described by [@brunori18, 7-8]:
 
 > 1. **Choose confidence level** Test the null hypothesis of independence, $H_0^{C^p} : D(Y|C^P) = D(Y)$, for each input variable $C^P  \in \hat{\Omega}$, and obtain a p-value associated with each test, $p^{C^p}$.
-$\implies$ We adjust the p-values for multiple hypothesis testing, such that $p_{adj.}^{C^p} = 1-(1-p^{Cp})^P$, which essentially means that we use the so called *Bonferroni Correction*.
-2. **Choose feature:** test all the null hypotheses of independence between the individual outcome and each of all the observable circumstances (variables). The model selects a variable, $C^*$, with the lowest adjusted p-value. Essentially we choose such that $C^* = \{C^P : \text{argmin} ~ p_{adj.}^{C^p} \}$.
-    i) no hypothesis can be rejected: stop $\implies$ If $p_{adj.}^{C^p} > \alpha$: Exit the algorithm. 
-    ii) one or more circumstance is siginificant: select the circumstance with the smallest p-value and proceed $\rightarrow$ If $p_{adj.}^{C^p} \leq \alpha$: Continue, and select $C^*$ as the splitting variable.
-  3. **Choose split:** for every possible way the selected circumstance can divide the sample into two subgroups, test the hypothesis of same mean outcome in the two resulting subgroups. Choose the splitting point with the smallest p-value. Technically, we test the discrepancy between the subsamples for each possible binary partition, _s_, based on $C^*$, meaning that $Y_s = \{Y_i : C^*_i < x^p \}$ and $Y_{-s} = \{Y_i : C^*_i \geq x^p \}$, and obtain a p-value associated with each test, $p^{C^*_s}$.
+> $\implies$ We adjust the p-values for multiple hypothesis testing, such that $p_{adj.}^{C^p} = 1-(1-p^{Cp})^P$, which essentially means that we use the so called *Bonferroni Correction*.
+> 2. **Choose feature:** test all the null hypotheses of independence between the individual outcome and each of all the observable circumstances (variables). The model selects a variable, $C^*$, with the lowest adjusted p-value. Essentially we choose such that $C^* = \{C^P : \text{argmin} ~ p_{adj.}^{C^p} \}$.
+>     i) no hypothesis can be rejected: stop $\implies$ If $p_{adj.}^{C^p} > \alpha$: Exit the algorithm. 
+>     ii) one or more circumstance is siginificant: select the circumstance with the smallest p-value and proceed $\rightarrow$ If $p_{adj.}^{C^p} \leq \alpha$: Continue, and select $C^*$ as the splitting variable.
+>   3. **Choose split:** for every possible way the selected circumstance can divide the sample into two subgroups, test the hypothesis of same mean outcome in the two resulting subgroups. Choose the splitting point with the smallest p-value. Technically, we test the discrepancy between the subsamples for each possible binary partition, _s_, based on $C^*$, meaning that $Y_s = \{Y_i : C^*_i < x^p \}$ and $Y_{-s} = \{Y_i : C^*_i \geq x^p \}$, and obtain a p-value associated with each test, $p^{C^*_s}$.
 
 > $\implies$ The the Split sample based on $C^*_s$, by choosing the split point s that yields the lowest p-value, which is $C^*_s = \{C^*_s : \text{argmin} ~ p^{C^*_s} \}$.
-4. **Repeat :)**
+> 4. **Repeat :)**
 
 In the context of estimating inequality of opportunity conditional inference trees offer a particular structure. Namely each hypothesis is a test for whether equal opportunity exists within a group. If the tree results in no splits we cannot reject the null hypothesis of equality of opportunity. While the deeper the tree is grown, the more types are required to account for inequality of opportunity in the country under consideration. Each split (parent node) thus indicates that the opportunities of the two groups are significantly different, while we cannot say the same for the groups included in the leaf. nodes.
 
@@ -298,29 +300,18 @@ In the context of estimating inequality of opportunity conditional inference tre
 
 To showcase the difference between the _regression and classification trees_ we discussed in class and the _conditional inference trees_ we also plot the former as comparison. In the following chunk of code we use `set.seed` to generate randomness for reproducability. We define our `formula` which consists of all the circumstances we use for estimation. Furthermore, we split the data into a training and test sample. Finally we define a `fitControl` which is our tuning function for cross validation using the `caret` package.
 
+adults +
+
 ```{r}
 set.seed(12345)
 
-formula = inc_log ~ sex + country_birth + father_cit + father_edu + father_occup_stat + father_occup + father_manag + mother_cit + mother_edu + mother_occup_stat + mother_occup + mother_manag + tenancy + children + adults + adults_working + both_parents_present
+formula = inc_log ~ sex + country_birth + father_cit + father_edu + father_occup_stat + father_occup + father_manag + mother_cit + mother_edu + mother_occup_stat + mother_occup + mother_manag + tenancy + children +  adults_working + both_parents_present
 
 data19 <- data19 %>%
   mutate(train_index = sample(c("train", "test"), nrow(data19), replace=TRUE, prob=c(0.67, 0.33)))
 
 train <- data19 %>% filter(train_index=="train")
 test <- data19 %>% filter(train_index=="test")
-```
-
-```{r echo=T, eval=F, message=F, include=F, error=F, warning=F}
-COMMENTS (not included)
-
-# tree_1 <- rpart(formula, data = train, cp=.003)
-# tree_1
-
-# rpart.plot(tree_1, box.palette="RdBu", nn=FALSE, type=2)
-
-# test$prediction_tree <- predict(tree_1, newdata = test, type = c("matrix"))
-
-# Here we could add the MSE or RMSE measure to compare performance
 ```
 
 ```{r}
@@ -343,7 +334,7 @@ However, we only showcase this tree as a comparison to the *conditional inferenc
 
 ### Conditional inference tree
 
-The *conditional inference tree* algorithm as it is included in `party` and the `partykit` packages contains various points for adjustment of variable selection and stopping criteria. We use the default `ctree_control` function but see it necessary to explain what it does exactly and why we think that the specifications we have chosen are not distorting. We use the default teststatistic as we do not know neither the conditional expectation nor covariance of our circumstances. In such a case the default setting of `ctree_control(teststat = "quad")` is recommended [@Hoh]. In the Austria 2019 we have mostly *cleaned* the data of missing values, however we still have many `NA` entries furhter on in the document. For reasons of uniformity, we chose to use the testtype `ctree_control(testtype = "Bonferroni")`. This approach uses simple Bonferroni adjusted P-Values. However, we also use the caret package for cross validation in addition to the default control function, since it is the one we had discussed in class and we used it for comparability of the results.
+The *conditional inference tree* algorithm as it is included in `party` and the `partykit` packages contains various points for adjustment of variable selection and stopping criteria. We use the default `ctree_control` function but see it necessary to explain what it does exactly and why we think that the specifications we have chosen are not distorting. We use the default teststatistic as we do not know neither the conditional expectation nor covariance of our circumstances. In such a case the default setting of `ctree_control(teststat = "quad")` is recommended [@Hoh]. The Austria 2019 data set has been mostly *cleaned* of missing values, however we still have many `NA` entries further on in the document. For reasons of uniformity, we chose to use the testtype `ctree_control(testtype = "Bonferroni")`. This approach uses simple Bonferroni adjusted P-Values. However, we also use the caret package for cross validation in addition to the default control function, since it is the one we had discussed in class and we used it for comparability of the results.
 ```{r}
 # For the Inference Tree to work, we must have all variables as numeric data
 
@@ -356,6 +347,7 @@ plot(Ctree, type = "simple",gp = gpar(fontsize = 6),
   inner_panel=node_inner,
   ip_args=list(id = FALSE), main = "Conditional Inference Tree for Austria 2019") #Überschrift größe ändern
 
+exp(10.733)
 ```
 We obtain a deep tree with 11 inner nodes and 12 terminal nodes. Sex is the most siginificant determinant for income. The further determinants are quite different for men (0) and women (1).
 
@@ -421,10 +413,10 @@ The procedure and application of _Conditional Inference Forests_ follows the app
 As discussed the _conditional inference trees_ construct as outcome the counterfactual distribution of the income variable. However, _conditional inference trees_ only use limited information of the set of observed circumstances, since not all circumstances $C^p \in \hat{\Omega}$ are utilized. Furthermore, the predictions (the values of the opportunity sets) have high variance. _Conditional Inference Forests_ are able to deal with the shortcomings of _conditional inference trees_.
 The main difference between the forest and the tree approach is that in the forest each tree is estimated on a random subsample $b$ of the original data. Thus, in total $B$ trees are estimated. Furthermore, a random subset of circumstances is used at each splitting point. This guarantees that at some point all circumstances with any kind of informational value will be used as a splitting variable. Furthermore, averaging the result over $B$ predictions reduces the variance. The individual predictions are a function of $\alpha$ which stands for the significance level in charge of splits, $\bar{P}$ i.e. the number of circumstances to be considered, and $\bar{B}$ the number of subsamples. 
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
-cf <- cforest(formula, data19, na.action = na.pass, control = ctree_control(teststat = "quadratic", testtype = "Univariate", mincriterion = 0.99), ntree = 200L, perturb = list(replace = FALSE, fraction = 0.8))
+cf <- cforest(formula, data19, na.action = na.pass, control = ctree_control(teststat = "quadratic", testtype = "Univariate", mincriterion = 0.99), ntree = 200L, perturb = list(replace = T, fraction = 0.8))
 
 data19$hat_cf <- predict(cf, newdata = as.data.frame(data19), OOB = TRUE, type = "response")
-data19$RMSE <- sqrt(sum((data19$hat_cf - data19$inc_net_log)^2/nrow(data19), na.rm = T))
+data19$RMSE <- sqrt(sum((data19$hat_cf - data19$inc_net_log)^2/nrow(data19), na.rm = T))   
 head(data19$RMSE)
 
 varimp(cf, mincriterion = 0, OOB = TRUE) 
@@ -452,16 +444,16 @@ Both the _conditional inference tree_ and the _conditional inference forest_ ana
 #cf_boosted <- blackboost(formula, data = data19, na.action = na.pass, control = boost_control(), tree_controls = partykit::ctree_control())
 # cf_boosted
 
-cf_boosted_train <- train(formula, data19, method = "ctree2", trControl = fitControl, tuneGrid = NULL, na.action = na.pass)
+#cf_boosted_train <- train(formula, data19, method = "ctree2", trControl = fitControl, tuneGrid = NULL, na.action = na.pass)
 
 #RMSE
 
-test$At_BT_CF_pred <- predict(cf_boosted_train, newdata = as.data.frame(test))
-test$perror <- (test$At_BT_CF_pred - test$inc_net_log)^2
-test$RMSE <- sqrt(sum((test$At_BT_CF_pred - test$inc_net_log)^2/nrow(test), na.rm = T))
-head(test$RMSE)
-
-plot(test$At_BT_CF_pred, test$inc_net_log) #ADD GGPLOT und machs schön!
+#test$At_BT_CF_pred <- predict(cf_boosted_train, newdata = as.data.frame(test))
+#test$perror <- (test$At_BT_CF_pred - test$inc_net_log)^2
+#test$RMSE <- sqrt(sum((test$At_BT_CF_pred - test$inc_net_log)^2/nrow(test), na.rm = T))
+#head(test$RMSE)
+#
+#plot(test$At_BT_CF_pred, test$inc_net_log) #ADD GGPLOT und machs schön!
 
 ```
 ### Variable Importance
@@ -488,7 +480,7 @@ The unique identifier used in all  four data sets is the household ID identifier
 
 Following [@brunori18] we use the following variables for circumstances: Respondent's sex (PB150), Respondent's country of birth (Citizenship as proxy - PB220A), Presence of parents at home (PT010), Number of adults (18 or older) in respondents household (PT020), Number of working adults (18 or older) in respondents household (PT030), Father/Mother country of birth and citizenship (PT060, PT070, PT090, PT100), Father/mother education (PT110, PT120), Father/mother occupational status (PT130, PT160), Father/mother main occupation (PT150,PT180), Managerial position of father/mother(PT140,PT170), Tenancy status of the house in which respondent was living as a child (PT210).
 
-Outcome Variables i.e. Income: Total Household gross income (HY010), Total Disposable Income (HY020), Dwelling Type (HH010), Housing (HH030). 
+Outcome Variables i.e. Income: Total Household gross income (HY020), Total Disposable Income (HY020), Dwelling Type (HH010), Housing (HH030). 
 
 We first use more variables than ultimately used in the analysis. We use the year of birth to calculate the age, and then exclude everyone older than 60 or younger than 27, as was done in the paper we are referring to in order to focus on the working population only. First, we included both monthly and annual gross income. But in this cross-country analysis we use annual gross income as our outcome variable. 
 
@@ -510,8 +502,8 @@ AT_equality_data <- AT_personal_data %>%  left_join(AT_household_data, by = "PX0
 
 # Renaming important variables for readability of tree
 AT_equality_data <- AT_equality_data %>% select(
-  PB140, HY010, PB150, PB220A, PT010, PT020, PT030, PT060, PT070, PT090, PT100, PT110, PT120, PT130, PT160, PT150, PT180, PT140, PT170, PT210, PY200G) %>% mutate(
-    age = (2011 - PB140), log_income = log(HY010 + 1) #We add 1 so the logarithm works
+  PB140, HY020, PB150, PB220A, PT010, PT020, PT030, PT060, PT070, PT090, PT100, PT110, PT120, PT130, PT160, PT150, PT180, PT140, PT170, PT210, PY200G) %>% mutate(
+    age = (2011 - PB140), log_income = log(HY020 + 1) #We add 1 so the logarithm works
   ) %>% filter(
     age %in% (27:59)
   ) %>% mutate(
@@ -519,7 +511,7 @@ AT_equality_data <- AT_equality_data %>% select(
   ) %>%
   rename(
     "year_of_birth" = PB140,        # Respondents year of birth
-    "annual_income" = HY010,
+    "annual_income" = HY020,
     "sex" = PB150,                  # Respondents sex
     "parents_present" = PT010,      # Presence of parents (or those considered as such)
     "adults_home" = PT020,          # Number of adults living in the household when the respondent was 14 years old
@@ -556,8 +548,8 @@ FR_household_data <- FR_household_data %>% rename("PX030" = HB030)
 FR_equality_data <- FR_personal_data %>%  left_join(FR_household_data, by = "PX030")
 
 FR_equality_data <- FR_equality_data %>% select(
-  PB140, HY010, PB150, PB220A, PT010, PT020, PT030, PT060, PT070, PT090, PT100, PT110, PT120, PT130, PT160, PT150, PT180, PT140, PT170, PT210, PY200G) %>% mutate(
-    age = (2011 - PB140), log_income = log(HY010 + 1)
+  PB140, HY020, PB150, PB220A, PT010, PT020, PT030, PT060, PT070, PT090, PT100, PT110, PT120, PT130, PT160, PT150, PT180, PT140, PT170, PT210, PY200G) %>% mutate(
+    age = (2011 - PB140), log_income = log(HY020 + 1)
   ) %>% filter(
     age %in% (27:59)
   ) %>% mutate(
@@ -565,7 +557,7 @@ FR_equality_data <- FR_equality_data %>% select(
   ) %>% 
   rename(
     "year_of_birth" = PB140,
-    "annual_income" = HY010,
+    "annual_income" = HY020,
     "sex" = PB150,
     "parents_present" = PT010,
     "adults_home" = PT020,
@@ -591,8 +583,8 @@ DK_household_data <- DK_household_data %>% rename("PX030" = HB030)
 DK_equality_data <- DK_personal_data %>%  left_join(DK_household_data, by = "PX030")
 
 DK_equality_data <- DK_equality_data %>% select(
-  PB140, HY010, PB150, PB220A, PT010, PT020, PT030, PT060, PT070, PT090, PT100, PT110, PT120, PT130, PT160, PT150, PT180, PT140, PT170, PT210, PY200G) %>% mutate(
-    age = (2011 - PB140), log_income = log(HY010 + 1)
+  PB140, HY020, PB150, PB220A, PT010, PT020, PT030, PT060, PT070, PT090, PT100, PT110, PT120, PT130, PT160, PT150, PT180, PT140, PT170, PT210, PY200G) %>% mutate(
+    age = (2011 - PB140), log_income = log(HY020 + 1)
   ) %>% filter(
     age %in% (27:59)
   ) %>% mutate(
@@ -600,7 +592,7 @@ DK_equality_data <- DK_equality_data %>% select(
   ) %>% 
   rename(
     "year_of_birth" = PB140,
-    "annual_income" = HY010,
+    "annual_income" = HY020,
     "sex" = PB150,
     "parents_present" = PT010,
     "adults_home" = PT020,
@@ -626,8 +618,8 @@ ES_household_data <- ES_household_data %>% rename("PX030" = HB030)
 ES_equality_data <- ES_personal_data %>%  left_join(ES_household_data, by = "PX030")
 
 ES_equality_data <- ES_equality_data %>% select(
-  PB140, HY010, PB150, PB220A, PT010, PT020, PT030, PT060, PT070, PT090, PT100, PT110, PT120, PT130, PT160, PT150, PT180, PT140, PT170, PT210, PY200G) %>% mutate(
-    age = (2011 - PB140), log_income = log(HY010 + 1)
+  PB140, HY020, PB150, PB220A, PT010, PT020, PT030, PT060, PT070, PT090, PT100, PT110, PT120, PT130, PT160, PT150, PT180, PT140, PT170, PT210, PY200G) %>% mutate(
+    age = (2011 - PB140), log_income = log(HY020 + 1)
   ) %>% filter(
     age %in% (27:59)
   ) %>% mutate(
@@ -635,7 +627,7 @@ ES_equality_data <- ES_equality_data %>% select(
   ) %>% 
   rename(
     "year_of_birth" = PB140,
-    "annual_income" = HY010,
+    "annual_income" = HY020,
     "sex" = PB150,
     "parents_present" = PT010,
     "adults_home" = PT020,
@@ -661,8 +653,8 @@ FI_household_data <- FI_household_data %>% rename("PX030" = HB030)
 FI_equality_data <- FI_personal_data %>%  left_join(FI_household_data, by = "PX030")
 
 FI_equality_data <- FI_equality_data %>% select(
-  PB140, HY010, PB150, PB220A, PT010, PT020, PT030, PT060, PT070, PT090, PT100, PT110, PT120, PT130, PT160, PT150, PT180, PT140, PT170, PT210, PY200G) %>% mutate(
-    age = (2011 - PB140), log_income = log(HY010 + 1)
+  PB140, HY020, PB150, PB220A, PT010, PT020, PT030, PT060, PT070, PT090, PT100, PT110, PT120, PT130, PT160, PT150, PT180, PT140, PT170, PT210, PY200G) %>% mutate(
+    age = (2011 - PB140), log_income = log(HY020 + 1)
   ) %>% filter(
     age %in% (27:59)
   ) %>% mutate(
@@ -670,7 +662,7 @@ FI_equality_data <- FI_equality_data %>% select(
   ) %>% 
   rename(
     "year_of_birth" = PB140,
-    "annual_income" = HY010,
+    "annual_income" = HY020,
     "sex" = PB150,
     "parents_present" = PT010,
     "adults_home" = PT020,
@@ -730,8 +722,8 @@ FI_equality_data <- FI_equality_data %>% select(
 # BG_equality_data <- BG_personal_data %>%  left_join(BG_household_data, by = "PX030")
 # 
 # BG_equality_data <- BG_equality_data %>% select(
-#   PB140, HY010, PB150, PB220A, PT010, PT020, PT030, PT060, PT070, PT090, PT100, PT110, PT120, PT130, PT160, PT150, PT180, PT140, PT170, PT210, PY200G) %>% mutate(
-#     age = (2011 - PB140), log_income = log(HY010 + 1)
+#   PB140, HY020, PB150, PB220A, PT010, PT020, PT030, PT060, PT070, PT090, PT100, PT110, PT120, PT130, PT160, PT150, PT180, PT140, PT170, PT210, PY200G) %>% mutate(
+#     age = (2011 - PB140), log_income = log(HY020 + 1)
 #   ) %>% filter(
 #     age %in% (27:59)
 #   ) %>% mutate(
@@ -739,7 +731,7 @@ FI_equality_data <- FI_equality_data %>% select(
 #   ) %>% 
 #   rename(
 #     "year_of_birth" = PB140,
-#     "annual_income" = HY010,
+#     "annual_income" = HY020,
 #     "sex" = PB150,
 #     "parents_present" = PT010,
 #     "adults_home" = PT020,
@@ -765,8 +757,8 @@ LV_household_data <- LV_household_data %>% rename("PX030" = HB030)
 LV_equality_data <- LV_personal_data %>%  left_join(LV_household_data, by = "PX030")
 
 LV_equality_data <- LV_equality_data %>% select(
-  PB140, HY010, PB150, PB220A, PT010, PT020, PT030, PT060, PT070, PT090, PT100, PT110, PT120, PT130, PT160, PT150, PT180, PT140, PT170, PT210, PY200G) %>% mutate(
-    age = (2011 - PB140), log_income = log(HY010 + 1)
+  PB140, HY020, PB150, PB220A, PT010, PT020, PT030, PT060, PT070, PT090, PT100, PT110, PT120, PT130, PT160, PT150, PT180, PT140, PT170, PT210, PY200G) %>% mutate(
+    age = (2011 - PB140), log_income = log(HY020 + 1)
   ) %>% filter(
     age %in% (27:59)
   ) %>% mutate(
@@ -774,7 +766,7 @@ LV_equality_data <- LV_equality_data %>% select(
   ) %>% 
   rename(
     "year_of_birth" = PB140,
-    "annual_income" = HY010,
+    "annual_income" = HY020,
     "sex" = PB150,
     "parents_present" = PT010,
     "adults_home" = PT020,
@@ -796,26 +788,6 @@ LV_equality_data <- LV_equality_data %>% select(
 
 ```
 
-```{r echo=T, message=FALSE, error=FALSE, warning=FALSE, include=FALSE}
-
-# print(dfSummary(FR_equality_data), method="render")
-# 
-# 
-# print(dfSummary(DK_equality_data), method="render") #We have maybe too many missing values for Denmark
-# 
-# 
-# print(dfSummary(ES_equality_data), method="render")
-# 
-# 
-# print(dfSummary(FI_equality_data), method="render") #We have maybe too many missing values for Finland
-# 
-# 
-# print(dfSummary(IT_equality_data), method="render")
-# 
-# 
-# print(dfSummary(LV_equality_data), method="render")
-
-```
 *Summary Statistics All Countries*
 
 Before we start with our empirical analysis using the synthetic EU Silc data for six different countries we first want to compare these countries to analyze how they differ. For each of the countries we create a data frame which contains information regarding the country's average equalized income, the standard deviation of the annual income, the sample size of the data and the Gini coefficients. After obtaining the individual country data frames we join them together in order to plot the differences in the Gini coefficients in the respective countries. 
@@ -876,12 +848,6 @@ AT_train <- AT_equality_data %>% filter(train_index=="train")
 AT_test <- AT_equality_data %>% filter(train_index=="test")
 
 formula <- log_income ~ sex + parents_present + adults_home + children_home + father_cob + father_cit + mother_cob + mother_cit + father_edu + mother_edu + father_occup_stat + mother_occup_stat + father_occup + mother_occup + father_manag + mother_manag + tenancy
-
-# AT_tree <- rpart(formula, data = AT_train, cp=.008)
-
-# AT_tree
-
-# rpart.plot(AT_tree, box.palette="RdBu", nn=FALSE, type=2, main = "Regression Tree for Austria 2011")
 ```
 
 ```{r echo=F, message=FALSE, error=FALSE, warning=FALSE}
@@ -891,13 +857,6 @@ FR_equality_data <- FR_equality_data %>%
 
 FR_train <- FR_equality_data %>% filter(train_index=="train")
 FR_test <- FR_equality_data %>% filter(train_index=="test")
-
-
-#FR_tree <- rpart(formula, data = FR_train, cp=.003)
-
-#FR_tree
-
-#rpart.plot(FR_tree, box.palette="RdBu", nn=FALSE, type=2, main = "Regression Tree for France 2011")
 ```
 
 ```{r echo=F, message=FALSE, error=FALSE, warning=FALSE}
@@ -906,13 +865,6 @@ ES_equality_data <- ES_equality_data %>%
 
 ES_train <- ES_equality_data %>% filter(train_index=="train")
 ES_test <- ES_equality_data %>% filter(train_index=="test")
-
-
-#ES_tree <- rpart(formula, data = ES_train, cp=.003)
-
-#ES_tree
-
-#rpart.plot(ES_tree, box.palette="RdBu", nn=FALSE, type=2, main = "Regression Tree for Spain 2011")
 ```
 
 ```{r echo=F, message=FALSE, error=FALSE, warning=FALSE}
@@ -922,28 +874,6 @@ DK_equality_data <- DK_equality_data %>%
 DK_train <- DK_equality_data %>% filter(train_index=="train")
 DK_test <- DK_equality_data %>% filter(train_index=="test")
 
-
-#DK_tree <- rpart(formula, data = DK_train, cp=.003)
-
-#DK_tree
-
-#rpart.plot(DK_tree, box.palette="RdBu", nn=FALSE, type=2, main = "Regression Tree for Denmark 2011")
-```
-
-
-```{r echo=F, message=FALSE, error=FALSE, warning=FALSE}
-#IT_equality_data <- IT_equality_data %>%
-# mutate(train_index = sample(c("train", "test"), nrow(IT_equality_data), replace=TRUE, prob=c(0.67, 0.33)))
-
-#IT_train <- IT_equality_data %>% filter(train_index=="train")
-#IT_test <- IT_equality_data %>% filter(train_index=="test")
-
-
-#IT_tree <- rpart(formula, data = IT_train, cp=.003)
-
-#IT_tree
-
-#rpart.plot(IT_tree, box.palette="RdBu", nn=FALSE, type=2, main = "Regression Tree for Italy 2011")
 ```
 
 ```{r}
@@ -952,13 +882,6 @@ FI_equality_data <- FI_equality_data %>%
 
 FI_train <- FI_equality_data %>% filter(train_index=="train")
 FI_test <- FI_equality_data %>% filter(train_index=="test")
-
-
-#FI_tree <- rpart(formula, data = FI_train, cp=.003)
-
-#FI_tree
-
-#rpart.plot(FI_tree, box.palette="RdBu", nn=FALSE, type=2, main = "Regression Tree for Finland 2011")
 ```
 
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
@@ -967,13 +890,6 @@ LV_equality_data <- LV_equality_data %>%
 
 LV_train <- LV_equality_data %>% filter(train_index=="train")
 LV_test <- LV_equality_data %>% filter(train_index=="test")
-
-
-#LV_tree <- rpart(formula, data = LV_train, cp=.003)
-
-#LV_tree
-
-#rpart.plot(LV_tree, box.palette="RdBu", nn=FALSE, type=2, main = "Regression Tree for Latvia 2011")
 ```
 
 ### Conditional Inference Trees
@@ -1258,12 +1174,20 @@ varimpo4 <- ggplot(importance_cf_LV, aes(x = var_name, y = importance)) +
 ggplotly(varimpo4)
 ```
 
+
+How long did it take to knit the document:
+```{r}
+end <- Sys.time()
+end-start
+```
+
+
 # **Conclusion**
 
 # **References**
 
 ```{r echo=F, eval=F, message=F, include=F, error=F, warning=F}
-NOT SHOWN IN HTML
+#NOT SHOWN IN HTML
 
 library(beepr)
 beep(8)        # playing a sound so you know when it's done
