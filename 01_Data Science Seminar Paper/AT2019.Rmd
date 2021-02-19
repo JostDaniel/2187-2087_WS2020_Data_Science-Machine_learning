@@ -22,10 +22,8 @@ knitr::opts_chunk$set(fig.align = 'left')
 COMMENTS (not included)
  
 **TO DOs**
-#* Adapt Graphs and Summary Statistics
-#* Compare Cross-Country Results - Variable Importance synthetic countries comparison, Gini comparison across countries, (Comparison of trees)
-Zeile 430 vielleich nochmal bearbeiten...
-#* RMSE für Boosted berechnen
+* AT2019 wrangling und recoded fertig
+* AT2011 Wrangling Code vereinfachen (ist ja für alle Länder gleich)
 * Conclusion schreiben
 * Endlektorat
 
@@ -42,14 +40,6 @@ DANIEL:
 **Ideen für Plots**
   1. Einen plot mit Einkommen und parental education zb auf 3 levels zusammen geplottet.
   2. Same shit für Country of birth oder so
-  
-  # wir sollten eine parents_present variable machen wie im paper mit den Ausprägungen:
-- Both present
-- Only mother
-- Only father
-- Without parents
-- Lived in a private household without any parent
-  
 ```
 # **Introduction**
 Building upon the contribution of [@brunori18] the goal of our project is to estimate inequality of opportunity (IOP) based on Machine Learning (ML) techniques. The measurement of unequal opportunities goes back to Roemer (1998), who states that factors controlling individual outcomes (e.g income) consist of two categories: effort and circumstances. Effort summarizes all aspects over which individuals have control, while circumstances include all factors individuals cannot control. Individuals identified by the same exogenous circumstances and therefore characterized by similar background conditions belong to a circumstance type [@roemer98]. In what follows we want to analyze between-type disparities. 
@@ -111,8 +101,9 @@ Since annual income was not properly provided in the Statistic Austria dataset f
 
 After selecting the variables described from the original dataset, we rename all the variables and save them to our main dataset "data19". Building on this dataset we further limit our data by the age. We only include respondents aged between 27 and 59 since this captures the working population. In the next step we drop all answers where the respondents refused or were not able to provide information concerning the intergenerational circumstances like e.g. father or mother citizenship. We do not do this for all variables since it would leave us with too little observations (e.g. dropping adults). Next we need to recode some of the variables from characters into factors or numeric variables in order to later calculate the conditional inference trees. 
 
+Import and rename variables:
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
-data19 <- data19 %>% select(sex, hy020, P038004, P110000nu, P111010nu, alter, M009010, M010000, M014000, M016000, M017000, M020010, M021000, M025000, M027000, M028000, M004000, M001300, M001510, M003100, M001100, M001200, M002000, M001500) %>% 
+data19 <- data19 %>% select(sex, hy020, P038004, P110000nu, P111010nu, alter, M009010, M010000, M014000, M016000, M017000, M020010, M021000, M025000, M027000, M028000, M004000, M001300, M001510, M003100, M001100, M001200, M001500) %>% 
   
   rename("net_income"        = hy020,       # total disposable household income
          "inc_net"           = P038004,     # gross monthly income
@@ -136,24 +127,34 @@ data19 <- data19 %>% select(sex, hy020, P038004, P110000nu, P111010nu, alter, M0
          "father_present"    = M001100,     # father present in respondent’s household at age 14
          "mother_present"    = M001200,     # mother present in respondent’s household at age 14
          "adults_present"    = M001500,     # adults present in respondent’s household at age 14
-         ) %>%    
+         )
+```
+
+Filter the working age group as defined in [@brunori18] and recode father_cit & mother_cit and father_manag & mother_manag:
+```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
+data19 <- data19 %>% 
   
-  filter(age %in% (30:59), mother_present >= 0, father_present >= 0, father_cit >= 0, mother_cit >= 0) %>% 
-  # DAN: Hier schau ich noch dass die observations nicht komplett gedropt werden wenn 
+  filter(age %in% (30:59), mother_present >= 0, father_present >= 0) %>% 
+  
   mutate("both_parents_present" = father_present + mother_present,
          # 4 = none present, 3 = one present, 2 = both present
          father_cit = ifelse(father_cit == 1, 1, 2),  
-         # Austria = 1 and Other = 2
+         # Austria = 1 & Other = 2
          mother_cit = ifelse(mother_cit == 1, 1, 2),
-        # Austria = 1 and Other = 2
-        #father_manag = ifelse(father_manag == 1, 1, ifelse(2, 2, NA)),
-        
+         # Austria = 1 & Other = 2
+         father_manag = ifelse(father_manag == 1, 1, ifelse(father_manag == 2, 0, NA)),
+         # yes = 1 & no = 0
+         mother_manag = ifelse(mother_manag == 1, 1, ifelse(mother_manag == 2, 0, NA)),
+         # yes = 1 & no = 
+         father_edu = ifelse(father_edu == -5, NA, ifelse(father_edu ==-2, NA, father_edu)),
+         # -2 & -5 both recoded as NA
+         mother_edu = ifelse(mother_edu == -5, NA, ifelse(mother_edu ==-2, NA, mother_edu)),
+         # -2 & -5 both recoded as NA
+         )
+```
 
-        
-        #mother_manag = ifelse(mother_manag == 2, 2, ifelse(1, 1, NA))
-  )
-
-# factorize cataegorial variable
+Factorize categorical variable:
+```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 factor <- c("sex",
             "country_birth", 
             "citizenship",           
@@ -168,19 +169,40 @@ factor <- c("sex",
             "mother_occup",
             "mother_manag",
             "tenancy",
-            "both_parents_present")
+            "both_parents_present",
+            "father_present",
+            "mother_present")
 
 data19[factor] <- lapply(data19[factor], as.factor)
 sapply(data19, class)
+```
 
+Recode factor variables
+```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
+data19cor <- data19 # for correlation plot later
 
-# recode variables
-levels(data19$country_birth) <- c("Unknown", "Austria", "EU15", "EU12", "Jugo", "Turkey", "Other")
-levels(data19$citizenship) <- c("Austria", "EU15", "EU12", "Jugo", "Turkey", "Other")
+levels(data19$sex) <- c("Male", "Female")
+levels(data19$country_birth) <- c("Unknown", "Austria", "EU15", "EU12", "Yugo", "Turkey", "Other")
+levels(data19$citizenship) <- c("Austria", "EU15", "EU12", "Yugo", "Turkey", "Other")
 levels(data19$father_cit) <- c("Austria", "Other")
 levels(data19$mother_cit) <- c("Austria", "Other")
-# levels(data19$father_manag) <- c("Unknown", "Yes", "No")
+levels(data19$both_parents_present) <- c("both", "one", "none")
+levels(data19$father_manag) <- c("Yes", "No")
+levels(data19$mother_manag) <- c("Yes", "No")
+levels(data19$father_edu) <- c("Army", "Manager", "Professional", "Technician", "Clerical", "Service","Agri", "Craft", "Operator", "Elementary")
+levels(data19$mother_edu) <- c("Army", "Manager", "Professional", "Technician", "Clerical", "Service","Agri", "Craft", "Operator", "Elementary")
 ```
+Education, occupation and occupational status are not recoded. Occupations for example are coded according to the major groups in ISCO-08:
+1: Managers
+2: Professionals
+3: Technicians and associate professionals
+4: Clerical support workers
+5: Service and sales workers
+6: Skilled agricultural, forestry and fishery workers
+7: Craft and related trades workers
+8: Plant and machine operators, and assemblers
+9: Elementary occupations
+0: Armed forces occupations
 
 ### Data Summary
 ```{r}
@@ -206,9 +228,9 @@ The Gini index corresponds to the are below the the black equal distribution lin
 ### Quantiles and Winsorization
 Inequality statistics tend to be heaviliy influenced by outliers, thus we first apply the winsorization function to our data [@brunori20, p12]. The winsorization sets all non-positive incomes equal to 1 and scales back all incomes exceeding the 95th percentile of the income distribution to that same threshold. Furthermore, we transform the income variable by taking the log. This means that ultimately our predicted output income, is the exponential of the predicted log income.
 ```{r}
-quantile(data19$net_income, weights = NULL, probs = seq(0, 1, 0.005), na.rm = FALSE, names = TRUE, type = 7) %>% tail(12)
+quantile <- quantile(data19$net_income, weights = NULL, probs = seq(0, 1, 0.005), na.rm = FALSE, names = TRUE, type = 7) %>% tail(12)
 
-data19 <- data19 %>% mutate(income = Winsorize(data19$net_income, minval = 1, maxval = 107645.6, probs = c(0.05, 0.95),
+data19 <- data19 %>% mutate(income = Winsorize(data19$net_income, minval = 1, maxval = quantile[2], probs = c(0.05, 0.95),
           na.rm = FALSE, type = 7), inc_log = log(income))
 ```
 
@@ -236,9 +258,10 @@ mean(data19$net_income)
 
 ### Correlation plot
 ```{r}
+## One with all numeric variables and one with all categorical variables using CramerV()
+##################
 
-data19cor <- data19 %>% as.numeric()
-
+data19cor <- sapply(data19cor, as.numeric)
 
 data19cor$sex <- as.numeric(data19cor$sex)
 data19cor$country_birth <- as.numeric(data19cor$country_birth)
