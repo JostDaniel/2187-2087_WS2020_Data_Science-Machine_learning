@@ -381,6 +381,19 @@ In the next step, we cross-validate use cross validation for our prediction usin
 caret_ctree <- train(formula, data = train, method = "ctree", trControl = fitControl, na.action = na.pass)
 caret_ctree
 
+plot(caret_ctree$finalModel, type = "simple")
+
+#Thats just the mean of the overall predictions, not how well the model actually fits
+P_caret_ctree <- mean(predict(caret_ctree, newdata = test))
+exp(P_caret_ctree) #Which is the predicted average income - and its quite off the actual mean income.
+
+exp(10.53)
+```
+Above, we showcase the cross-validated tree obtained from the `caret` package. Hereby there is only one split, and the prediction for the whole population is just split into two groups. For whom the predicted income depends only on the citizenship of the father. The predicted incomes are EUR 47810.47 for node 2, and EUR 37421.47 for node 3.
+
+In the next, step we again use the `ctree_control` function instead of cross-validation, but we use the suggested mincriterion we obtained from cross-validation. 
+
+```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 
 caret_ctree_B <- ctree(formula, data = data19, control = ctree_control(testtype = "Univariate", alpha = 0.05, mincriterion = 0.99)) 
 caret_ctree_B
@@ -390,16 +403,15 @@ mean((data19$inc_log - predict(caret_ctree_B))^2) #MSE
 plot(caret_ctree_B,gp = gpar(fontsize = 6),
   inner_panel=node_inner,
   ip_args=list(abbreviate = FALSE,id = FALSE), main = "Opportunity Conditional Inference Tree for Austria 2019 - Cross Validated")
-```
 
+exp(10.509)
+```
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 plot(caret_ctree,gp = gpar(fontsize = 6),
   inner_panel=node_inner,
   ip_args=list(id = FALSE))
-
-plot(caret_ctree$finalModel, type = "simple")
 ```
-We plot the conditional inference tree using both the `caret` and the `party` package to compare the results. In the first we used the suggested `mincriterion = 0.99` obtained through cross validation. We now have a tree with 9 terminal nodes and 8 inner nodes. Sex remains the most significant determinant. Furthermore, we see for example that country of birth is significant if its in the EU or outside of it. The Boxplots at the terminal nodes show the distribution of the outcome variable at the node. All, splits are chosen at a significance level of p < 0.001 which is also in line with the discplinary convention for hypothesis test [@brunori18, p. 9]. 
+We plot the conditional inference tree using both the `caret` and the `party` package to compare the results. In the first we used the suggested `mincriterion = 0.99` obtained through cross validation. Here, we showcase a tree with 6 inner and 7 terminal nodes. Again, the first split is made based on the citizenship of the father of the respondents. We do not showcase the simplified tree, but instead show the distribution of the outcome variable, visible through the box-plots at the terminal nodes of the tree. Again, we obtain widely different results, for different groups in the population. Our MSE for this model is 0.50. As an example of a predicted outcome consider terminal node 13, where we have 946 observations grouped together. Here, respondents father does not have Austrian citizenship, and are likely to have larger families. However, all possible answers for family size or amount of children are grouped together in this node, which is likely why, the observations are so widely dispersed here. The predicted income for this node is EUR 36643.82. All, splits are chosen at a significance level of p < 0.001 which is also in line with the discplinary convention for hypothesis test [@brunori18, p. 9]. 
 
 ### Graphic representation of the tuning parameters
 
