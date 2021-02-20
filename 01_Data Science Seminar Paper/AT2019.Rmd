@@ -352,12 +352,12 @@ caret_rpart
 tree_caret_final <- caret_rpart$finalModel
 rpart.plot(tree_caret_final, box.palette="RdBu", nn=FALSE, type=2)
 ```
-The `caret_tree` for Austria shows a tree with five partitions and seven terminal nodes. The splitting variables indicate already which circumstances are most significant in determining the income of the respondents. In Austria, sex is the most important determinant for income.
+The `caret_tree` for Austria shows a tree with one partition and two terminal nodes. The splitting variables indicate already which circumstances are most significant in determining the income of the respondents. In Austria, the citizenship of the father appears to be the most important determinant for income.
 However, we only showcase this tree as a comparison to the *conditional inference trees*.
 
 ### Conditional inference tree
 
-The *conditional inference tree* algorithm as it is included in `party` and the `partykit` packages contains various points for adjustment of variable selection and stopping criteria. We use the default `ctree_control` function but see it necessary to explain what it does exactly and why we think that the specifications we have chosen are not distorting. We use the default teststatistic as we do not know neither the conditional expectation nor covariance of our circumstances. In such a case the default setting of `ctree_control(teststat = "quad")` is recommended [@Hoh]. The Austria 2019 data set has been mostly *cleaned* of missing values, however we still have many `NA` entries further on in the document. For reasons of uniformity, we chose to use the testtype `ctree_control(testtype = "Bonferroni")`. This approach uses simple Bonferroni adjusted P-Values. However, we also use the caret package for cross validation in addition to the default control function, since it is the one we had discussed in class and we used it for comparability of the results.
+The *conditional inference tree* algorithm as it is included in `party` and the `partykit` packages contains various points for adjustment of variable selection and stopping criteria. We use the default `ctree_control` function but see it necessary to explain what it does exactly and why we think that the specifications we have chosen are not distorting. We use the default teststatistic as we do not know neither the conditional expectation nor covariance of our circumstances. In such a case the default setting of `ctree_control(teststat = "quad")` is recommended [@Hoh]. The Austria 2019 data set has been mostly *cleaned* of missing values, however we still have many `NA` entries further on in the document. For reasons of uniformity, we chose to use the testtype `ctree_control(testtype = "Univariate")`. This approach uses simple P-Values. However, we also use the caret package for cross validation in addition to the default control function, since it is the one we had discussed in class and we used it for comparability of the results.
 ```{r}
 # For the Inference Tree to work, we must have all variables as numeric data
 
@@ -370,13 +370,15 @@ plot(Ctree, type = "simple",gp = gpar(fontsize = 6),
   inner_panel=node_inner,
   ip_args=list(id = FALSE), main = "Conditional Inference Tree for Austria 2019") #Überschrift größe ändern
 
-exp(10.733)
+exp(9.630)
 ```
-We obtain a deep tree with 11 inner nodes and 12 terminal nodes. Sex is the most siginificant determinant for income. The further determinants are quite different for men (0) and women (1).
+We obtain a deep tree with 10 inner nodes and 11 terminal nodes. In this estimate the citizenship of the father appears to be the first determining split. The predictive power of the model does not appear to be good, when we look at the errors indicated in the grey boxes. As an example for reading the tree, we point at terminal node `8`, where we see that 422 observations are grouped together. Going down the tree from the initial split, we can tell that this group has a father with Austrian citizenship, a mother with Austrian citizenship, and one parent present at home. The predicted outcome for income for this group is EUR 44311.52 (the second node, is tricky to interpret as non-contradicting descriptions of occupation status, are grouped into different outcomes). The predicted income for a person, whos father does not have Austrian citizenship, as in nodes 20 and 21, would be  EUR 15214.44 EUR 36643.82. 
+
+In the next step, we cross-validate use cross validation for our prediction using the `caret` package, thus we also use the split of data (`test`, `training`).
 
 ```{r}
 ### data = in data 2019 geändert von train!
-caret_ctree <- train(formula, data = data19, method = "ctree", trControl = fitControl, na.action = na.pass)
+caret_ctree <- train(formula, data = train, method = "ctree", trControl = fitControl, na.action = na.pass)
 caret_ctree
 
 
