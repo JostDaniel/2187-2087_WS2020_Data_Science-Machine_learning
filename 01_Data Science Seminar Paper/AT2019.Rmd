@@ -36,7 +36,7 @@ DANIEL:
   1.  DAN: ich schon noch dass die observations nicht komplett gedropt werden wenn bei einer variable NA
   2.  DAN: Income schau ich mir auch noch an, ob wir da nit annual income verwenden können
   3.  Plots (siehe unten)
-  4.  M002000 droppen?
+  5.  Daniel, kannst du die Age pyramide fixen, oder noch einfacher, sie einfach nach vorne verschieben? :D
 **Ideen für Plots**
   1. Einen plot mit Einkommen und parental education zb auf 3 levels zusammen geplottet.
   2. Same shit für Country of birth oder so
@@ -130,7 +130,7 @@ data19 <- data19 %>% select(sex, hy020, P038004, P110000nu, P111010nu, alter, M0
          )
 ```
 
-Filter the working age group as defined in [@brunori18] and recode father_cit & mother_cit and father_manag & mother_manag:
+Filter the working age group as defined in [@brunori18] and recode `father_cit` & `mother_cit` and `father_manag` & `mother_manag`:
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 data19 <- data19 %>% 
   
@@ -230,7 +230,7 @@ Inequality statistics tend to be heaviliy influenced by outliers, thus we first 
 ```{r}
 quantile <- quantile(data19$net_income, weights = NULL, probs = seq(0, 1, 0.005), na.rm = FALSE, names = TRUE, type = 7) %>% tail(12)
 
-data19 <- data19 %>% mutate(income = Winsorize(data19$net_income, minval = 1, maxval = quantile[2], probs = c(0.05, 0.95),
+data19 <- data19 %>% mutate(income = Winsorize(data19$net_income, minval = 1, maxval = quantile[11], probs = c(0.05, 0.95),
           na.rm = FALSE, type = 7), inc_log = log(income))
 ```
 
@@ -526,7 +526,10 @@ In the beginning, we ran the analysis with the citizenship variable included, bu
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 # setting the data path
 data_path ="./SILC_2011"
+```
 
+
+```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 # accessing the data
 AT_personal_data <- read.csv(file.path(data_path, "AT_2011p_EUSILC.csv"))
 AT_household_data <- read.csv(file.path(data_path, "AT_2011h_EUSILC.csv"))
@@ -536,19 +539,27 @@ AT_household_data <- AT_household_data %>% rename("PX030" = HB030)
 
 # joining the data
 AT_equality_data <- AT_personal_data %>%  left_join(AT_household_data, by = "PX030")
+```
 
+```{r}
+# For shorter chunks of code we group some of the following data wrangling steps together
+
+selection_f <- c("PB140", "HY020", "PB150", "PB220A", "PT010", "PT020", "PT030", "PT060", "PT070", "PT090", "PT100", "PT110", "PT120", "PT130", "PT160", "PT150", "PT180", "PT140", "PT170", "PT210")
+
+factor_f <- c("citizenship", "sex", "parents_present", "father_cob", "father_cit", "father_edu", "mother_edu", "mother_cob", "mother_cit", "mother_occup", "father_occup_stat", "mother_occup_stat", "father_occup", "mother_manag","father_manag", "tenancy")
+```
+
+```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 # Renaming important variables for readability of tree
-AT_equality_data <- AT_equality_data %>% select(
-  PB140, HY020, PB150, PB220A, PT010, PT020, PT030, PT060, PT070, PT090, PT100, PT110, PT120, PT130, PT160, PT150, PT180, PT140, PT170, PT210, PY200G) %>% mutate(
-    age = (2011 - PB140), log_income = log(HY020 + 1) #We add 1 so the logarithm works
+AT_equality_data <- AT_equality_data %>% select(selection_f) %>% mutate(
+    age = (2011 - PB140),
   ) %>% filter(
-    age %in% (27:59)
-  ) %>% mutate(
-    citizenship = factor(PB220A, labels = c(1,2,3)) # Citizenship of the respondent
+    age %in% (30:59)
   ) %>%
   rename(
     "year_of_birth" = PB140,        # Respondents year of birth
     "annual_income" = HY020,
+    "citizenship" = PB220A,
     "sex" = PB150,                  # Respondents sex
     "parents_present" = PT010,      # Presence of parents (or those considered as such)
     "adults_home" = PT020,          # Number of adults living in the household when the respondent was 14 years old
@@ -565,9 +576,35 @@ AT_equality_data <- AT_equality_data %>% select(
     "mother_occup" = PT180,         # Main occupation (job) of mother
     "father_manag" = PT140,         # Managerial position of father
     "mother_manag" = PT170,         # Managerial position of mother
-    "tenancy" = PT210,              # Tenancy status when respondent was 14 years old
-    "monthly_income" = PY200G)      # Gross monthly earnings for employees
-```                                                                                                                                           
+    "tenancy" = PT210)              # Tenancy status when respondent was 14 years old     
+
+AT_equality_data[factor_f] <- lapply(AT_equality_data[factor_f], as.factor)
+sapply(AT_equality_data, class)
+```
+We again use the Winsorization based on the 99.5th percentile of the income distribution. In the 2011 data set, we have a very high fraction of negative income entries, which are all changed to be equal to 1.
+```{r}
+quantile_AT <- quantile(AT_equality_data$annual_income, weights = NULL, probs = seq(0, 1, 0.005), na.rm = FALSE, names = TRUE, type = 7) %>% tail(12)
+
+AT_equality_data <- AT_equality_data %>% mutate(income = Winsorize(AT_equality_data$annual_income, minval = 1, maxval = quantile_AT[11], probs = c(0.05, 0.95), na.rm = FALSE, type = 7), inc_log = log(income))
+```
+
+```{r}
+levels(AT_equality_data$sex)               <- c("Male", "Female")
+levels(AT_equality_data$father_cit)        <- c("Don't know","Resp. Present Country","Other EU country","Other European Country")
+levels(AT_equality_data$mother_cit)        <- c("Don't know","Resp. Present Country","Other EU country","Other European Country")
+levels(AT_equality_data$father_cob)        <- c("Don't know","Resp. Present Country","Other EU country","Other European Country")
+levels(AT_equality_data$mother_cob)        <- c("Don't know","Resp. Present Country","Other EU country","Other European Country")
+levels(AT_equality_data$father_edu)        <- c("Don't know", "None", "Low", "Medium", "High")
+levels(AT_equality_data$mother_edu)        <- c("Don't know", "None", "Low", "Medium", "High")
+levels(AT_equality_data$father_manag)      <- c("Don't know", "Supervisory", "Non-supervisory")
+levels(AT_equality_data$mother_manag)      <- c("Don't know", "Supervisory", "Non-supervisory")
+levels(AT_equality_data$father_occup_stat) <- c("Don't know", "Employed", "Self-employed", "Unemployed", "Retired etc.", "Domestic", "Other inactive")
+levels(AT_equality_data$mother_occup_stat) <- c("Don't know", "Employed", "Self-employed", "Unemployed", "Retired etc.", "Domestic", "Other inactive")
+levels(AT_equality_data$tenancy)           <- c("Don't know", "Owner", "Tenant", "Free Acc")
+levels(AT_equality_data$father_occup)      <- c("Don't know", "Armed forces", "Manager", "Professional", "Technician", "Clerical", "Service",                                                  "Agri", "Craft", "Operator", "Elementary")
+levels(AT_equality_data$mother_occup)      <- c("Don't know", "Armed forces", "Manager", "Professional", "Technician", "Clerical", "Service",                                                  "Agri", "Craft", "Operator", "Elementary")
+```
+
 *Summary*
 We provide the summary statistics for Austria, which we obtained using the 'dfsummary' from the package 'summarytools'. Similar to the 2019 data set the 'AT_equality_data' does contain almost 7000 observations and no missing entries in our outcome variable annual income. However, it does contain many missing values across the observed circumstances. We chose to not exclude those and deal with these missing entries using the `na.action = na.pass` command when doing the statistical analysis.
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
@@ -584,18 +621,16 @@ FR_household_data <- read.csv(file.path(data_path, "FR_2011h_EUSILC.csv"))
 FR_household_data <- FR_household_data %>% rename("PX030" = HB030)
 FR_equality_data <- FR_personal_data %>%  left_join(FR_household_data, by = "PX030")
 
-FR_equality_data <- FR_equality_data %>% select(
-  PB140, HY020, PB150, PB220A, PT010, PT020, PT030, PT060, PT070, PT090, PT100, PT110, PT120, PT130, PT160, PT150, PT180, PT140, PT170, PT210, PY200G) %>% mutate(
-    age = (2011 - PB140), log_income = log(HY020 + 1)
+FR_equality_data <- FR_equality_data %>% select(selection_f) %>% mutate(
+    age = (2011 - PB140)
   ) %>% filter(
-    age %in% (27:59)
-  ) %>% mutate(
-    citizenship = factor(PB220A, labels = c(1,2,3))
+    age %in% (30:59)
   ) %>% 
   rename(
     "year_of_birth" = PB140,
     "annual_income" = HY020,
     "sex" = PB150,
+    "citizenship" = PB220A,
     "parents_present" = PT010,
     "adults_home" = PT020,
     "children_home" = PT030,
@@ -611,8 +646,14 @@ FR_equality_data <- FR_equality_data %>% select(
     "mother_occup" = PT180,
     "father_manag" = PT140,
     "mother_manag" = PT170,
-    "tenancy" = PT210,
-    "monthly_income" = PY200G)
+    "tenancy" = PT210)
+
+FR_equality_data[factor_f] <- lapply(FR_equality_data[factor_f], as.factor)
+
+quantile_FR <- quantile(FR_equality_data$annual_income, weights = NULL, probs = seq(0, 1, 0.005), na.rm = FALSE, names = TRUE, type = 7) %>% tail(12)
+
+FR_equality_data <- FR_equality_data %>% mutate(income = Winsorize(FR_equality_data$annual_income, minval = 1, maxval = quantile_AT[11], probs = c(0.05, 0.95), na.rm = FALSE, type = 7), inc_log = log(income))
+
 # Denmark
 DK_personal_data <- read.csv(file.path(data_path, "DK_2011p_EUSILC.csv"))
 DK_household_data <- read.csv(file.path(data_path, "DK_2011h_EUSILC.csv"))
@@ -620,17 +661,16 @@ DK_household_data <- DK_household_data %>% rename("PX030" = HB030)
 DK_equality_data <- DK_personal_data %>%  left_join(DK_household_data, by = "PX030")
 
 DK_equality_data <- DK_equality_data %>% select(
-  PB140, HY020, PB150, PB220A, PT010, PT020, PT030, PT060, PT070, PT090, PT100, PT110, PT120, PT130, PT160, PT150, PT180, PT140, PT170, PT210, PY200G) %>% mutate(
-    age = (2011 - PB140), log_income = log(HY020 + 1)
+  selection_f) %>% mutate(
+    age = (2011 - PB140)
   ) %>% filter(
-    age %in% (27:59)
-  ) %>% mutate(
-    citizenship = factor(PB220A, labels = c(1,2,3))
+    age %in% (30:59)
   ) %>% 
   rename(
     "year_of_birth" = PB140,
     "annual_income" = HY020,
     "sex" = PB150,
+    "citizenship" = PB220A,
     "parents_present" = PT010,
     "adults_home" = PT020,
     "children_home" = PT030,
@@ -646,26 +686,30 @@ DK_equality_data <- DK_equality_data %>% select(
     "mother_occup" = PT180,
     "father_manag" = PT140,
     "mother_manag" = PT170,
-    "tenancy" = PT210,
-    "monthly_income" = PY200G)
+    "tenancy" = PT210)
+
+DK_equality_data[factor_f] <- lapply(DK_equality_data[factor_f], as.factor)
+
+quantile_DK <- quantile(DK_equality_data$annual_income, weights = NULL, probs = seq(0, 1, 0.005), na.rm = FALSE, names = TRUE, type = 7) %>% tail(12)
+
+DK_equality_data <- DK_equality_data %>% mutate(income = Winsorize(DK_equality_data$annual_income, minval = 1, maxval = quantile_AT[11], probs = c(0.05, 0.95), na.rm = FALSE, type = 7), inc_log = log(income))
+
 # Spain
 ES_personal_data <- read.csv(file.path(data_path, "ES_2011p_EUSILC.csv"))
 ES_household_data <- read.csv(file.path(data_path, "ES_2011h_EUSILC.csv"))
 ES_household_data <- ES_household_data %>% rename("PX030" = HB030)
 ES_equality_data <- ES_personal_data %>%  left_join(ES_household_data, by = "PX030")
 
-ES_equality_data <- ES_equality_data %>% select(
-  PB140, HY020, PB150, PB220A, PT010, PT020, PT030, PT060, PT070, PT090, PT100, PT110, PT120, PT130, PT160, PT150, PT180, PT140, PT170, PT210, PY200G) %>% mutate(
-    age = (2011 - PB140), log_income = log(HY020 + 1)
+ES_equality_data <- ES_equality_data %>% select(selection_f) %>% mutate(
+    age = (2011 - PB140)
   ) %>% filter(
-    age %in% (27:59)
-  ) %>% mutate(
-    citizenship = factor(PB220A, labels = c(1,2,3))
+    age %in% (30:59)
   ) %>% 
   rename(
     "year_of_birth" = PB140,
     "annual_income" = HY020,
     "sex" = PB150,
+    "citizenship" = PB220A,
     "parents_present" = PT010,
     "adults_home" = PT020,
     "children_home" = PT030,
@@ -681,26 +725,30 @@ ES_equality_data <- ES_equality_data %>% select(
     "mother_occup" = PT180,
     "father_manag" = PT140,
     "mother_manag" = PT170,
-    "tenancy" = PT210,
-    "monthly_income" = PY200G)
+    "tenancy" = PT210)
+
+ES_equality_data[factor_f] <- lapply(ES_equality_data[factor_f], as.factor)
+
+quantile_ES <- quantile(ES_equality_data$annual_income, weights = NULL, probs = seq(0, 1, 0.005), na.rm = FALSE, names = TRUE, type = 7) %>% tail(12)
+
+ES_equality_data <- ES_equality_data %>% mutate(income = Winsorize(ES_equality_data$annual_income, minval = 1, maxval = quantile_AT[11], probs = c(0.05, 0.95), na.rm = FALSE, type = 7), inc_log = log(income))
+
 # Finland
 FI_personal_data <- read.csv(file.path(data_path, "FI_2011p_EUSILC.csv"))
 FI_household_data <- read.csv(file.path(data_path, "FI_2011h_EUSILC.csv"))
 FI_household_data <- FI_household_data %>% rename("PX030" = HB030)
 FI_equality_data <- FI_personal_data %>%  left_join(FI_household_data, by = "PX030")
 
-FI_equality_data <- FI_equality_data %>% select(
-  PB140, HY020, PB150, PB220A, PT010, PT020, PT030, PT060, PT070, PT090, PT100, PT110, PT120, PT130, PT160, PT150, PT180, PT140, PT170, PT210, PY200G) %>% mutate(
-    age = (2011 - PB140), log_income = log(HY020 + 1)
+FI_equality_data <- FI_equality_data %>% select(selection_f) %>% mutate(
+    age = (2011 - PB140)
   ) %>% filter(
-    age %in% (27:59)
-  ) %>% mutate(
-    citizenship = factor(PB220A, labels = c(1,2,3))
+    age %in% (30:59)
   ) %>% 
   rename(
     "year_of_birth" = PB140,
     "annual_income" = HY020,
     "sex" = PB150,
+    "citizenship" = PB220A,
     "parents_present" = PT010,
     "adults_home" = PT020,
     "children_home" = PT030,
@@ -716,95 +764,30 @@ FI_equality_data <- FI_equality_data %>% select(
     "mother_occup" = PT180,
     "father_manag" = PT140,
     "mother_manag" = PT170,
-    "tenancy" = PT210,
-    "monthly_income" = PY200G)
-# # Italy
-# IT_personal_data <- read.csv(file.path(data_path, "IT_2011p_EUSILC.csv"))
-# # Unfortunately the synthetic household data set for Italy does not contain enough entries. 
-# # Therefore, we use gross monthly income, as in the Austria 2019 data set, and multiply it by 12
-# 
-# IT_equality_data <- IT_personal_data %>% select(
-#   PB140, PY200G, PB150, PB220A, PT010, PT020, PT030, PT060, PT070, PT090, PT100, PT110, PT120, PT130, PT160, PT150, PT180, PT140, PT170, PT210, PY200G) %>% mutate(
-#     age = (2011 - PB140), log_income = log(PY200G * 12), annual_income = (PY200G * 12)
-#   ) %>% filter(
-#     age %in% (27:59)
-#   ) %>% mutate(
-#     citizenship = factor(PB220A, labels = c(1,2,3))
-#   ) %>% 
-#   rename(
-#     "year_of_birth" = PB140,
-#     "monthly_income" = PY200G,
-#     "sex" = PB150,
-#     "parents_present" = PT010,
-#     "adults_home" = PT020,
-#     "children_home" = PT030,
-#     "father_cob" = PT060,
-#     "father_cit" = PT070,
-#     "mother_cob" = PT090,
-#     "mother_cit" = PT100,
-#     "father_edu" = PT110,
-#     "mother_edu" = PT120,
-#     "father_occup_stat" = PT130,
-#     "mother_occup_stat" = PT160,
-#     "father_occup" = PT150,
-#     "mother_occup" = PT180,
-#     "father_manag" = PT140,
-#     "mother_manag" = PT170,
-#     "tenancy" = PT210,
-#     "monthly_income" = PY200G)
-# # Bulgaria
-# BG_personal_data <- read.csv(file.path(data_path, "BG_2011p_EUSILC.csv"))
-# BG_household_data <- read.csv(file.path(data_path, "BG_2011h_EUSILC.csv"))
-# BG_household_data <- BG_household_data %>% rename("PX030" = HB030)
-# BG_equality_data <- BG_personal_data %>%  left_join(BG_household_data, by = "PX030")
-# 
-# BG_equality_data <- BG_equality_data %>% select(
-#   PB140, HY020, PB150, PB220A, PT010, PT020, PT030, PT060, PT070, PT090, PT100, PT110, PT120, PT130, PT160, PT150, PT180, PT140, PT170, PT210, PY200G) %>% mutate(
-#     age = (2011 - PB140), log_income = log(HY020 + 1)
-#   ) %>% filter(
-#     age %in% (27:59)
-#   ) %>% mutate(
-#     citizenship = factor(PB220A, labels = c(1,2,3))
-#   ) %>% 
-#   rename(
-#     "year_of_birth" = PB140,
-#     "annual_income" = HY020,
-#     "sex" = PB150,
-#     "parents_present" = PT010,
-#     "adults_home" = PT020,
-#     "children_home" = PT030,
-#     "father_cob" = PT060,
-#     "father_cit" = PT070,
-#     "mother_cob" = PT090,
-#     "mother_cit" = PT100,
-#     "father_edu" = PT110,
-#     "mother_edu" = PT120,
-#     "father_occup_stat" = PT130,
-#     "mother_occup_stat" = PT160,
-#     "father_occup" = PT150,
-#     "mother_occup" = PT180,
-#     "father_manag" = PT140,
-#     "mother_manag" = PT170,
-#     "tenancy" = PT210,
-#     "monthly_income" = PY200G)
+    "tenancy" = PT210)
+
+FI_equality_data[factor_f] <- lapply(FI_equality_data[factor_f], as.factor)
+
+quantile_FI <- quantile(FI_equality_data$annual_income, weights = NULL, probs = seq(0, 1, 0.005), na.rm = FALSE, names = TRUE, type = 7) %>% tail(12)
+
+FI_equality_data <- FI_equality_data %>% mutate(income = Winsorize(FI_equality_data$annual_income, minval = 1, maxval = quantile_AT[11], probs = c(0.05, 0.95), na.rm = FALSE, type = 7), inc_log = log(income))
+
 # Latvia
 LV_personal_data <- read.csv(file.path(data_path, "LV_2011p_EUSILC.csv"))
 LV_household_data <- read.csv(file.path(data_path, "LV_2011h_EUSILC.csv"))
 LV_household_data <- LV_household_data %>% rename("PX030" = HB030)
 LV_equality_data <- LV_personal_data %>%  left_join(LV_household_data, by = "PX030")
 
-LV_equality_data <- LV_equality_data %>% select(
-  PB140, HY020, PB150, PB220A, PT010, PT020, PT030, PT060, PT070, PT090, PT100, PT110, PT120, PT130, PT160, PT150, PT180, PT140, PT170, PT210, PY200G) %>% mutate(
-    age = (2011 - PB140), log_income = log(HY020 + 1)
+LV_equality_data <- LV_equality_data %>% select(selection_f) %>% mutate(
+    age = (2011 - PB140)
   ) %>% filter(
-    age %in% (27:59)
-  ) %>% mutate(
-    citizenship = factor(PB220A, labels = c(1,2,3))
+    age %in% (30:59)
   ) %>% 
   rename(
     "year_of_birth" = PB140,
     "annual_income" = HY020,
     "sex" = PB150,
+    "citizenship" = PB220A,
     "parents_present" = PT010,
     "adults_home" = PT020,
     "children_home" = PT030,
@@ -820,8 +803,13 @@ LV_equality_data <- LV_equality_data %>% select(
     "mother_occup" = PT180,
     "father_manag" = PT140,
     "mother_manag" = PT170,
-    "tenancy" = PT210,
-    "monthly_income" = PY200G)
+    "tenancy" = PT210)
+
+LV_equality_data[factor_f] <- lapply(LV_equality_data[factor_f], as.factor)
+
+quantile_LV <- quantile(LV_equality_data$annual_income, weights = NULL, probs = seq(0, 1, 0.005), na.rm = FALSE, names = TRUE, type = 7) %>% tail(12)
+
+LV_equality_data <- LV_equality_data %>% mutate(income = Winsorize(LV_equality_data$annual_income, minval = 1, maxval = quantile_AT[11], probs = c(0.05, 0.95), na.rm = FALSE, type = 7), inc_log = log(income))
 
 ```
 
@@ -876,7 +864,7 @@ Summary_Stat_all %>%
 Following [@brunori18] and the standard procedure for CART we split the data into training and testing data by $2/3:1/3$.
 Furthermore, we chose to show the results obtained using regression trees obtained from the 'rpart' package. The training and test data sets will be continually used also for further analysis when we proceed with 'cTree'.
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
-set.seed(123)
+set.seed(78910)
 
 AT_equality_data <- AT_equality_data %>%
   mutate(train_index = sample(c("train", "test"), nrow(AT_equality_data), replace=TRUE, prob=c(0.67, 0.33)))
@@ -884,7 +872,7 @@ AT_equality_data <- AT_equality_data %>%
 AT_train <- AT_equality_data %>% filter(train_index=="train")
 AT_test <- AT_equality_data %>% filter(train_index=="test")
 
-formula <- log_income ~ sex + parents_present + adults_home + children_home + father_cob + father_cit + mother_cob + mother_cit + father_edu + mother_edu + father_occup_stat + mother_occup_stat + father_occup + mother_occup + father_manag + mother_manag + tenancy
+formula <- inc_log ~ sex + parents_present + adults_home + children_home + father_cob + father_cit + mother_cob + mother_cit + father_edu + mother_edu + father_occup_stat + mother_occup_stat + father_occup + mother_occup + father_manag + mother_manag + tenancy
 ```
 
 ```{r echo=F, message=FALSE, error=FALSE, warning=FALSE}
@@ -969,9 +957,9 @@ plot(AT_ctree2, type = "simple",gp = gpar(fontsize = 6),
 ```{r}
 AT_test$P_AtCt <- predict(AT_ctree2, newdata = as.data.frame(AT_test))
 
-AT_test$perror <- (AT_test$P_AtCt - AT_test$log_income)^2
+AT_test$perror <- (AT_test$P_AtCt - AT_test$inc_log)^2
 
-AT_test$RMSE <- sqrt(sum((AT_test$P_AtCt - AT_test$log_income)^2/nrow(AT_test), na.rm = T))
+AT_test$RMSE <- sqrt(sum((AT_test$P_AtCt - AT_test$inc_log)^2/nrow(AT_test), na.rm = T))
 
 head(AT_test$RMSE)
 # For Austria we have a RMSE of 1.02, which is not very good. But is most likely attributed to the synthetic data. 
