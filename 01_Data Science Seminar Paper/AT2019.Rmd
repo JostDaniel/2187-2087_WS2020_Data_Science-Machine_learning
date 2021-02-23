@@ -22,21 +22,14 @@ knitr::opts_chunk$set(fig.align = 'left')
 COMMENTS (not included)
  
 **TO DOs**
-* AT2019 wrangling und recoded fertig
-* AT2011 Wrangling Code vereinfachen (ist ja für alle Länder gleich)
-* Conclusion schreiben
 * Endlektorat
 
 **Aufbau**
-1. Austria 2019 mit der ausführlichen Erklärung der Vorgehensweise und der einzelnen Schritte. Daten sollten genau erklärt werden.
-2. Warum synthetisches Datenset abweicht, detaillierter auf Austria 2011. Die restlichen Länder eher im Appendix. 
-3. Ländervergleich Cforest Var importance. Tree complexity und Gini? (p.51 paper)
+3. Ländervergleich Cforest Var importance, Plot beschreiben. Tree complexity und Gini? (p.51 paper)
 
 DANIEL:
   1.  DAN: ich schon noch dass die observations nicht komplett gedropt werden wenn bei einer variable NA
-  2.  DAN: Income schau ich mir auch noch an, ob wir da nit annual income verwenden können
   3.  Plots (siehe unten)
-  5.  Daniel, kannst du die Age pyramide fixen, oder noch einfacher, sie einfach nach vorne verschieben? :D
 **Ideen für Plots**
   1. Einen plot mit Einkommen und parental education zb auf 3 levels zusammen geplottet.
   2. Same shit für Country of birth oder so
@@ -429,12 +422,16 @@ As discussed the _conditional inference trees_ construct as outcome the counterf
 The main difference between the forest and the tree approach is that in the forest each tree is estimated on a random subsample $b$ of the original data. Thus, in total $B$ trees are estimated. Furthermore, a random subset of circumstances is used at each splitting point. This guarantees that at some point all circumstances with any kind of informational value will be used as a splitting variable. Furthermore, averaging the result over $B$ predictions reduces the variance. The individual predictions are a function of $\alpha$ which stands for the significance level in charge of splits, $\bar{P}$ i.e. the number of circumstances to be considered, and $\bar{B}$ the number of subsamples. 
 
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
-cf <- cforest(formula, train, na.action = na.pass, control = ctree_control(teststat = "quadratic", testtype = "Univariate", mincriterion = 0.99), ntree = 500L, perturb = list(replace = T, fraction = 0.8))
+cf <- cforest(formula, train, na.action = na.pass, control = ctree_control(teststat = "quadratic", testtype = "Bonferroni", mincriterion = 0.5), ntree = 500L, perturb = list(replace = T, fraction = 0.8))
 
 
 class(cf)
 #We have a RMSE of 0, makes no sense at all!
 data19$hat_cf <- predict(cf, newdata = as.data.frame(data19), OOB = TRUE, type = "response")
+
+mean((data19$inc_log - predict(cf))^2) #MSE
+
+cor(predict(cf, newdata=test),test$inc_log)^2 #R-sq -> rather bad :(
 
 data19$pred_inc <- exp(data19$hat_cf)
 
@@ -608,9 +605,9 @@ FR_equality_data <- FR_equality_data %>% select(selection_f) %>% mutate(
 
 FR_equality_data[factor_f] <- lapply(FR_equality_data[factor_f], as.factor)
 
-quantile_FR <- quantile(FR_equality_data$annual_income, weights = NULL, probs = seq(0, 1, 0.005), na.rm = FALSE, names = TRUE, type = 7) %>% tail(12)
+quantile_FR <- quantile(FR_equality_data$annual_income, weights = NULL, probs = seq(0, 1, 0.005), na.rm = FALSE, names = TRUE, type = 7) %>% tail(2)
 
-FR_equality_data <- FR_equality_data %>% mutate(income = Winsorize(FR_equality_data$annual_income, minval = 1, maxval = quantile_FR[11], probs = c(0.05, 0.95), na.rm = FALSE, type = 7), inc_log = log(income))
+FR_equality_data <- FR_equality_data %>% mutate(income = Winsorize(FR_equality_data$annual_income, minval = 1, maxval = quantile_FR[1], probs = c(0.05, 0.95), na.rm = FALSE, type = 7), inc_log = log(income))
 
 # Denmark
 DK_personal_data <- read.csv(file.path(data_path, "DK_2011p_EUSILC.csv"))
@@ -648,9 +645,9 @@ DK_equality_data <- DK_equality_data %>% select(
 
 DK_equality_data[factor_f] <- lapply(DK_equality_data[factor_f], as.factor)
 
-quantile_DK <- quantile(DK_equality_data$annual_income, weights = NULL, probs = seq(0, 1, 0.005), na.rm = FALSE, names = TRUE, type = 7) %>% tail(12)
+quantile_DK <- quantile(DK_equality_data$annual_income, weights = NULL, probs = seq(0, 1, 0.005), na.rm = FALSE, names = TRUE, type = 7) %>% tail(2)
 
-DK_equality_data <- DK_equality_data %>% mutate(income = Winsorize(DK_equality_data$annual_income, minval = 1, maxval = quantile_DK[11], probs = c(0.05, 0.95), na.rm = FALSE, type = 7), inc_log = log(income))
+DK_equality_data <- DK_equality_data %>% mutate(income = Winsorize(DK_equality_data$annual_income, minval = 1, maxval = quantile_DK[1], probs = c(0.05, 0.95), na.rm = FALSE, type = 7), inc_log = log(income))
 
 # Spain
 ES_personal_data <- read.csv(file.path(data_path, "ES_2011p_EUSILC.csv"))
@@ -687,9 +684,9 @@ ES_equality_data <- ES_equality_data %>% select(selection_f) %>% mutate(
 
 ES_equality_data[factor_f] <- lapply(ES_equality_data[factor_f], as.factor)
 
-quantile_ES <- quantile(ES_equality_data$annual_income, weights = NULL, probs = seq(0, 1, 0.005), na.rm = FALSE, names = TRUE, type = 7) %>% tail(12)
+quantile_ES <- quantile(ES_equality_data$annual_income, weights = NULL, probs = seq(0, 1, 0.005), na.rm = FALSE, names = TRUE, type = 7) %>% tail(2)
 
-ES_equality_data <- ES_equality_data %>% mutate(income = Winsorize(ES_equality_data$annual_income, minval = 1, maxval = quantile_ES[11], probs = c(0.05, 0.95), na.rm = FALSE, type = 7), inc_log = log(income))
+ES_equality_data <- ES_equality_data %>% mutate(income = Winsorize(ES_equality_data$annual_income, minval = 1, maxval = quantile_ES[1], probs = c(0.05, 0.95), na.rm = FALSE, type = 7), inc_log = log(income))
 
 # Finland
 FI_personal_data <- read.csv(file.path(data_path, "FI_2011p_EUSILC.csv"))
@@ -726,9 +723,9 @@ FI_equality_data <- FI_equality_data %>% select(selection_f) %>% mutate(
 
 FI_equality_data[factor_f] <- lapply(FI_equality_data[factor_f], as.factor)
 
-quantile_FI <- quantile(FI_equality_data$annual_income, weights = NULL, probs = seq(0, 1, 0.005), na.rm = FALSE, names = TRUE, type = 7) %>% tail(12)
+quantile_FI <- quantile(FI_equality_data$annual_income, weights = NULL, probs = seq(0, 1, 0.005), na.rm = FALSE, names = TRUE, type = 7) %>% tail(2)
 
-FI_equality_data <- FI_equality_data %>% mutate(income = Winsorize(FI_equality_data$annual_income, minval = 1, maxval = quantile_FI[11], probs = c(0.05, 0.95), na.rm = FALSE, type = 7), inc_log = log(income))
+FI_equality_data <- FI_equality_data %>% mutate(income = Winsorize(FI_equality_data$annual_income, minval = 1, maxval = quantile_FI[1], probs = c(0.05, 0.95), na.rm = FALSE, type = 7), inc_log = log(income))
 
 # Latvia
 LV_personal_data <- read.csv(file.path(data_path, "LV_2011p_EUSILC.csv"))
@@ -765,10 +762,9 @@ LV_equality_data <- LV_equality_data %>% select(selection_f) %>% mutate(
 
 LV_equality_data[factor_f] <- lapply(LV_equality_data[factor_f], as.factor)
 
-quantile_LV <- quantile(LV_equality_data$annual_income, weights = NULL, probs = seq(0, 1, 0.005), na.rm = FALSE, names = TRUE, type = 7) %>% tail(12)
+quantile_LV <- quantile(LV_equality_data$annual_income, weights = NULL, probs = seq(0, 1, 0.005), na.rm = FALSE, names = TRUE, type = 7) %>% tail(2)
 
-LV_equality_data <- LV_equality_data %>% mutate(income = Winsorize(LV_equality_data$annual_income, minval = 1, maxval = quantile_LV[11], probs = c(0.05, 0.95), na.rm = FALSE, type = 7), inc_log = log(income))
-
+LV_equality_data <- LV_equality_data %>% mutate(income = Winsorize(LV_equality_data$annual_income, minval = 1, maxval = quantile_LV[1], probs = c(0.05, 0.95), na.rm = FALSE, type = 7), inc_log = log(income))
 ```
 *Summary Statistics All Countries*
 
@@ -870,13 +866,16 @@ LV_test <- LV_equality_data %>% filter(train_index=="test")
 
 First, we chose to show the estimation results for Austria in 2011 with the synthetic data, in order to compare those results to the ones obtained prior.
 ```{r}
-AT_cf <- cforest(formula_2, AT_equality_data, na.action = na.pass, control = ctree_control(teststat = "quadratic", testtype = "Bonferroni", mincriterion = 0.99), ytrafo = NULL, scores = NULL, ntree = 500L, perturb = list(replace = T, fraction = 0.8))
+AT_cf <- cforest(formula_2, AT_equality_data, na.action = na.pass, control = ctree_control(teststat = "quadratic", testtype = "Bonferroni", mincriterion = 0.9), ytrafo = NULL, scores = NULL, ntree = 500L, perturb = list(replace = T, fraction = 0.8))
 
 AThat_cf <- predict(AT_cf, newdata = AT_test, OOB = TRUE, type = "response")
 
-varimp(AT_cf, mincriterion = 0, OOB = TRUE) 
 
-importance_cf <- data.frame(varimp(AT_cf, mincriterion = 0, OOB = TRUE))
+mean((AT_equality_data$inc_log - predict(AT_cf))^2) #MSE
+
+cor(predict(AT_cf, newdata=NULL),AT_equality_data$inc_log)^2 #R-sq
+
+importance_cf <- data.frame(varimp(AT_cf, mincriterion = 0, OOB = TRUE)) # Variable importance
 names(importance_cf) <- "importance"
 importance_cf$var_name = rownames(importance_cf)
 importance_cf <- importance_cf  %>% 
@@ -899,7 +898,8 @@ DESCRIBE RESULTS
 
 Next we repeat the procedure for the remaining countries:
 ```{r}
-FR_cf <- cforest(formula_2, FR_equality_data, na.action = na.pass, control = ctree_control(teststat = "quadratic", testtype = "Bonferroni", mincriterion = 0.99), ytrafo = NULL, scores = NULL, ntree = 500L, perturb = list(replace = T, fraction = 0.8))
+FR_cf <- cforest(formula_2, FR_equality_data, na.action = na.pass, control = ctree_control(teststat = "quadratic", testtype = "Bonferroni", mincriterion = 0.9), ytrafo = NULL, scores = NULL, ntree = 500L, perturb = list(replace = T, fraction = 0.8))
+
 importance_cf_FR <- data.frame(varimp(FR_cf, mincriterion = 0, OOB = TRUE))
 names(importance_cf_FR) <- "importance"
 importance_cf_FR$var_name = rownames(importance_cf_FR)
@@ -907,7 +907,7 @@ importance_cf_FR <- importance_cf_FR  %>% arrange(desc(importance)) %>% mutate(C
 ```
 
 ```{r}
- FI_cf <- cforest(formula_2, FI_equality_data, na.action = na.pass, control = ctree_control(teststat = "quadratic", testtype = "Bonferroni", mincriterion = 0.99), ytrafo = NULL, scores = NULL, ntree = 200L, perturb = list(replace = T, fraction = 0.8))
+ FI_cf <- cforest(formula_2, FI_equality_data, na.action = na.pass, control = ctree_control(teststat = "quadratic", testtype = "Bonferroni", mincriterion = 0.9), ytrafo = NULL, scores = NULL, ntree = 200L, perturb = list(replace = T, fraction = 0.8))
 # 
 importance_cf_FI <- data.frame(varimp(FI_cf, mincriterion = 0, OOB = TRUE))
 names(importance_cf_FI) <- "importance"
@@ -916,7 +916,7 @@ importance_cf_FI <- importance_cf_FI  %>% arrange(desc(importance)) %>% mutate(C
 ```
 
 ```{r}
- DK_cf <- cforest(formula_2, DK_equality_data, na.action = na.pass, control = ctree_control(teststat = "quadratic", testtype = "Bonferroni", mincriterion = 0.99), ytrafo = NULL, scores = NULL, ntree = 200L, perturb = list(replace = T, fraction = 0.8))
+ DK_cf <- cforest(formula_2, DK_equality_data, na.action = na.pass, control = ctree_control(teststat = "quadratic", testtype = "Bonferroni", mincriterion = 0.9), ytrafo = NULL, scores = NULL, ntree = 200L, perturb = list(replace = T, fraction = 0.8))
 # 
 importance_cf_DK <- data.frame(varimp(DK_cf, mincriterion = 0, OOB = TRUE))
 names(importance_cf_DK) <- "importance"
@@ -926,7 +926,7 @@ importance_cf_DK <- importance_cf_DK  %>% arrange(desc(importance)) %>% mutate(C
 
 
 ```{r}
-LV_cf <- cforest(formula_2, LV_equality_data, na.action = na.pass, control = ctree_control(teststat = "quadratic", testtype = "Bonferroni", mincriterion = 0.99), ytrafo = NULL, scores = NULL, ntree = 500L, perturb = list(replace = T, fraction = 0.8))
+LV_cf <- cforest(formula_2, LV_equality_data, na.action = na.pass, control = ctree_control(teststat = "quadratic", testtype = "Bonferroni", mincriterion = 0.9), ytrafo = NULL, scores = NULL, ntree = 500L, perturb = list(replace = T, fraction = 0.8))
 
 importance_cf_LV <- data.frame(varimp(LV_cf, mincriterion = 0, OOB = TRUE))
 names(importance_cf_LV) <- "importance"
@@ -953,7 +953,7 @@ ggplotly(dfvarimp)
 DESCRIBE PLOT
 
 # **Conclusion**
-
+In this paper we have shown and described the detailed process of estimating and predicting inequality of opportunity using conditional inference trees and forests. It was our focus, to point out the difficulties and restrictions encountered when working with microdata. Our outcome variable in the 2019 dataset did not reflect actual values and the whole 2011 dataset only contained synthetic data. Thus, we were not able to precisely replicate the work of -@brunori18. However, we have shown that it is possible to use ML techniques to estimate inequality of opportunity. The clear benefit of conditional inference trees is that they give us a glimpse into what the structure of inequality of opportunity might look like in a country. Our results are not confident of the performance quality of either ML application employed. Thus, we ultimately cannot confirm the sentiment, expressed by -@brunori18 that either application is a useful tool for presenting results on inequality of opportunity.
 # **References**
 
 ```{r echo=F, eval=F, message=F, include=F, error=F, warning=F}
