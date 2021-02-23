@@ -95,7 +95,7 @@ data19 <- data19 %>%  left_join(data19_h, by = "Hid")
 ```
 
 ### Data Wrangling
-The first step of our data wrangling part is to select the variables of interest. These are based upon the list of circumstances chosen in [@brunori18]. The circumstances include both characteristics describing the respondent and circumstances related to the intergenerational transmission of the respondent. Personal characteristics are: sex and country of birth. Intergenerational circumstances include: the presence of parents at home, the number of adults present at home (aged 18 and over), the number of working adults present and the number of children (under 18) present at home, all when the respondent was at age 14. Further intergenerational circumstances are the level of education of the respondents parents, their occupational status, main occupation and if they held a managerial position, their citizenship and the tenancy status. 
+The first step of our data wrangling part is to select the variables of interest. These are based upon the list of circumstances chosen in [@brunori18]. The circumstances include both characteristics describing the respondent and circumstances related to the intergenerational transmission of the respondent. Personal characteristics are: sex and country of birth. Intergenerational circumstances include: the presence of parents at home, the number of adults present at home (aged 18 and over), the number of working adults present and the number of children (under 18) present at home, all when the respondent was at age 14. Further inter-generational circumstances are the level of education of the respondents parents, their occupational status, main occupation and if they held a managerial position, their citizenship and the tenancy status. 
 
 As our outcome variable we use Total Disposable Household Income. Unfortunately the data provided by Statistik Austria does not contain original answers, but instead are aggregated following Eurostat standards. The applied income variable is net income, meaning post deductions of taxes and social insurance. In the Austria 2019 data set most negative incomes are replaced by 0 entries. However, the provided data is meant to be comparable with the officially publicized data by Statistik Austria.
 
@@ -150,6 +150,9 @@ data19 <- data19 %>%
          # -2 & -5 both recoded as NA
          mother_edu = ifelse(mother_edu == -5, NA, ifelse(mother_edu ==-2, NA, mother_edu)),
          # -2 & -5 both recoded as NA
+         father_occup = ifelse(father_occup == -5, NA, ifelse(father_occup == -2, NA, father_occup)),
+         # -5, -3 & -2 recoded as NA                       
+         mother_occup = ifelse(mother_occup == -5, NA, ifelse(mother_occup == -2, NA, mother_occup)),
          )
 ```
 
@@ -189,8 +192,8 @@ levels(data19$mother_cit) <- c("Austria", "Other")
 levels(data19$both_parents_present) <- c("both", "one", "none")
 levels(data19$father_manag) <- c("Yes", "No")
 levels(data19$mother_manag) <- c("Yes", "No")
-levels(data19$father_edu) <- c("Army", "Manager", "Professional", "Technician", "Clerical", "Service","Agri", "Craft", "Operator", "Elementary")
-levels(data19$mother_edu) <- c("Army", "Manager", "Professional", "Technician", "Clerical", "Service","Agri", "Craft", "Operator", "Elementary")
+levels(data19$father_occup) <- c("Unable","Army", "Manager", "Professional", "Technician", "Clerical", "Service","Agri", "Craft", "Operator", "Elementary")
+levels(data19$mother_occup) <- c("Unable", "Army", "Manager", "Professional", "Technician", "Clerical", "Service","Agri", "Craft", "Operator", "Elementary")
 ```
 Education, occupation and occupational status are not recoded. Occupations for example are coded according to the major groups in ISCO-08:
 1: Managers
@@ -319,7 +322,7 @@ adults +
 ```{r}
 set.seed(12345)
 
-formula = inc_log ~ sex + country_birth + father_cit + father_edu + father_occup_stat + father_occup + father_manag + mother_cit + mother_edu + mother_occup_stat + mother_occup + mother_manag + tenancy + children +  adults_working + both_parents_present
+formula = inc_log ~ sex + country_birth + father_cit + father_edu + father_occup_stat + father_occup + father_manag + mother_cit + mother_edu + mother_occup_stat + mother_occup + mother_manag + tenancy + children + adults_working + both_parents_present
 
 data19 <- data19 %>%
   mutate(train_index = sample(c("train", "test"), nrow(data19), replace=TRUE, prob=c(0.67, 0.33)))
@@ -338,7 +341,6 @@ caret_rpart <- train(formula, data = train, method = "rpart", trControl = fitCon
 
 caret_rpart
 ```
-
 ```{r}
 tree_caret_final <- caret_rpart$finalModel
 rpart.plot(tree_caret_final, box.palette="RdBu", nn=FALSE, type=2)
@@ -350,12 +352,15 @@ However, we only showcase this tree as a comparison to the *conditional inferenc
 
 The *conditional inference tree* algorithm as it is included in `party` and the `partykit` packages contains various points for adjustment of variable selection and stopping criteria. We use the default `ctree_control` function but see it necessary to explain what it does exactly and why we think that the specifications we have chosen are not distorting. We use the default teststatistic as we do not know neither the conditional expectation nor covariance of our circumstances. In such a case the default setting of `ctree_control(teststat = "quad")` is recommended [@Hoh]. The Austria 2019 data set has been mostly *cleaned* of missing values, however we still have many `NA` entries further on in the document. For reasons of uniformity, we chose to use the testtype `ctree_control(testtype = "Univariate")`. This approach uses simple P-Values. However, we also use the caret package for cross validation in addition to the default control function, since it is the one we had discussed in class and we used it for comparability of the results.
 ```{r}
-# For the Inference Tree to work, we must have all variables as numeric data
+#As a first step we grow an unrpuned tree
 
-Ctree <- ctree(formula, data = data19, control = ctree_control(testtype = "Univariate"), alpha = 0.05, maxdepth = 5) 
+Ctree <- ctree(formula, data = train, control = ctree_control(testtype = "Univariate")) 
+
 Ctree
 
-mean((data19$inc_log - predict(Ctree))^2) #MSE
+mean((train$inc_log - predict(Ctree))^2) #MSE
+
+cor(predict(Ctree, newdata=test),test$inc_log)^2 #R-sq
 
 plot(Ctree, type = "simple",gp = gpar(fontsize = 6),
   inner_panel=node_inner,
@@ -363,12 +368,11 @@ plot(Ctree, type = "simple",gp = gpar(fontsize = 6),
 
 exp(9.630)
 ```
-We obtain a deep tree with 10 inner nodes and 11 terminal nodes. In this estimate the citizenship of the father appears to be the first determining split. The predictive power of the model does not appear to be good, when we look at the errors indicated in the grey boxes. We obtain a MSE for the model of 0,52. As an example for reading the tree, we point at terminal node `8`, where we see that 422 observations are grouped together. Going down the tree from the initial split, we can tell that this group has a father with Austrian citizenship, employed, a mother with Austrian citizenship, and one parent present at home. The predicted outcome for income for this group, which accounts for 8% of the whole population sample, is EUR 44311,52. Going, down the other split to node `6` we find the largest group accounting for 58% of the whole sample. Here, the respondents are grouped together, where both or none of the parents were present, and there were at most 2 working adults present in the household. The predicted outcome for this group is EUR 49961,1.
+We obtain a deep tree with 11 inner nodes and 12 terminal nodes. In this estimate the citizenship of the father appears to be the first determining split. The predictive power of the model does not appear to be good, when we look at the errors indicated in the gray boxes. We obtain a MSE for the model of 0,45 and an $R^2$ of 0,026. As an example for reading the tree, we point at terminal node `4`, where we see that 2016 observations are grouped together. Going down the tree from the initial split, we can tell that this group has a father with Austrian citizenship, employed, a mother with variying levels of education. The predicted outcome for income for this group, which accounts for 64% of the whole training sample, is EUR 47762,69. Going, down the other split to node `6` we find a group accounting for 13% of the training sample. Here, the respondents are grouped together, where both parents were present. The predicted outcome for this group is EUR 55270,8.
 
 In the next step, we cross-validate use cross validation for our prediction using the `caret` package, thus we also use the split of data (`test`, `training`). In addition we apply the `ctree` package to see how good the model is at predicting the income of our `test` data.
 
 ```{r}
-### data = in data 2019 geändert von train!
 caret_ctree <- train(formula, data = train, method = "ctree", trControl = fitControl, na.action = na.pass)
 caret_ctree
 
@@ -378,7 +382,7 @@ plot(caret_ctree$finalModel, type = "simple")
 P_caret_ctree <- mean(predict(caret_ctree, newdata = test))
 exp(P_caret_ctree) #Which is the predicted average income - and its quite off the actual mean income.
 ```
-Above, we showcase the cross-validated tree obtained from the `caret` package. Hereby there is only one split, and the prediction for the whole population is just split into two groups. For whom the predicted income depends only on the citizenship of the father. The predicted incomes are EUR 47810.47 for node 2, and EUR 37421.47 for node 3.
+Above, we showcase the cross-validated tree obtained from the `caret` package. Hereby there is only one split, and the prediction for the whole population is just split into two groups. For whom the predicted income depends only on the citizenship of the father. The predicted incomes are EUR 47810,47 for node 2, and EUR 37421,47 for node 3.
 
 In the next, step we again use the `ctree_control` function instead of cross-validation, but we use the suggested `mincriterion` we obtained from cross-validation. 
 
@@ -389,12 +393,14 @@ caret_ctree_B
 
 mean((data19$inc_log - predict(caret_ctree_B))^2) #MSE
 
+cor(predict(caret_ctree_B, newdata=test),test$inc_log)^2 #R-sq
+
 plot(caret_ctree_B,gp = gpar(fontsize = 6),
   inner_panel=node_inner,
   ip_args=list(abbreviate = FALSE,id = FALSE), main = "Opportunity Conditional Inference Tree for Austria 2019 - Cross Validated")
 
 ```
-We plot the conditional inference tree using both the `caret` and the `party` package to compare the results. In the first we used the suggested `mincriterion = 0.99` obtained through cross validation. Here, we showcase a tree with 6 inner and 7 terminal nodes. Again, the first split is made based on the citizenship of the father of the respondents. We do not showcase the simplified tree, but instead show the distribution of the outcome variable, visible through the box-plots at the terminal nodes of the tree. Again, we obtain widely different results, for different groups in the population. Our MSE for this model is 0.50. As an example of a predicted outcome consider terminal node 13, where we have 946 observations grouped together. Here, respondents father does not have Austrian citizenship, and are likely to have larger families. However, all possible answers for family size or amount of children are grouped together in this node, which is likely why, the observations are so widely dispersed here. The predicted income for this node is EUR 36643.82. All, splits are chosen at a significance level of p < 0.001 which is also in line with the discplinary convention for hypothesis test [@brunori18, p. 9]. We obtain another large group in terminal node 4, where 3712 observations or 77% of all observations are grouped together. The citizenship of the mother, is the determining split variable, the among of variables it accounts for, already suggests that `mother_cit` could be a very important variable for determining income.
+We plot the conditional inference tree using both the `caret` and the `party` package to compare the results. In the first we used the suggested `mincriterion = 0.99` obtained through cross validation. Here, we showcase a tree with 6 inner and 7 terminal nodes. Again, the first split is made based on the citizenship of the father of the respondents. We do not showcase the simplified tree, but instead show the distribution of the outcome variable, visible through the box-plots at the terminal nodes of the tree. Again, we obtain widely different results, for different groups in the population. Our MSE for this model is 0.52 and the $R^2$ has increased to 0,07, which is still very low. As an example of a predicted outcome consider terminal node 13, where we have 946 observations grouped together. Here, respondents father does not have Austrian citizenship, and are likely to have larger families. However, all possible answers for family size or amount of children are grouped together in this node, which is likely why, the observations are so widely dispersed here. The predicted income for this node is EUR 36643.82. All, splits are chosen at a significance level of p < 0.001 which is also in line with the discplinary convention for hypothesis test [@brunori18, p. 9]. We obtain another large group in terminal node 4, where 3712 observations or 77% of all observations are grouped together. The citizenship of the mother, is the determining split variable, the among of variables it accounts for, already suggests that `mother_cit` could be a very important variable for determining income.
 
 ### Graphic representation of the tuning parameters
 
@@ -409,12 +415,18 @@ plot(caret_rpart)
 The procedure and application of _Conditional Inference Forests_ follows the application in [@brunori18, p. 10]
 As discussed the _conditional inference trees_ construct as outcome the counterfactual distribution of the income variable. However, _conditional inference trees_ only use limited information of the set of observed circumstances, since not all circumstances $C^p \in \hat{\Omega}$ are utilized. Furthermore, the predictions (the values of the opportunity sets) have high variance. _Conditional Inference Forests_ are able to deal with the shortcomings of _conditional inference trees_.
 The main difference between the forest and the tree approach is that in the forest each tree is estimated on a random subsample $b$ of the original data. Thus, in total $B$ trees are estimated. Furthermore, a random subset of circumstances is used at each splitting point. This guarantees that at some point all circumstances with any kind of informational value will be used as a splitting variable. Furthermore, averaging the result over $B$ predictions reduces the variance. The individual predictions are a function of $\alpha$ which stands for the significance level in charge of splits, $\bar{P}$ i.e. the number of circumstances to be considered, and $\bar{B}$ the number of subsamples. 
+
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 cf <- cforest(formula, train, na.action = na.pass, control = ctree_control(teststat = "quadratic", testtype = "Univariate", mincriterion = 0.99), ntree = 500L, perturb = list(replace = T, fraction = 0.8))
 
+
+class(cf)
 #We have a RMSE of 0, makes no sense at all!
 data19$hat_cf <- predict(cf, newdata = as.data.frame(data19), OOB = TRUE, type = "response")
-data19$RMSE <- sqrt(sum((data19$hat_cf - data19$inc_net_log)^2/nrow(data19), na.rm = T))   
+
+data19$pred_inc <- exp(data19$hat_cf)
+
+data19$RMSE <- sqrt(sum((data19$income - data19$pred_inc)^2/nrow(data19), na.rm = T))   
 head(data19$RMSE)
 
 varimp(cf, mincriterion = 0, OOB = TRUE) 
@@ -435,7 +447,7 @@ varimpo <- importance_cf %>% ggplot(aes(x = var_name, y = importance)) +
 
 ggplotly(varimpo)
 ```
-Both the _conditional inference tree_ and the _conditional inference forest_ analysis indicate that sex, is the most important determinant of an individuals income in Austria. We are surprised by this outcome, since [@brunori18] find that for Austria, the country of birth of the father is the variable determining the initial split of the tree. However, the variable is significantly more important than any other variable under consideration, and while it is arguably not a generationally transmittable characteristic, it is genetic, circumstantial, and completely out of the respondents control to influence. 
+Both the _conditional inference tree_ and the _conditional inference forest_ analysis indicate that the citizenship of either parent, is the most important determinant of an individuals income in Austria. This result is in line with the predicted results by [@brunori18]. We are puzzled by the fact, that some variables seem to have a negative effect on the mean decrease of SSR. However, over all our results, while not building any statistical confidence in our estimation approach, confirm the results discussed and point to citizenship origin as determining factors for opportunity in Austria.
 
 # **Cross Country Comparison: EU-SILC 2011**
 
