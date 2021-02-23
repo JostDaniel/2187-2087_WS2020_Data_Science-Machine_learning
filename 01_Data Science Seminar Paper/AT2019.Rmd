@@ -301,11 +301,12 @@ The algorithm of _conditional inference trees_ follows a step-wise procedure  of
 > $\implies$ We adjust the p-values for multiple hypothesis testing, such that $p_{adj.}^{C^p} = 1-(1-p^{Cp})^P$, which essentially means that we can use the so called *Bonferroni Correction*.
 > 2. **Choose feature:** test all the null hypotheses of independence between the individual outcome and each of all the observable circumstances (variables). The model selects a variable, $C^*$, with the lowest adjusted p-value. Essentially we choose such that $C^* = \{C^P : \text{argmin} ~ p_{adj.}^{C^p} \}$.
 >     i) no hypothesis can be rejected: stop $\implies$ If $p_{adj.}^{C^p} > \alpha$: Exit the algorithm. 
->     ii) one or more circumstance is siginificant: select the circumstance with the smallest p-value and proceed $\rightarrow$ If $p_{adj.}^{C^p} \leq \alpha$: Continue, and select $C^*$ as the splitting variable.\\
->   3. **Choose split:** for every possible way the selected circumstance can divide the sample into two subgroups, test the hypothesis of same mean outcome in the two resulting subgroups. Choose the splitting point with the smallest p-value. Technically, we test the discrepancy between the subsamples for each possible binary partition, _s_, based on $C^*$, meaning that $Y_s = \{Y_i : C^*_i < x^p \}$ and $Y_{-s} = \{Y_i : C^*_i \geq x^p \}$, and obtain a p-value associated with each test, $p^{C^*_s}$.\\
+>     ii) one or more circumstance is siginificant: select the circumstance with the smallest p-value and proceed $\rightarrow$ If $p_{adj.}^{C^p} \leq \alpha$: Continue, and select $C^*$ as the splitting variable.
+>   3. **Choose split:** for every possible way the selected circumstance can divide the sample into two subgroups, test the hypothesis of same mean outcome in the two resulting subgroups. Choose the splitting point with the smallest p-value. Technically, we test the discrepancy between the subsamples for each possible binary partition, _s_, based on $C^*$, meaning that $Y_s = \{Y_i : C^*_i < x^p \}$ and $Y_{-s} = \{Y_i : C^*_i \geq x^p \}$, and obtain a p-value associated with each test, $p^{C^*_s}$.
 
-> $\implies$ The the Split sample based on $C^*_s$, by choosing the split point s that yields the lowest p-value, which is $C^*_s = \{C^*_s : \text{argmin} ~ p^{C^*_s} \}$.\\
-> 4. **Repeat :)** \\
+> $\implies$ The the Split sample based on $C^*_s$, by choosing the split point s that yields the lowest p-value, which is $C^*_s = \{C^*_s : \text{argmin} ~ p^{C^*_s} \}$.
+
+>  4. **Repeat :)** 
 
 In the context of estimating inequality of opportunity conditional inference trees offer a particular structure. Namely each hypothesis is a test for whether equal opportunity exists within a group. If the tree results in no splits we cannot reject the null hypothesis of equality of opportunity. While the deeper the tree is grown, the more types are required to account for inequality of opportunity in the country under consideration. Each split (parent node) thus indicates that the opportunities of the two groups are significantly different, while we cannot say the same for the groups included in the leaf. nodes.
 
@@ -591,7 +592,7 @@ FR_equality_data[factor_f] <- lapply(FR_equality_data[factor_f], as.factor)
 
 quantile_FR <- quantile(FR_equality_data$annual_income, weights = NULL, probs = seq(0, 1, 0.005), na.rm = FALSE, names = TRUE, type = 7) %>% tail(12)
 
-FR_equality_data <- FR_equality_data %>% mutate(income = Winsorize(FR_equality_data$annual_income, minval = 1, maxval = quantile_AT[11], probs = c(0.05, 0.95), na.rm = FALSE, type = 7), inc_log = log(income))
+FR_equality_data <- FR_equality_data %>% mutate(income = Winsorize(FR_equality_data$annual_income, minval = 1, maxval = quantile_FR[11], probs = c(0.05, 0.95), na.rm = FALSE, type = 7), inc_log = log(income))
 
 # Denmark
 DK_personal_data <- read.csv(file.path(data_path, "DK_2011p_EUSILC.csv"))
@@ -631,7 +632,7 @@ DK_equality_data[factor_f] <- lapply(DK_equality_data[factor_f], as.factor)
 
 quantile_DK <- quantile(DK_equality_data$annual_income, weights = NULL, probs = seq(0, 1, 0.005), na.rm = FALSE, names = TRUE, type = 7) %>% tail(12)
 
-DK_equality_data <- DK_equality_data %>% mutate(income = Winsorize(DK_equality_data$annual_income, minval = 1, maxval = quantile_AT[11], probs = c(0.05, 0.95), na.rm = FALSE, type = 7), inc_log = log(income))
+DK_equality_data <- DK_equality_data %>% mutate(income = Winsorize(DK_equality_data$annual_income, minval = 1, maxval = quantile_DK[11], probs = c(0.05, 0.95), na.rm = FALSE, type = 7), inc_log = log(income))
 
 # Spain
 ES_personal_data <- read.csv(file.path(data_path, "ES_2011p_EUSILC.csv"))
@@ -670,7 +671,7 @@ ES_equality_data[factor_f] <- lapply(ES_equality_data[factor_f], as.factor)
 
 quantile_ES <- quantile(ES_equality_data$annual_income, weights = NULL, probs = seq(0, 1, 0.005), na.rm = FALSE, names = TRUE, type = 7) %>% tail(12)
 
-ES_equality_data <- ES_equality_data %>% mutate(income = Winsorize(ES_equality_data$annual_income, minval = 1, maxval = quantile_AT[11], probs = c(0.05, 0.95), na.rm = FALSE, type = 7), inc_log = log(income))
+ES_equality_data <- ES_equality_data %>% mutate(income = Winsorize(ES_equality_data$annual_income, minval = 1, maxval = quantile_ES[11], probs = c(0.05, 0.95), na.rm = FALSE, type = 7), inc_log = log(income))
 
 # Finland
 FI_personal_data <- read.csv(file.path(data_path, "FI_2011p_EUSILC.csv"))
@@ -709,7 +710,7 @@ FI_equality_data[factor_f] <- lapply(FI_equality_data[factor_f], as.factor)
 
 quantile_FI <- quantile(FI_equality_data$annual_income, weights = NULL, probs = seq(0, 1, 0.005), na.rm = FALSE, names = TRUE, type = 7) %>% tail(12)
 
-FI_equality_data <- FI_equality_data %>% mutate(income = Winsorize(FI_equality_data$annual_income, minval = 1, maxval = quantile_AT[11], probs = c(0.05, 0.95), na.rm = FALSE, type = 7), inc_log = log(income))
+FI_equality_data <- FI_equality_data %>% mutate(income = Winsorize(FI_equality_data$annual_income, minval = 1, maxval = quantile_FI[11], probs = c(0.05, 0.95), na.rm = FALSE, type = 7), inc_log = log(income))
 
 # Latvia
 LV_personal_data <- read.csv(file.path(data_path, "LV_2011p_EUSILC.csv"))
@@ -748,7 +749,7 @@ LV_equality_data[factor_f] <- lapply(LV_equality_data[factor_f], as.factor)
 
 quantile_LV <- quantile(LV_equality_data$annual_income, weights = NULL, probs = seq(0, 1, 0.005), na.rm = FALSE, names = TRUE, type = 7) %>% tail(12)
 
-LV_equality_data <- LV_equality_data %>% mutate(income = Winsorize(LV_equality_data$annual_income, minval = 1, maxval = quantile_AT[11], probs = c(0.05, 0.95), na.rm = FALSE, type = 7), inc_log = log(income))
+LV_equality_data <- LV_equality_data %>% mutate(income = Winsorize(LV_equality_data$annual_income, minval = 1, maxval = quantile_LV[11], probs = c(0.05, 0.95), na.rm = FALSE, type = 7), inc_log = log(income))
 
 ```
 *Summary Statistics All Countries*
@@ -780,6 +781,7 @@ Summary_Stat_all <- full_join(x = Summary_Stat_all, y= FI)
 #Summary_Stat_all <- full_join(x = Summary_Stat_all, y= IT)     
 Summary_Stat_all <- full_join(x = Summary_Stat_all, y= LV)     
 
+
 knitr::kable(Summary_Stat_all, caption = "Country Statistics")
 
 Summary_Stat_all$Country <- factor(Summary_Stat_all$Country,                                    
@@ -790,7 +792,7 @@ Summary_Stat_all %>%
   geom_col(mapping = aes(x = Country, y = Gini, fill=Country))  +
   theme_classic() +
   labs(title = "Comparision of the Gini Index across countries") +
-  scale_fill_manual(values = c("gray40", "gray40", "gray40", "red", "gray40", "gray40")) +
+  scale_fill_manual(values = c("gray40", "gray40", "gray40", "gray40", "red", "gray40")) +
   theme(legend.position="none") +
   geom_text(aes(x = Country, y = Gini, label=round(Gini, 3)), size = 6, color="white", vjust = 2)
 
@@ -798,23 +800,23 @@ Summary_Stat_all %>%
 
 ## Empirical Analysis
 
-### Regression Trees
-Following -@brunori18 and the standard procedure for CART we split the data into training and testing data by $2/3:1/3$.
-Furthermore, we chose to show the results obtained using regression trees obtained from the 'rpart' package. The training and test data sets will be continually used also for further analysis when we proceed with `ctree`.
-```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
+### Conditional Inference Forest
+Unfortunately the data is of very bad qualtiy, which is why we chose to showcase only the results obtained from the conditional inference forest for the variable importance comparison across countries. First, we split the data into training and test data, and define our formula for estimation.
+
+```{r}
 set.seed(78910)
 
-AT_equality_data <- AT_equality_data %>%
-  mutate(train_index = sample(c("train", "test"), nrow(AT_equality_data), replace=TRUE, prob=c(0.67, 0.33)))
+formula_2 <- inc_log ~ sex + parents_present + adults_home + children_home + father_cob + father_cit + mother_cob + mother_cit + father_edu + mother_edu + father_occup_stat + mother_occup_stat + father_occup + mother_occup + father_manag + mother_manag + tenancy
 
+
+AT_equality_data <- AT_equality_data %>%
+    mutate(train_index = sample(c("train", "test"), nrow(AT_equality_data), replace=TRUE, prob=c(0.67, 0.33)))
 AT_train <- AT_equality_data %>% filter(train_index=="train")
 AT_test <- AT_equality_data %>% filter(train_index=="test")
 
-formula <- inc_log ~ sex + parents_present + adults_home + children_home + father_cob + father_cit + mother_cob + mother_cit + father_edu + mother_edu + father_occup_stat + mother_occup_stat + father_occup + mother_occup + father_manag + mother_manag + tenancy
 ```
 
 ```{r echo=F, message=FALSE, error=FALSE, warning=FALSE}
-
 FR_equality_data <- FR_equality_data %>%
   mutate(train_index = sample(c("train", "test"), nrow(FR_equality_data), replace=TRUE, prob=c(0.67, 0.33)))
 
@@ -836,7 +838,6 @@ DK_equality_data <- DK_equality_data %>%
 
 DK_train <- DK_equality_data %>% filter(train_index=="train")
 DK_test <- DK_equality_data %>% filter(train_index=="test")
-
 ```
 
 ```{r}
@@ -855,6 +856,102 @@ LV_train <- LV_equality_data %>% filter(train_index=="train")
 LV_test <- LV_equality_data %>% filter(train_index=="test")
 ```
 
+First, we chose to show the estimation results for Austria in 2011 with the synthetic data, in order to compare those results to the ones obtained prior.
+```{r}
+AT_cf <- cforest(formula, AT_equality_data, na.action = na.pass, control = ctree_control(teststat = "quadratic", testtype = "Univariate", mincriterion = 0.99), ytrafo = NULL, scores = NULL, ntree = 500L, perturb = list(replace = FALSE, fraction = 0.8))
+
+AThat_cf <- predict(AT_cf, newdata = AT_test, OOB = TRUE, type = "response")
+
+varimp(AT_cf, mincriterion = 0, OOB = TRUE) 
+
+importance_cf <- data.frame(varimp(AT_cf, mincriterion = 0, OOB = TRUE))
+names(importance_cf) <- "importance"
+importance_cf$var_name = rownames(importance_cf)
+importance_cf <- importance_cf  %>% 
+  arrange( desc(importance))  %>%
+  mutate(Country = "AT")
+```
+
+```{r}
+varimpo2 <- ggplot(importance_cf, aes(x = var_name, y = importance)) +
+  geom_pointrange(shape = 21, colour = "black", fill = "white", size = 3, stroke = 1, aes(ymin = 0, ymax = importance)) +
+    scale_x_discrete(limits = importance_cf$var_name[order(importance_cf$importance)]) +
+    labs(title = "Conditional Forest variable importance - Austria 2011", x = "", y = "Mean decrease in sum of squared residuals") +
+    coord_flip() +
+    theme_light() +
+    theme(axis.line = element_blank(), panel.border = element_blank(), panel.grid.major.y=element_blank())
+
+ggplotly(varimpo2)
+```
+DESCRIBE RESULTS
+
+Next we repeat the procedure for the remaining countries:
+```{r}
+FR_cf <- cforest(formula, FR_equality_data, na.action = na.pass, control = ctree_control(teststat = "quadratic", testtype = "Univariate", mincriterion = 0.99), ytrafo = NULL, scores = NULL, ntree = 500L, perturb = list(replace = FALSE, fraction = 0.8))
+importance_cf_FR <- data.frame(varimp(FR_cf, mincriterion = 0, OOB = TRUE))
+names(importance_cf_FR) <- "importance"
+importance_cf_FR$var_name = rownames(importance_cf_FR)
+importance_cf_FR <- importance_cf_FR  %>% arrange(desc(importance)) %>% mutate(Country = "FR")
+```
+
+```{r}
+ FI_cf <- cforest(formula, FI_equality_data, na.action = na.pass, control = ctree_control(teststat = "quadratic", testtype = "Univariate", mincriterion = 0.99), ytrafo = NULL, scores = NULL, ntree = 200L, perturb = list(replace = FALSE, fraction = 0.8))
+# 
+importance_cf_FI <- data.frame(varimp(FI_cf, mincriterion = 0, OOB = TRUE))
+names(importance_cf_FI) <- "importance"
+importance_cf_FI$var_name = rownames(importance_cf_FI)
+importance_cf_FI <- importance_cf_FI  %>% arrange(desc(importance)) %>% mutate(Country = "FI")
+```
+
+```{r}
+ DK_cf <- cforest(formula, DK_equality_data, na.action = na.pass, control = ctree_control(teststat = "quadratic", testtype = "Univariate", mincriterion = 0.99), ytrafo = NULL, scores = NULL, ntree = 200L, perturb = list(replace = FALSE, fraction = 0.8))
+# 
+importance_cf_DK <- data.frame(varimp(DK_cf, mincriterion = 0, OOB = TRUE))
+names(importance_cf_DK) <- "importance"
+importance_cf_DK$var_name = rownames(importance_cf_DK)
+importance_cf_DK <- importance_cf_DK  %>% arrange(desc(importance)) %>% mutate(Country = "DK")
+```
+
+
+```{r}
+LV_cf <- cforest(formula, LV_equality_data, na.action = na.pass, control = ctree_control(teststat = "quadratic", testtype = "Bonferroni", mincriterion = 0.99), ytrafo = NULL, scores = NULL, ntree = 500L, perturb = list(replace = FALSE, fraction = 0.8))
+
+importance_cf_LV <- data.frame(varimp(LV_cf, mincriterion = 0, OOB = TRUE))
+names(importance_cf_LV) <- "importance"
+importance_cf_LV$var_name = rownames(importance_cf_LV)
+importance_cf_LV <- importance_cf_LV  %>% arrange(desc(importance)) %>% mutate(Country = "LV")
+```
+
+**Variable Importance Countries**
+```{r}
+
+df <- full_join(importance_cf, importance_cf_FR)
+df <- full_join(df, importance_cf_FI)
+df <- full_join(df, importance_cf_DK)
+df <- full_join(df, importance_cf_LV) %>% group_by(Country)
+
+dfvarimp <- ggplot(df, aes(x = var_name , y = importance, shape = Country, color=Country)) +
+    geom_point() +
+    scale_x_discrete(limits = importance_cf$var_name[order(importance_cf$importance)]) +
+    labs(title = "Conditional Forest variable importance - Country Comparison", x = "", y = "Variable importance") +theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+ggplotly(dfvarimp)
+
+```
+DESCRIBE PLOT
+
+# **Conclusion**
+
+# **References**
+
+```{r echo=F, eval=F, message=F, include=F, error=F, warning=F}
+#NOT SHOWN IN HTML
+
+library(beepr)
+beep(8)        # playing a sound so you know when it's done
+```
+
+# **Appendix**
 ### Conditional Inference Trees
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 AT_Ctree <- ctree(formula, data = AT_train, alpha = 0.05, maxdepth = 5)
@@ -892,20 +989,6 @@ plot(AT_ctree2, type = "simple",gp = gpar(fontsize = 6),
   ip_args=list(abbreviate = FALSE,id = FALSE), main = "Opportunity Conditional Inference Tree for Austria 2011 - Cross Validated with Ctree")
 ```
 
-```{r}
-#AT_test$P_AtCt <- predict(AT_ctree2, newdata = as.data.frame(AT_test))
-
-#AT_test$perror <- (AT_test$P_AtCt - AT_test$inc_log)^2
-
-#AT_test$RMSE <- sqrt(sum((AT_test$P_AtCt - AT_test$inc_log)^2/nrow(AT_test), na.rm = T))
-
-#head(AT_test$RMSE)
-# For Austria we have a RMSE of 1.02, which is not very good. But is most likely attributed to the synthetic data. 
-
-# Plot the Errors somehow
-```
-
-
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 FR_Ctree <- ctree(formula, data = FR_train)
 FR_Ctree
@@ -924,86 +1007,6 @@ FR_cct <- ctree(formula, data = FR_train, mincriterion = 0.99) #Using the sugges
 plot(FR_cct, type = "simple",gp = gpar(fontsize = 8),
   inner_panel=node_inner,
   ip_args=list(abbreviate = FALSE,id = FALSE), main = "Opportunity Conditional Inference Tree for France 2011 - Cross Validated")
-
-```
-
-```{r}
-#FR_test$P_FRCt <- predict(FR_cct, newdata = as.data.frame(FR_test))
-
-#FR_test$perror <- (FR_test$P_FRCt - FR_test$inc_log)^2
-
-#FR_test$RMSE <- sqrt(sum((FR_test$P_FRCt - FR_test$inc_log)^2/nrow(FR_test), na.rm = T))
-
-#head(FR_test$RMSE)
-# RMSE 0.86
-```
-
-```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
-# ES_Ctree <- ctree(formula, data = ES_train)
-# ES_Ctree
-# 
-# plot(ES_Ctree, type = "simple",gp = gpar(fontsize = 6),
-#   inner_panel=node_inner,
-#   ip_args=list(abbreviate = FALSE,id = FALSE), main = "Conditional Inference Tree for Spain 2011")
-# 
-# ES_cctree <- train(formula, data = ES_train, method = "ctree", trControl = fitControl, na.action = na.omit) #The spanish synthetic dataset has many NA`s, the output of the tree is unreliable as we don't have information on the errors
-# 
-# ES_cctree #This is the suggested tree we get from applying Caret
-# 
-# 
-# ES_cct <- ctree(formula, data = ES_train, mincriterion = 0.99) #Using the suggestion we generate a Conditional Inference Tree and plot it as our final result
-# 
-# plot(ES_cct, type = "simple",gp = gpar(fontsize = 8),
-#   inner_panel=node_inner,
-#   ip_args=list(abbreviate = FALSE,id = FALSE), main = "Opportunity Conditional Inference Tree for Spain 2011 - Cross Validated")
-```
-
-```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
-# IT_Ctree <- ctree(formula, data = IT_train, control = ctree_control())
-# IT_Ctree
-# 
-# plot(IT_Ctree,gp = gpar(fontsize = 6),
-#   inner_panel=node_inner,
-#   ip_args=list(abbreviate = FALSE,id = FALSE), main = "Conditional Inference Tree for Italy 2011")
-# 
-# 
-# IT_cctree <- train(formula, data = IT_train, method = "ctree", trControl = fitControl, na.action = na.pass)
-# 
-# IT_cctree #suggests using mincriterion 0.99
-# plot(IT_cctree$finalModel)
-# 
-# #plotted as ctree
-# IT_cct <- ctree(formula, data = IT_train, mincriterion = 0.99)
-# 
-# plot(IT_cct,gp = gpar(fontsize = 8),
-#   inner_panel=node_inner,
-#   ip_args=list(abbreviate = FALSE,id = FALSE), main = "Opportunity Conditional Inference Tree for Italy 2011 - Cross Validated")
-
-
-#In Italy we have too many NAs among the circumstantial 
-```
-
-```{r}
-# IT_test$P_Ct <- predict(IT_cct, newdata = as.data.frame(IT_test))
-# 
-# IT_test$perror <- (IT_test$P_Ct - IT_test$log_income)^2
-# 
-# IT_test$RMSE <- sqrt(sum((IT_test$P_Ct - IT_test$log_income)^2/nrow(IT_test), na.rm = T))
-```
-
-```{r}
-# The Denmark set has too many missing values, we cannot evaluate it with the given variables
-
-# DK_cctree <- train(formula, data = DK_train, method = "ctree", trControl = fitControl, na.action = na.omit)
-# 
-# DK_cctree
-
-```
-```{r}
-# The Finland set has too many missing values
-# FI_cctree <- train(formula, data = FI_train, method = "ctree", trControl = fitControl, na.action = na.omit)
-# 
-# FI_cctree
 
 ```
 
@@ -1031,125 +1034,6 @@ plot(LV_cct,gp = gpar(fontsize = 8),
   ip_args=list(abbreviate = FALSE,id = FALSE), main = "Conditional Inference Tree for Latvia 2011 - Cross Validated")
 ```
 
-```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
-#LV_test$P_Ct <- predict(LV_cct, newdata = as.data.frame(LV_test))
-
-#LV_test$perror <- (LV_test$P_Ct - LV_test$log_income)^2
-
-#LV_test$RMSE <- sqrt(sum((LV_test$P_Ct - LV_test$log_income)^2/nrow(LV_test), na.rm = T))
-
-#RMSE of 1.4 which is not so good, and does not speak of good predictive capabilities of the model
-```
-
-### Conditional Inference Forest
-```{r}
-AT_cf <- cforest(formula, AT_equality_data, na.action = na.pass, control = ctree_control(teststat = "quadratic", testtype = "Univariate", mincriterion = 0.99), ytrafo = NULL, scores = NULL, ntree = 500L, perturb = list(replace = FALSE, fraction = 0.8))
-
-AThat_cf <- predict(AT_cf, newdata = AT_test, OOB = TRUE, type = "response")
-
-varimp(AT_cf, mincriterion = 0, OOB = TRUE) 
-
-importance_cf <- data.frame(varimp(AT_cf, mincriterion = 0, OOB = TRUE))
-names(importance_cf) <- "importance"
-importance_cf$var_name = rownames(importance_cf)
-importance_cf <- importance_cf  %>% 
-  arrange( desc(importance))  %>%
-  mutate(Country = "AT")
-
-```
-
-```{r}
-varimpo2 <- ggplot(importance_cf, aes(x = var_name, y = importance)) +
-  geom_pointrange(shape = 21, colour = "black", fill = "white", size = 3, stroke = 1, aes(ymin = 0, ymax = importance)) +
-    scale_x_discrete(limits = importance_cf$var_name[order(importance_cf$importance)]) +
-    labs(title = "Conditional Forest variable importance - Austria 2011", x = "", y = "Mean decrease in sum of squared residuals") +
-    coord_flip() +
-    theme_light() +
-    theme(axis.line = element_blank(), panel.border = element_blank(), panel.grid.major.y=element_blank())
-
-ggplotly(varimpo2)
-```
-
-```{r}
-FR_cf <- cforest(formula, FR_equality_data, na.action = na.pass, control = ctree_control(teststat = "quadratic", testtype = "Univariate", mincriterion = 0.99), ytrafo = NULL, scores = NULL, ntree = 500L, perturb = list(replace = FALSE, fraction = 0.8))
-importance_cf_FR <- data.frame(varimp(FR_cf, mincriterion = 0, OOB = TRUE))
-names(importance_cf_FR) <- "importance"
-importance_cf_FR$var_name = rownames(importance_cf_FR)
-importance_cf_FR <- importance_cf_FR  %>% arrange(desc(importance)) %>% mutate(Country = "FR")
-```
-
-```{r}
- FI_cf <- cforest(formula, FI_equality_data, na.action = na.pass, control = ctree_control(teststat = "quadratic", testtype = "Univariate", mincriterion = 0.99), ytrafo = NULL, scores = NULL, ntree = 200L, perturb = list(replace = FALSE, fraction = 0.8))
-# 
-importance_cf_FI <- data.frame(varimp(FI_cf, mincriterion = 0, OOB = TRUE))
-names(importance_cf_FI) <- "importance"
-importance_cf_FI$var_name = rownames(importance_cf_FI)
-importance_cf_FI <- importance_cf_FI  %>% arrange(desc(importance)) %>% mutate(Country = "FI")
-```
-
-```{r}
- DK_cf <- cforest(formula, DK_equality_data, na.action = na.pass, control = ctree_control(teststat = "quadratic", testtype = "Univariate", mincriterion = 0.99), ytrafo = NULL, scores = NULL, ntree = 200L, perturb = list(replace = FALSE, fraction = 0.8))
-# 
-importance_cf_DK <- data.frame(varimp(DK_cf, mincriterion = 0, OOB = TRUE))
-names(importance_cf_DK) <- "importance"
-importance_cf_DK$var_name = rownames(importance_cf_DK)
-importance_cf_DK <- importance_cf_DK  %>% arrange(desc(importance)) %>% mutate(Country = "DK")
-```
-
-
-```{r}
-LV_cf <- cforest(formula, LV_equality_data, na.action = na.pass, control = ctree_control(teststat = "quadratic", testtype = "Bonferroni", mincriterion = 0.99), ytrafo = NULL, scores = NULL, ntree = 500L, perturb = list(replace = FALSE, fraction = 0.8))
-
-importance_cf_LV <- data.frame(varimp(LV_cf, mincriterion = 0, OOB = TRUE))
-names(importance_cf_LV) <- "importance"
-importance_cf_LV$var_name = rownames(importance_cf_LV)
-importance_cf_LV <- importance_cf_LV  %>% arrange(desc(importance)) %>% mutate(Country = "LV")
-```
-
-
-* Variable Importance Countries*
-```{r}
-
-df <- full_join(importance_cf, importance_cf_FR)
-df <- full_join(df, importance_cf_FI)
-df <- full_join(df, importance_cf_DK)
-df <- full_join(df, importance_cf_LV) %>% group_by(Country)
-
-dfvarimp <- ggplot(df, aes(x = var_name , y = importance, shape = Country, color=Country)) +
-    geom_point() +
-    scale_x_discrete(limits = importance_cf$var_name[order(importance_cf$importance)]) +
-    labs(title = "Conditional Forest variable importance - Country Comparison", x = "", y = "Variable importance") +theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
-
-ggplotly(dfvarimp)
-
-```
-
-```{r}
-# varimpo3 <- ggplot(importance_cf_FR, aes(x = var_name, y = importance)) +
-#   geom_pointrange(shape = 21, colour = "black", fill = "white", size = 3, stroke = 1, aes(ymin = 0, ymax = importance)) +
-#     scale_x_discrete(limits = importance_cf_FR$var_name[order(importance_cf_FR$importance)]) +
-#     labs(title = "Conditional Forest variable importance - France 2011", x = "", y = "Mean decrease in sum of squared residuals") +
-#     coord_flip() +
-#     theme_light() +
-#     theme(axis.line = element_blank(), panel.border = element_blank(), panel.grid.major.y=element_blank())
-# 
-# ggplotly(varimpo3)
-```
-
-
-```{r}
-# varimpo4 <- ggplot(importance_cf_LV, aes(x = var_name, y = importance)) +
-#   geom_pointrange(shape = 21, colour = "black", fill = "white", size = 3, stroke = 1, aes(ymin = 0, ymax = importance)) +
-#     scale_x_discrete(limits = importance_cf_LV$var_name[order(importance_cf_LV$importance)]) +
-#     labs(title = "Conditional Forest variable importance - Latvia 2011", x = "", y = "Mean decrease in sum of squared residuals") +
-#     coord_flip() +
-#     theme_light() +
-#     theme(axis.line = element_blank(), panel.border = element_blank(), panel.grid.major.y=element_blank())
-# 
-# ggplotly(varimpo4)
-```
-
-
 How long did it take to knit the document:
 ```{r}
 end <- Sys.time()
@@ -1157,13 +1041,5 @@ end-start
 ```
 
 
-# **Conclusion**
 
-# **References**
 
-```{r echo=F, eval=F, message=F, include=F, error=F, warning=F}
-#NOT SHOWN IN HTML
-
-library(beepr)
-beep(8)        # playing a sound so you know when it's done
-```
