@@ -384,7 +384,24 @@ In the next, step we again use the `ctree_control` function instead of cross-val
 
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
 
-caret_ctree_B <- ctree(formula, data = data19, control = ctree_control(testtype = "Univariate", alpha = 0.05, mincriterion = 0.99)) 
+caret_ctree_U <- ctree(formula, data = data19, control = ctree_control(testtype = "Univariate", alpha = 0.05, mincriterion = 0.99)) 
+caret_ctree_U
+
+mean((data19$inc_log - predict(caret_ctree_U))^2) #MSE
+
+cor(predict(caret_ctree_U, newdata=test),test$inc_log)^2 #R-sq
+
+plot(caret_ctree_U,gp = gpar(fontsize = 6),
+  inner_panel=node_inner,
+  ip_args=list(abbreviate = FALSE,id = FALSE), main = "Opportunity Conditional Inference Tree for Austria 2019 - Cross Validated")
+
+```
+We plot the conditional inference tree using both the `caret` and the `party` package to compare the results. In the first we used the suggested `mincriterion = 0.99` obtained through cross validation. Here, we showcase a tree with 6 inner and 7 terminal nodes. Again, the first split is made based on the citizenship of the father of the respondents. We do not showcase the simplified tree, but instead show the distribution of the outcome variable, visible through the box-plots at the terminal nodes of the tree. Again, we obtain widely different results, for different groups in the population. Our MSE for this model is 0.52 and the $R^2$ has increased to 0,07, which is still very low. As an example of a predicted outcome consider terminal node 13, where we have 946 observations grouped together. Here, respondents father does not have Austrian citizenship, and are likely to have larger families. However, all possible answers for family size or amount of children are grouped together in this node, which is likely why, the observations are so widely dispersed here. The predicted income for this node is EUR 36643.82. All, splits are chosen at a significance level of p < 0.001 which is also in line with the disciplinary convention for hypothesis tests [@brunori18, p. 9]. We obtain another large group in terminal node 4, where 3712 observations or 77% of all observations are grouped together. The citizenship of the mother, is the determining split variable, the among of variables it accounts for, already suggests that `mother_cit` could be a very important variable for determining income.
+
+Following the descprition by @brunori18, we change the testtype criterion to "Bonferroni" as it lets us avoid the problems of tree-pruning. The Bonferroni correction also helps with the bias-variance trade-off as it is a test criterion, that considers it before each additional split. 
+
+```{r}
+caret_ctree_B <- ctree(formula, data = data19, control = ctree_control(testtype = "Bonferroni", alpha = 0.05)) 
 caret_ctree_B
 
 mean((data19$inc_log - predict(caret_ctree_B))^2) #MSE
@@ -393,10 +410,9 @@ cor(predict(caret_ctree_B, newdata=test),test$inc_log)^2 #R-sq
 
 plot(caret_ctree_B,gp = gpar(fontsize = 6),
   inner_panel=node_inner,
-  ip_args=list(abbreviate = FALSE,id = FALSE), main = "Opportunity Conditional Inference Tree for Austria 2019 - Cross Validated")
-
+  ip_args=list(abbreviate = FALSE,id = FALSE), main = "Opportunity Conditional Inference Tree for Austria 2019 - Bonferroni")
 ```
-We plot the conditional inference tree using both the `caret` and the `party` package to compare the results. In the first we used the suggested `mincriterion = 0.99` obtained through cross validation. Here, we showcase a tree with 6 inner and 7 terminal nodes. Again, the first split is made based on the citizenship of the father of the respondents. We do not showcase the simplified tree, but instead show the distribution of the outcome variable, visible through the box-plots at the terminal nodes of the tree. Again, we obtain widely different results, for different groups in the population. Our MSE for this model is 0.52 and the $R^2$ has increased to 0,07, which is still very low. As an example of a predicted outcome consider terminal node 13, where we have 946 observations grouped together. Here, respondents father does not have Austrian citizenship, and are likely to have larger families. However, all possible answers for family size or amount of children are grouped together in this node, which is likely why, the observations are so widely dispersed here. The predicted income for this node is EUR 36643.82. All, splits are chosen at a significance level of p < 0.001 which is also in line with the disciplinary convention for hypothesis tests [@brunori18, p. 9]. We obtain another large group in terminal node 4, where 3712 observations or 77% of all observations are grouped together. The citizenship of the mother, is the determining split variable, the among of variables it accounts for, already suggests that `mother_cit` could be a very important variable for determining income.
+We obtain a tree with 5 inner and 6 terminal nodes. This tree has a MSE of 0,52 and $R^2$ of 0,05. Meaning this tree is also rather bad at predicting income based on circumstances, but better than the trees we have estimated prior. A large share of our observations are grouped together into the two outer nodes, which also suggests that there is quite a lot of in-group variation - this is also confirmed by the errors. Further this suggests to us, that the conditional inference trees perform rather poorly in predicting incomes. However, we have no model to compare our results to.
 
 ### Graphic representation of the tuning parameters
 
@@ -854,7 +870,7 @@ LV_test <- LV_equality_data %>% filter(train_index=="test")
 
 First, we chose to show the estimation results for Austria in 2011 with the synthetic data, in order to compare those results to the ones obtained prior.
 ```{r}
-AT_cf <- cforest(formula_2, AT_equality_data, na.action = na.pass, control = ctree_control(teststat = "quadratic", testtype = "Univariate", mincriterion = 0.99), ytrafo = NULL, scores = NULL, ntree = 500L, perturb = list(replace = FALSE, fraction = 0.8))
+AT_cf <- cforest(formula_2, AT_equality_data, na.action = na.pass, control = ctree_control(teststat = "quadratic", testtype = "Bonferroni", mincriterion = 0.99), ytrafo = NULL, scores = NULL, ntree = 500L, perturb = list(replace = T, fraction = 0.8))
 
 AThat_cf <- predict(AT_cf, newdata = AT_test, OOB = TRUE, type = "response")
 
@@ -883,7 +899,7 @@ DESCRIBE RESULTS
 
 Next we repeat the procedure for the remaining countries:
 ```{r}
-FR_cf <- cforest(formula_2, FR_equality_data, na.action = na.pass, control = ctree_control(teststat = "quadratic", testtype = "Univariate", mincriterion = 0.99), ytrafo = NULL, scores = NULL, ntree = 500L, perturb = list(replace = FALSE, fraction = 0.8))
+FR_cf <- cforest(formula_2, FR_equality_data, na.action = na.pass, control = ctree_control(teststat = "quadratic", testtype = "Bonferroni", mincriterion = 0.99), ytrafo = NULL, scores = NULL, ntree = 500L, perturb = list(replace = T, fraction = 0.8))
 importance_cf_FR <- data.frame(varimp(FR_cf, mincriterion = 0, OOB = TRUE))
 names(importance_cf_FR) <- "importance"
 importance_cf_FR$var_name = rownames(importance_cf_FR)
@@ -891,7 +907,7 @@ importance_cf_FR <- importance_cf_FR  %>% arrange(desc(importance)) %>% mutate(C
 ```
 
 ```{r}
- FI_cf <- cforest(formula_2, FI_equality_data, na.action = na.pass, control = ctree_control(teststat = "quadratic", testtype = "Univariate", mincriterion = 0.99), ytrafo = NULL, scores = NULL, ntree = 200L, perturb = list(replace = FALSE, fraction = 0.8))
+ FI_cf <- cforest(formula_2, FI_equality_data, na.action = na.pass, control = ctree_control(teststat = "quadratic", testtype = "Bonferroni", mincriterion = 0.99), ytrafo = NULL, scores = NULL, ntree = 200L, perturb = list(replace = T, fraction = 0.8))
 # 
 importance_cf_FI <- data.frame(varimp(FI_cf, mincriterion = 0, OOB = TRUE))
 names(importance_cf_FI) <- "importance"
@@ -900,7 +916,7 @@ importance_cf_FI <- importance_cf_FI  %>% arrange(desc(importance)) %>% mutate(C
 ```
 
 ```{r}
- DK_cf <- cforest(formula_2, DK_equality_data, na.action = na.pass, control = ctree_control(teststat = "quadratic", testtype = "Univariate", mincriterion = 0.99), ytrafo = NULL, scores = NULL, ntree = 200L, perturb = list(replace = FALSE, fraction = 0.8))
+ DK_cf <- cforest(formula_2, DK_equality_data, na.action = na.pass, control = ctree_control(teststat = "quadratic", testtype = "Bonferroni", mincriterion = 0.99), ytrafo = NULL, scores = NULL, ntree = 200L, perturb = list(replace = T, fraction = 0.8))
 # 
 importance_cf_DK <- data.frame(varimp(DK_cf, mincriterion = 0, OOB = TRUE))
 names(importance_cf_DK) <- "importance"
@@ -910,7 +926,7 @@ importance_cf_DK <- importance_cf_DK  %>% arrange(desc(importance)) %>% mutate(C
 
 
 ```{r}
-LV_cf <- cforest(formula_2, LV_equality_data, na.action = na.pass, control = ctree_control(teststat = "quadratic", testtype = "Bonferroni", mincriterion = 0.99), ytrafo = NULL, scores = NULL, ntree = 500L, perturb = list(replace = FALSE, fraction = 0.8))
+LV_cf <- cforest(formula_2, LV_equality_data, na.action = na.pass, control = ctree_control(teststat = "quadratic", testtype = "Bonferroni", mincriterion = 0.99), ytrafo = NULL, scores = NULL, ntree = 500L, perturb = list(replace = T, fraction = 0.8))
 
 importance_cf_LV <- data.frame(varimp(LV_cf, mincriterion = 0, OOB = TRUE))
 names(importance_cf_LV) <- "importance"
@@ -958,26 +974,8 @@ plot(AT_Ctree, type = "simple", gp = gpar(fontsize = 6),
   ip_args=list(abbreviate = FALSE,id = FALSE), main = "Conditional Inference Tree for Austria 2011")
 
 ```
-
-### Cross Validation using the Caret package
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
-fitControl <- trainControl(method = "repeatedcv", number = 10, repeats = 10, savePredictions = T)
-```
-
-```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
-AT_cctree1 <- train(formula_2, data = AT_train, method = "ctree", trControl = fitControl, na.action = na.pass)
-
-AT_cctree1 #This is the suggested tree we get from applying Caret
-
-
-AT_cct <- ctree(formula_2, data = AT_train, mincriterion = 0.99) #Using the suggestion we generate a Conditional Inference Tree and plot it as our final result
-
-plot(AT_cct,gp = gpar(fontsize = 8),
-  inner_panel=node_inner,
-  ip_args=list(abbreviate = FALSE,id = FALSE), main = "Opportunity Conditional Inference Tree for Austria 2011 - Cross Validated with Caret")
-
-
-AT_ctree2 <- ctree(formula_2, data = AT_train, control = ctree_control(testtype = "Univariate", mincriterion = 0.99, maxdepth = 5)) 
+AT_ctree2 <- ctree(formula_2, data = AT_train, control = ctree_control(testtype = "Bonferroni", mincriterion = 0.99, maxdepth = 5)) 
 AT_ctree2
 
 plot(AT_ctree2, type = "simple",gp = gpar(fontsize = 6),
@@ -986,46 +984,19 @@ plot(AT_ctree2, type = "simple",gp = gpar(fontsize = 6),
 ```
 
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
-FR_Ctree <- ctree(formula_2, data = FR_train)
-FR_Ctree
+FR_ct <- ctree(formula_2, data = FR_train, control = ctree_control(testtype = "Bonferroni", mincriterion = 0.99, maxdepth = 5)) #Using the suggestion we generate a Conditional Inference Tree and plot it as our final result
 
-plot(FR_Ctree, type = "simple",gp = gpar(fontsize = 6),
-  inner_panel=node_inner,
-  ip_args=list(abbreviate = FALSE,id = FALSE), main = "Conditional Inference Tree for France 2011")
-
-FR_cctree <- train(formula_2, data = FR_train, method = "ctree", trControl = fitControl, na.action = na.pass)
-
-FR_cctree #This is the suggested tree we get from applying Caret
-
-
-FR_cct <- ctree(formula_2, data = FR_train, mincriterion = 0.99) #Using the suggestion we generate a Conditional Inference Tree and plot it as our final result
-
-plot(FR_cct, type = "simple",gp = gpar(fontsize = 8),
+plot(FR_ct, type = "simple",gp = gpar(fontsize = 8),
   inner_panel=node_inner,
   ip_args=list(abbreviate = FALSE,id = FALSE), main = "Opportunity Conditional Inference Tree for France 2011 - Cross Validated")
 
 ```
-
-```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
-LV_Ctree <- ctree(formula_2, data = LV_train)
-LV_Ctree
-
-plot(LV_Ctree, type = "simple", gp = gpar(fontsize = 8),
-  inner_panel=node_inner,
-  ip_args=list(abbreviate = FALSE,id = FALSE), main = "Conditional Inference Tree for Latvia 2011")
-```
-
-```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
-LV_cctree <- train(formula_2, data = LV_train, method = "ctree", trControl = fitControl, na.action = na.pass)
-LV_cctree #again we choose Mincriterion 0.99 based on the RMSE
-
-plot(LV_cctree$finalModel)
-
+```{r}
 # we do the control step using the default ctree_control function
-LV_cct <- ctree(formula_2, data = LV_train, control = ctree_control(testtype = "Bonferroni", mincriterion = 0.99))
+LV_ct <- ctree(formula_2, data = LV_train, control = ctree_control(testtype = "Bonferroni", mincriterion = 0.99))
 
 
-plot(LV_cct,gp = gpar(fontsize = 8),
+plot(LV_ct, type = "simple", gp = gpar(fontsize = 8),
   inner_panel=node_inner,
   ip_args=list(abbreviate = FALSE,id = FALSE), main = "Conditional Inference Tree for Latvia 2011 - Cross Validated")
 ```
