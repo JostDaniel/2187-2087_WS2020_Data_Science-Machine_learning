@@ -251,23 +251,23 @@ agepyra <- ggplot(data19, aes(x = age, fill= sex))  +
 ggplotly(agepyra)
 ```
 ### Correlation plot
-```{r}
+```{r, message=FALSE, error=FALSE, warning=FALSE}
 ## One with all numeric variables and one with all categorical variables using CramerV()
 ##################
 
-data19cor <- sapply(data19cor, as.numeric)
+# <- sapply(data19cor, as.numeric)
 
-data19cor$sex <- as.numeric(data19cor$sex)
-data19cor$country_birth <- as.numeric(data19cor$country_birth)
+#data19cor$sex <- as.numeric(data19cor$sex)
+#data19cor$country_birth <- as.numeric(data19cor$country_birth)
 
 # Dropping the categorical variables father_occup & mother_occup
-data19cor <- select(data19cor, -c(father_occup, mother_occup))
+#data19cor <- select(data19cor, -c(father_occup, mother_occup))
 
 # Computing correlation coefficients and significance thereof 
-data19cor <- cor(data19cor)
-res1 <- cor.mtest(data19cor, conf.level = 0.99)
+#data19cor <- cor(data19cor)
+#res1 <- cor.mtest(data19cor, conf.level = 0.99)
 
-corrplot(data19cor, method = "ellipse", type = "upper", order = "FPC", diag = FALSE, outline = FALSE, tl.cex = .5, tl.col = "black", title = "Correlation plot", p.mat = res1$p, sig.level = 0.01, insig = "blank", mar=c(2,2,2,2))
+#corrplot(data19cor, method = "ellipse", type = "upper", order = "FPC", diag = FALSE, outline = FALSE, tl.cex = .5, tl.col = "black", title = "Correlation plot", p.mat = res1$p, sig.level = 0.01, insig = "blank", mar=c(2,2,2,2))
 ```
 As can be seen from the correlation plot, all variables are significantly related to at least one other variable of the data set (at the 1% significance level). For better visibility insignificant correlations are blanked out. As the correlation matrix is ordered using the first principal component there is some clustering of significant correlations.
 
@@ -898,13 +898,13 @@ plot(AT_ctree2, type = "simple",gp = gpar(fontsize = 6),
 ```
 
 ```{r}
-AT_test$P_AtCt <- predict(AT_ctree2, newdata = as.data.frame(AT_test))
+#AT_test$P_AtCt <- predict(AT_ctree2, newdata = as.data.frame(AT_test))
 
-AT_test$perror <- (AT_test$P_AtCt - AT_test$inc_log)^2
+#AT_test$perror <- (AT_test$P_AtCt - AT_test$inc_log)^2
 
-AT_test$RMSE <- sqrt(sum((AT_test$P_AtCt - AT_test$inc_log)^2/nrow(AT_test), na.rm = T))
+#AT_test$RMSE <- sqrt(sum((AT_test$P_AtCt - AT_test$inc_log)^2/nrow(AT_test), na.rm = T))
 
-head(AT_test$RMSE)
+#head(AT_test$RMSE)
 # For Austria we have a RMSE of 1.02, which is not very good. But is most likely attributed to the synthetic data. 
 
 # Plot the Errors somehow
@@ -933,13 +933,13 @@ plot(FR_cct, type = "simple",gp = gpar(fontsize = 8),
 ```
 
 ```{r}
-FR_test$P_FRCt <- predict(FR_cct, newdata = as.data.frame(FR_test))
+#FR_test$P_FRCt <- predict(FR_cct, newdata = as.data.frame(FR_test))
 
-FR_test$perror <- (FR_test$P_FRCt - FR_test$inc_log)^2
+#FR_test$perror <- (FR_test$P_FRCt - FR_test$inc_log)^2
 
-FR_test$RMSE <- sqrt(sum((FR_test$P_FRCt - FR_test$inc_log)^2/nrow(FR_test), na.rm = T))
+#FR_test$RMSE <- sqrt(sum((FR_test$P_FRCt - FR_test$inc_log)^2/nrow(FR_test), na.rm = T))
 
-head(FR_test$RMSE)
+#head(FR_test$RMSE)
 # RMSE 0.86
 ```
 
@@ -1037,11 +1037,11 @@ plot(LV_cct,gp = gpar(fontsize = 8),
 ```
 
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
-LV_test$P_Ct <- predict(LV_cct, newdata = as.data.frame(LV_test))
+#LV_test$P_Ct <- predict(LV_cct, newdata = as.data.frame(LV_test))
 
-LV_test$perror <- (LV_test$P_Ct - LV_test$log_income)^2
+#LV_test$perror <- (LV_test$P_Ct - LV_test$log_income)^2
 
-LV_test$RMSE <- sqrt(sum((LV_test$P_Ct - LV_test$log_income)^2/nrow(LV_test), na.rm = T))
+#LV_test$RMSE <- sqrt(sum((LV_test$P_Ct - LV_test$log_income)^2/nrow(LV_test), na.rm = T))
 
 #RMSE of 1.4 which is not so good, and does not speak of good predictive capabilities of the model
 ```
@@ -1130,28 +1130,28 @@ ggplotly(dfvarimp)
 ```
 
 ```{r}
-varimpo3 <- ggplot(importance_cf_FR, aes(x = var_name, y = importance)) +
-  geom_pointrange(shape = 21, colour = "black", fill = "white", size = 3, stroke = 1, aes(ymin = 0, ymax = importance)) +
-    scale_x_discrete(limits = importance_cf_FR$var_name[order(importance_cf_FR$importance)]) +
-    labs(title = "Conditional Forest variable importance - France 2011", x = "", y = "Mean decrease in sum of squared residuals") +
-    coord_flip() +
-    theme_light() +
-    theme(axis.line = element_blank(), panel.border = element_blank(), panel.grid.major.y=element_blank())
-
-ggplotly(varimpo3)
+# varimpo3 <- ggplot(importance_cf_FR, aes(x = var_name, y = importance)) +
+#   geom_pointrange(shape = 21, colour = "black", fill = "white", size = 3, stroke = 1, aes(ymin = 0, ymax = importance)) +
+#     scale_x_discrete(limits = importance_cf_FR$var_name[order(importance_cf_FR$importance)]) +
+#     labs(title = "Conditional Forest variable importance - France 2011", x = "", y = "Mean decrease in sum of squared residuals") +
+#     coord_flip() +
+#     theme_light() +
+#     theme(axis.line = element_blank(), panel.border = element_blank(), panel.grid.major.y=element_blank())
+# 
+# ggplotly(varimpo3)
 ```
 
 
 ```{r}
-varimpo4 <- ggplot(importance_cf_LV, aes(x = var_name, y = importance)) +
-  geom_pointrange(shape = 21, colour = "black", fill = "white", size = 3, stroke = 1, aes(ymin = 0, ymax = importance)) +
-    scale_x_discrete(limits = importance_cf_LV$var_name[order(importance_cf_LV$importance)]) +
-    labs(title = "Conditional Forest variable importance - Latvia 2011", x = "", y = "Mean decrease in sum of squared residuals") +
-    coord_flip() +
-    theme_light() +
-    theme(axis.line = element_blank(), panel.border = element_blank(), panel.grid.major.y=element_blank())
-
-ggplotly(varimpo4)
+# varimpo4 <- ggplot(importance_cf_LV, aes(x = var_name, y = importance)) +
+#   geom_pointrange(shape = 21, colour = "black", fill = "white", size = 3, stroke = 1, aes(ymin = 0, ymax = importance)) +
+#     scale_x_discrete(limits = importance_cf_LV$var_name[order(importance_cf_LV$importance)]) +
+#     labs(title = "Conditional Forest variable importance - Latvia 2011", x = "", y = "Mean decrease in sum of squared residuals") +
+#     coord_flip() +
+#     theme_light() +
+#     theme(axis.line = element_blank(), panel.border = element_blank(), panel.grid.major.y=element_blank())
+# 
+# ggplotly(varimpo4)
 ```
 
 
