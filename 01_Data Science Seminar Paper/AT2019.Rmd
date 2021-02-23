@@ -94,7 +94,7 @@ data19_h <- data19_h %>% select(hy020, Hid)
 data19 <- data19 %>%  left_join(data19_h, by = "Hid")
 ```
 
-### Data Wrangling
+## Data Wrangling
 The first step of our data wrangling part is to select the variables of interest. These are based upon the list of circumstances chosen in @brunori18. The circumstances include both characteristics describing the respondent and circumstances related to the intergenerational transmission of the respondent. Personal characteristics are: sex and country of birth. Intergenerational circumstances include: the presence of parents at home, the number of adults present at home (aged 18 and over), the number of working adults present and the number of children (under 18) present at home, all when the respondent was at age 14. Further inter-generational circumstances are the level of education of the respondents parents, their occupational status, main occupation and if they held a managerial position, their citizenship and the tenancy status. 
 
 As our outcome variable we use Total Disposable Household Income. Unfortunately the data provided by Statistik Austria does not contain original answers, but instead are aggregated following Eurostat standards. The applied income variable is net income, meaning post deductions of taxes and social insurance. In the Austria 2019 data set most negative incomes are replaced by 0 entries. However, the provided data is meant to be comparable with the officially publicized data by Statistik Austria.
@@ -494,12 +494,12 @@ factor_f <- c("citizenship", "sex", "parents_present", "father_cob", "father_cit
 AT_equality_data <- AT_equality_data %>% select(selection_f) %>% mutate(
     age = (2011 - PB140),
   ) %>% filter(
-    age %in% (30:59)
+    age %in% (30:59), HY020 >= 0    # Since Statistik Austria, excludes negative entries for total disposable income, we do the same here!
   ) %>%
   rename(
     "year_of_birth" = PB140,        # Respondents year of birth
-    "annual_income" = HY020,
-    "citizenship" = PB220A,
+    "annual_income" = HY020,        # Total Disposable Income
+    "citizenship" = PB220A,         # Respondents citizenship
     "sex" = PB150,                  # Respondents sex
     "parents_present" = PT010,      # Presence of parents (or those considered as such)
     "adults_home" = PT020,          # Number of adults living in the household when the respondent was 14 years old
@@ -522,12 +522,14 @@ AT_equality_data[factor_f] <- lapply(AT_equality_data[factor_f], as.factor)
 sapply(AT_equality_data, class)
 ```
 We again use the Winsorization based on the 99.5th percentile of the income distribution. In the 2011 data set, we have a very high fraction of negative income entries, which are all changed to be equal to 1.
-```{r}
-quantile_AT <- quantile(AT_equality_data$annual_income, weights = NULL, probs = seq(0, 1, 0.005), na.rm = FALSE, names = TRUE, type = 7) %>% tail(12)
 
-AT_equality_data <- AT_equality_data %>% mutate(income = Winsorize(AT_equality_data$annual_income, minval = 1, maxval = quantile_AT[11], probs = c(0.05, 0.95), na.rm = FALSE, type = 7), inc_log = log(income))
+```{r}
+quantile_AT <- quantile(AT_equality_data$annual_income, weights = NULL, probs = seq(0, 1, 0.005), na.rm = FALSE, names = TRUE, type = 7) %>% tail(2)
+
+AT_equality_data <- AT_equality_data %>% mutate(income = Winsorize(AT_equality_data$annual_income, minval = 1, maxval = quantile_AT[1], probs = c(0.05, 0.95), na.rm = FALSE, type = 7), inc_log = log(income))
 ```
 
+For simplicity we only name the levels for Austrian circumstantial variabels:
 ```{r}
 levels(AT_equality_data$sex)               <- c("Male", "Female")
 levels(AT_equality_data$father_cit)        <- c("Don't know","Resp. Present Country","Other EU country","Other European Country")
@@ -564,7 +566,7 @@ FR_equality_data <- FR_personal_data %>%  left_join(FR_household_data, by = "PX0
 FR_equality_data <- FR_equality_data %>% select(selection_f) %>% mutate(
     age = (2011 - PB140)
   ) %>% filter(
-    age %in% (30:59)
+    age %in% (30:59), HY020 >= 0
   ) %>% 
   rename(
     "year_of_birth" = PB140,
@@ -604,7 +606,7 @@ DK_equality_data <- DK_equality_data %>% select(
   selection_f) %>% mutate(
     age = (2011 - PB140)
   ) %>% filter(
-    age %in% (30:59)
+    age %in% (30:59), HY020 >= 0
   ) %>% 
   rename(
     "year_of_birth" = PB140,
@@ -643,7 +645,7 @@ ES_equality_data <- ES_personal_data %>%  left_join(ES_household_data, by = "PX0
 ES_equality_data <- ES_equality_data %>% select(selection_f) %>% mutate(
     age = (2011 - PB140)
   ) %>% filter(
-    age %in% (30:59)
+    age %in% (30:59), HY020 >= 0
   ) %>% 
   rename(
     "year_of_birth" = PB140,
@@ -682,7 +684,7 @@ FI_equality_data <- FI_personal_data %>%  left_join(FI_household_data, by = "PX0
 FI_equality_data <- FI_equality_data %>% select(selection_f) %>% mutate(
     age = (2011 - PB140)
   ) %>% filter(
-    age %in% (30:59)
+    age %in% (30:59), HY020 >= 0
   ) %>% 
   rename(
     "year_of_birth" = PB140,
@@ -721,7 +723,7 @@ LV_equality_data <- LV_personal_data %>%  left_join(LV_household_data, by = "PX0
 LV_equality_data <- LV_equality_data %>% select(selection_f) %>% mutate(
     age = (2011 - PB140)
   ) %>% filter(
-    age %in% (30:59)
+    age %in% (30:59), HY020 >= 0
   ) %>% 
   rename(
     "year_of_birth" = PB140,
@@ -808,47 +810,41 @@ set.seed(78910)
 
 formula_2 <- inc_log ~ sex + parents_present + adults_home + children_home + father_cob + father_cit + mother_cob + mother_cit + father_edu + mother_edu + father_occup_stat + mother_occup_stat + father_occup + mother_occup + father_manag + mother_manag + tenancy
 
-
+# Austria
 AT_equality_data <- AT_equality_data %>%
     mutate(train_index = sample(c("train", "test"), nrow(AT_equality_data), replace=TRUE, prob=c(0.67, 0.33)))
 AT_train <- AT_equality_data %>% filter(train_index=="train")
 AT_test <- AT_equality_data %>% filter(train_index=="test")
 
-```
-
-```{r echo=F, message=FALSE, error=FALSE, warning=FALSE}
+# France
 FR_equality_data <- FR_equality_data %>%
   mutate(train_index = sample(c("train", "test"), nrow(FR_equality_data), replace=TRUE, prob=c(0.67, 0.33)))
 
 FR_train <- FR_equality_data %>% filter(train_index=="train")
 FR_test <- FR_equality_data %>% filter(train_index=="test")
-```
 
-```{r echo=F, message=FALSE, error=FALSE, warning=FALSE}
+# Spain
 ES_equality_data <- ES_equality_data %>%
   mutate(train_index = sample(c("train", "test"), nrow(ES_equality_data), replace=TRUE, prob=c(0.67, 0.33)))
 
 ES_train <- ES_equality_data %>% filter(train_index=="train")
 ES_test <- ES_equality_data %>% filter(train_index=="test")
-```
 
-```{r echo=F, message=FALSE, error=FALSE, warning=FALSE}
+# Denmark
 DK_equality_data <- DK_equality_data %>%
   mutate(train_index = sample(c("train", "test"), nrow(DK_equality_data), replace=TRUE, prob=c(0.67, 0.33)))
 
 DK_train <- DK_equality_data %>% filter(train_index=="train")
 DK_test <- DK_equality_data %>% filter(train_index=="test")
-```
 
-```{r}
+# Finland
 FI_equality_data <- FI_equality_data %>%
   mutate(train_index = sample(c("train", "test"), nrow(FI_equality_data), replace=TRUE, prob=c(0.67, 0.33)))
 
 FI_train <- FI_equality_data %>% filter(train_index=="train")
 FI_test <- FI_equality_data %>% filter(train_index=="test")
-```
 
-```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
+# Latvia
 LV_equality_data <- LV_equality_data %>%
   mutate(train_index = sample(c("train", "test"), nrow(LV_equality_data), replace=TRUE, prob=c(0.67, 0.33)))
 
@@ -858,7 +854,7 @@ LV_test <- LV_equality_data %>% filter(train_index=="test")
 
 First, we chose to show the estimation results for Austria in 2011 with the synthetic data, in order to compare those results to the ones obtained prior.
 ```{r}
-AT_cf <- cforest(formula, AT_equality_data, na.action = na.pass, control = ctree_control(teststat = "quadratic", testtype = "Univariate", mincriterion = 0.99), ytrafo = NULL, scores = NULL, ntree = 500L, perturb = list(replace = FALSE, fraction = 0.8))
+AT_cf <- cforest(formula_2, AT_equality_data, na.action = na.pass, control = ctree_control(teststat = "quadratic", testtype = "Univariate", mincriterion = 0.99), ytrafo = NULL, scores = NULL, ntree = 500L, perturb = list(replace = FALSE, fraction = 0.8))
 
 AThat_cf <- predict(AT_cf, newdata = AT_test, OOB = TRUE, type = "response")
 
@@ -887,7 +883,7 @@ DESCRIBE RESULTS
 
 Next we repeat the procedure for the remaining countries:
 ```{r}
-FR_cf <- cforest(formula, FR_equality_data, na.action = na.pass, control = ctree_control(teststat = "quadratic", testtype = "Univariate", mincriterion = 0.99), ytrafo = NULL, scores = NULL, ntree = 500L, perturb = list(replace = FALSE, fraction = 0.8))
+FR_cf <- cforest(formula_2, FR_equality_data, na.action = na.pass, control = ctree_control(teststat = "quadratic", testtype = "Univariate", mincriterion = 0.99), ytrafo = NULL, scores = NULL, ntree = 500L, perturb = list(replace = FALSE, fraction = 0.8))
 importance_cf_FR <- data.frame(varimp(FR_cf, mincriterion = 0, OOB = TRUE))
 names(importance_cf_FR) <- "importance"
 importance_cf_FR$var_name = rownames(importance_cf_FR)
@@ -895,7 +891,7 @@ importance_cf_FR <- importance_cf_FR  %>% arrange(desc(importance)) %>% mutate(C
 ```
 
 ```{r}
- FI_cf <- cforest(formula, FI_equality_data, na.action = na.pass, control = ctree_control(teststat = "quadratic", testtype = "Univariate", mincriterion = 0.99), ytrafo = NULL, scores = NULL, ntree = 200L, perturb = list(replace = FALSE, fraction = 0.8))
+ FI_cf <- cforest(formula_2, FI_equality_data, na.action = na.pass, control = ctree_control(teststat = "quadratic", testtype = "Univariate", mincriterion = 0.99), ytrafo = NULL, scores = NULL, ntree = 200L, perturb = list(replace = FALSE, fraction = 0.8))
 # 
 importance_cf_FI <- data.frame(varimp(FI_cf, mincriterion = 0, OOB = TRUE))
 names(importance_cf_FI) <- "importance"
@@ -904,7 +900,7 @@ importance_cf_FI <- importance_cf_FI  %>% arrange(desc(importance)) %>% mutate(C
 ```
 
 ```{r}
- DK_cf <- cforest(formula, DK_equality_data, na.action = na.pass, control = ctree_control(teststat = "quadratic", testtype = "Univariate", mincriterion = 0.99), ytrafo = NULL, scores = NULL, ntree = 200L, perturb = list(replace = FALSE, fraction = 0.8))
+ DK_cf <- cforest(formula_2, DK_equality_data, na.action = na.pass, control = ctree_control(teststat = "quadratic", testtype = "Univariate", mincriterion = 0.99), ytrafo = NULL, scores = NULL, ntree = 200L, perturb = list(replace = FALSE, fraction = 0.8))
 # 
 importance_cf_DK <- data.frame(varimp(DK_cf, mincriterion = 0, OOB = TRUE))
 names(importance_cf_DK) <- "importance"
@@ -914,7 +910,7 @@ importance_cf_DK <- importance_cf_DK  %>% arrange(desc(importance)) %>% mutate(C
 
 
 ```{r}
-LV_cf <- cforest(formula, LV_equality_data, na.action = na.pass, control = ctree_control(teststat = "quadratic", testtype = "Bonferroni", mincriterion = 0.99), ytrafo = NULL, scores = NULL, ntree = 500L, perturb = list(replace = FALSE, fraction = 0.8))
+LV_cf <- cforest(formula_2, LV_equality_data, na.action = na.pass, control = ctree_control(teststat = "quadratic", testtype = "Bonferroni", mincriterion = 0.99), ytrafo = NULL, scores = NULL, ntree = 500L, perturb = list(replace = FALSE, fraction = 0.8))
 
 importance_cf_LV <- data.frame(varimp(LV_cf, mincriterion = 0, OOB = TRUE))
 names(importance_cf_LV) <- "importance"
@@ -954,7 +950,7 @@ beep(8)        # playing a sound so you know when it's done
 # **Appendix**
 ### Conditional Inference Trees
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
-AT_Ctree <- ctree(formula, data = AT_train, alpha = 0.05, maxdepth = 5)
+AT_Ctree <- ctree(formula_2, data = AT_train, alpha = 0.05, maxdepth = 5)
 AT_Ctree
 
 plot(AT_Ctree, type = "simple", gp = gpar(fontsize = 6),
@@ -969,19 +965,19 @@ fitControl <- trainControl(method = "repeatedcv", number = 10, repeats = 10, sav
 ```
 
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
-AT_cctree1 <- train(formula, data = AT_train, method = "ctree", trControl = fitControl, na.action = na.pass)
+AT_cctree1 <- train(formula_2, data = AT_train, method = "ctree", trControl = fitControl, na.action = na.pass)
 
 AT_cctree1 #This is the suggested tree we get from applying Caret
 
 
-AT_cct <- ctree(formula, data = AT_train, mincriterion = 0.99) #Using the suggestion we generate a Conditional Inference Tree and plot it as our final result
+AT_cct <- ctree(formula_2, data = AT_train, mincriterion = 0.99) #Using the suggestion we generate a Conditional Inference Tree and plot it as our final result
 
 plot(AT_cct,gp = gpar(fontsize = 8),
   inner_panel=node_inner,
   ip_args=list(abbreviate = FALSE,id = FALSE), main = "Opportunity Conditional Inference Tree for Austria 2011 - Cross Validated with Caret")
 
 
-AT_ctree2 <- ctree(formula, data = AT_train, control = ctree_control(testtype = "Univariate", mincriterion = 0.99, maxdepth = 5)) 
+AT_ctree2 <- ctree(formula_2, data = AT_train, control = ctree_control(testtype = "Univariate", mincriterion = 0.99, maxdepth = 5)) 
 AT_ctree2
 
 plot(AT_ctree2, type = "simple",gp = gpar(fontsize = 6),
@@ -990,19 +986,19 @@ plot(AT_ctree2, type = "simple",gp = gpar(fontsize = 6),
 ```
 
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
-FR_Ctree <- ctree(formula, data = FR_train)
+FR_Ctree <- ctree(formula_2, data = FR_train)
 FR_Ctree
 
 plot(FR_Ctree, type = "simple",gp = gpar(fontsize = 6),
   inner_panel=node_inner,
   ip_args=list(abbreviate = FALSE,id = FALSE), main = "Conditional Inference Tree for France 2011")
 
-FR_cctree <- train(formula, data = FR_train, method = "ctree", trControl = fitControl, na.action = na.pass)
+FR_cctree <- train(formula_2, data = FR_train, method = "ctree", trControl = fitControl, na.action = na.pass)
 
 FR_cctree #This is the suggested tree we get from applying Caret
 
 
-FR_cct <- ctree(formula, data = FR_train, mincriterion = 0.99) #Using the suggestion we generate a Conditional Inference Tree and plot it as our final result
+FR_cct <- ctree(formula_2, data = FR_train, mincriterion = 0.99) #Using the suggestion we generate a Conditional Inference Tree and plot it as our final result
 
 plot(FR_cct, type = "simple",gp = gpar(fontsize = 8),
   inner_panel=node_inner,
@@ -1011,7 +1007,7 @@ plot(FR_cct, type = "simple",gp = gpar(fontsize = 8),
 ```
 
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
-LV_Ctree <- ctree(formula, data = LV_train)
+LV_Ctree <- ctree(formula_2, data = LV_train)
 LV_Ctree
 
 plot(LV_Ctree, type = "simple", gp = gpar(fontsize = 8),
@@ -1020,13 +1016,13 @@ plot(LV_Ctree, type = "simple", gp = gpar(fontsize = 8),
 ```
 
 ```{r echo=T, message=FALSE, error=FALSE, warning=FALSE}
-LV_cctree <- train(formula, data = LV_train, method = "ctree", trControl = fitControl, na.action = na.pass)
+LV_cctree <- train(formula_2, data = LV_train, method = "ctree", trControl = fitControl, na.action = na.pass)
 LV_cctree #again we choose Mincriterion 0.99 based on the RMSE
 
 plot(LV_cctree$finalModel)
 
 # we do the control step using the default ctree_control function
-LV_cct <- ctree(formula, data = LV_train, control = ctree_control(testtype = "Bonferroni", mincriterion = 0.99))
+LV_cct <- ctree(formula_2, data = LV_train, control = ctree_control(testtype = "Bonferroni", mincriterion = 0.99))
 
 
 plot(LV_cct,gp = gpar(fontsize = 8),
