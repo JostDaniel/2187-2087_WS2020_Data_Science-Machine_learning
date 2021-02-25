@@ -1000,6 +1000,12 @@ plot(LV_ct, type = "simple", gp = gpar(fontsize = 8),
   ip_args=list(abbreviate = FALSE,id = FALSE), main = "Conditional Inference Tree for Latvia 2011 - Cross Validated")
 ```
 
+How long did it take to knit the document:
+```{r}
+end <- Sys.time()
+end-start
+```
+
 # **References**
 
 ```{r echo=F, eval=F, message=F, include=F, error=F, warning=F}
@@ -1007,13 +1013,3 @@ plot(LV_ct, type = "simple", gp = gpar(fontsize = 8),
 library(beepr)
 beep(8)        # playing a sound so you know when it's done
 ```
-
-How long did it take to knit the document:
-```{r}
-end <- Sys.time()
-end-start
-```
-
-
-
-
