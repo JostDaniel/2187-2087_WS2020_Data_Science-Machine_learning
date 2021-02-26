@@ -37,7 +37,7 @@ DANIEL:
 # **Introduction**
 Building upon the contribution of @brunori18 the goal of our project is to estimate inequality of opportunity (IOP) based on Machine Learning (ML) techniques. The measurement of unequal opportunities goes back to @roemer98, who states that factors controlling individual outcomes (e.g income) consist of two categories: effort and circumstances. Effort summarizes all aspects over which individuals have control, while circumstances include all factors individuals cannot control. Individuals identified by the same exogenous circumstances and therefore characterized by similar background conditions belong to a circumstance type [@roemer98]. In what follows we want to analyze between-type disparities. 
 
-In the previous literature several methods have been applied to measure IOP. These include parametric, non-parametric and latent variable approaches [@roemer2015]. The reasons we rely upon ML methods is that, as outlined by @brunori18, the empirical results are sensitive to model selection determined by the researcher. As largely discussed in the literature, model selection and thus partial observability of the real number of exogenous variables causes a downward bias in estimating opportunity estimates [@ferreira11]. With ML methods it is possible to circumvent problems like sample size limitations or non-fixed and non-additive effects of circumstances and thus balance the bias [@Bourguignon07]; [@ferreira11]. To be more precise, in our empirical analysis we make use of conditional inference trees and conditional inference forests, which belong to the classification and regression tree (CART) methods popularized by @breiman84. CART methods lower the risk of arbitrary model selection by using an automated algorithm that splits the predictor space into non-overlapping areas to establish the best model for predicting the outcome variable. In the case of inequality of opportunity the algorithm partitions the sample of respondents into different types. Moreover, the conditional inference algorithm employs sequences of hypothesis tests which restrains model overfitting and thus trades off upward and downward biases [@hot]. Another advantage of CART methods is their intuitive graphical representation, which makes them easily accessible to a large audience.
+In the previous literature several methods have been applied to measure IOP. These include parametric, non-parametric and latent variable approaches [@roemer2015]. The reasons we rely upon ML methods is that, as outlined by @brunori18, the empirical results are sensitive to model selection determined by the researcher. As largely discussed in the literature, model selection and thus partial observability of the real number of exogenous variables causes a downward bias in estimating opportunity estimates [@ferreira11]. With ML methods it is possible to circumvent problems like sample size limitations or non-fixed and non-additive effects of circumstances and thus balance the bias (@Bourguignon07; @ferreira11). To be more precise, in our empirical analysis we make use of conditional inference trees and conditional inference forests, which belong to the classification and regression tree (CART) methods popularized by @breiman84. CART methods lower the risk of arbitrary model selection by using an automated algorithm that splits the predictor space into non-overlapping areas to establish the best model for predicting the outcome variable. In the case of inequality of opportunity the algorithm partitions the sample of respondents into different types. Moreover, the conditional inference algorithm employs sequences of hypothesis tests which restrains model overfitting and thus trades off upward and downward biases [@hot]. Another advantage of CART methods is their intuitive graphical representation, which makes them easily accessible to a large audience.
 
 The project is organized as follows: First, after properly assessing our data, we make use of the income and living conditions data of Austria in 2019 to estimate the Conditional Inference Trees and a Conditional Inference Forest for Austria. Second, we apply the same data wrangling and data analysis procedure to the synthetic EU-SILC 2011 data set. Here we estimate the trees and forest for 5 countries. In the last part, we compare the results across countries and conclude.
 
@@ -247,26 +247,38 @@ agepyra <- ggplot(data19, aes(x = age, fill= sex))  +
 
 ggplotly(agepyra)
 ```
-### Correlation plot
-```{r, message=FALSE, error=FALSE, warning=FALSE}
-## One with all numeric variables and one with all categorical variables using CramerV()
-##################
+
+```{r, eval=FALSE, include=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+data19 %>% ggplot(aes(sex, net_income)) + 
+  geom_bar(stat = "summary", fun = "mean") +
+  labs(title= "",
+       x ="Sex",
+       y = "Net income") +
+  facet_grid(. ~father_edu) +
+  theme_minimal()
+```
+
+
+
+```{r, eval=FALSE, include=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+# One with all numeric variables and one with all categorical variables using CramerV()
 
 # <- sapply(data19cor, as.numeric)
 
-#data19cor$sex <- as.numeric(data19cor$sex)
-#data19cor$country_birth <- as.numeric(data19cor$country_birth)
+# data19cor$sex <- as.numeric(data19cor$sex)
+# data19cor$country_birth <- as.numeric(data19cor$country_birth)
 
 # Dropping the categorical variables father_occup & mother_occup
-#data19cor <- select(data19cor, -c(father_occup, mother_occup))
+# data19cor <- select(data19cor, -c(father_occup, mother_occup))
 
 # Computing correlation coefficients and significance thereof 
-#data19cor <- cor(data19cor)
-#res1 <- cor.mtest(data19cor, conf.level = 0.99)
+# data19cor <- cor(data19cor)
+# res1 <- cor.mtest(data19cor, conf.level = 0.99)
 
-#corrplot(data19cor, method = "ellipse", type = "upper", order = "FPC", diag = FALSE, outline = FALSE, tl.cex = .5, tl.col = "black", title = "Correlation plot", p.mat = res1$p, sig.level = 0.01, insig = "blank", mar=c(2,2,2,2))
+# corrplot(data19cor, method = "ellipse", type = "upper", order = "FPC", diag = FALSE, outline = FALSE, tl.cex = .5, tl.col = "black", title = "Correlation plot", p.mat = res1$p, sig.level = 0.01, insig = "blank", mar=c(2,2,2,2))
+
+# As can be seen from the correlation plot, all variables are significantly related to at least one other variable of the data set (at the 1% significance level). For better visibility insignificant correlations are blanked out. As the correlation matrix is ordered using the first principal component there is some clustering of significant correlations.
 ```
-As can be seen from the correlation plot, all variables are significantly related to at least one other variable of the data set (at the 1% significance level). For better visibility insignificant correlations are blanked out. As the correlation matrix is ordered using the first principal component there is some clustering of significant correlations.
 
 ## Method: Conditional Inference Trees and Forests
 To estimate equality of opportunity we let an automated algorithm decide the partition of the population into mutually exclusive types, in order to obtain a measure of inequality of opportunity. We follow the procedure described by @brunori18. We show our results using both classification and regression trees and conditional inference trees. We put more emphasis on the latter. _Conditional inference trees_ and _conditional inference forests_ are a technique developed and described by [@hot]. We break down the main characteristics for our purposes:
