@@ -258,28 +258,6 @@ data19 %>% ggplot(aes(sex, net_income)) +
   theme_minimal()
 ```
 
-
-
-```{r, eval=FALSE, include=FALSE, message=FALSE, error=FALSE, warning=FALSE}
-# One with all numeric variables and one with all categorical variables using CramerV()
-
-# <- sapply(data19cor, as.numeric)
-
-# data19cor$sex <- as.numeric(data19cor$sex)
-# data19cor$country_birth <- as.numeric(data19cor$country_birth)
-
-# Dropping the categorical variables father_occup & mother_occup
-# data19cor <- select(data19cor, -c(father_occup, mother_occup))
-
-# Computing correlation coefficients and significance thereof 
-# data19cor <- cor(data19cor)
-# res1 <- cor.mtest(data19cor, conf.level = 0.99)
-
-# corrplot(data19cor, method = "ellipse", type = "upper", order = "FPC", diag = FALSE, outline = FALSE, tl.cex = .5, tl.col = "black", title = "Correlation plot", p.mat = res1$p, sig.level = 0.01, insig = "blank", mar=c(2,2,2,2))
-
-# As can be seen from the correlation plot, all variables are significantly related to at least one other variable of the data set (at the 1% significance level). For better visibility insignificant correlations are blanked out. As the correlation matrix is ordered using the first principal component there is some clustering of significant correlations.
-```
-
 ## Method: Conditional Inference Trees and Forests
 To estimate equality of opportunity we let an automated algorithm decide the partition of the population into mutually exclusive types, in order to obtain a measure of inequality of opportunity. We follow the procedure described by @brunori18. We show our results using both classification and regression trees and conditional inference trees. We put more emphasis on the latter. _Conditional inference trees_ and _conditional inference forests_ are a technique developed and described by [@hot]. We break down the main characteristics for our purposes:
 
